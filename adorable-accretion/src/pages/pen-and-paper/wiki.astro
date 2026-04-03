@@ -1,0 +1,26 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Pen and Paper - Wiki`} description="Pen and paper wiki" />
+		<style>
+			body {
+				background: #f0fdf4; /* Light green background */
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Wiki</h1>
+			<p>Pen and paper wiki content goes here.</p>
+		</main>
+		<Footer />
+	</body>
+</html>

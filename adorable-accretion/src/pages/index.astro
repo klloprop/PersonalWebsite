@@ -3,47 +3,174 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import personalBg from '../assets/blog-placeholder-about.jpg';
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<style>
+			html, body {
+				height: 100%;
+			}
+			body {
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+			}
+			main {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				max-width: 800px;
+				padding: 2rem;
+				text-align: center;
+				position: relative;
+				z-index: 2;
+			}
+			h1 {
+				font-size: 3rem;
+				margin-bottom: 2rem;
+				border-radius: 10px;
+				padding: 1rem;
+				background: rgba(255, 255, 255, 0.9);
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+			.choices {
+				display: flex;
+				flex-direction: row;
+				gap: 8rem; /* Increased gap for further apart buttons */
+				align-items: center;
+				justify-content: center;
+			}
+			.choice {
+				width: 400px;
+				border-radius: 10px;
+				padding: 1.5rem;
+				background: rgba(255, 255, 255, 0.9);
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				text-align: center;
+			}
+			.button {
+				display: inline-block;
+				padding: 1.5rem 3rem;
+				font-size: 1.5rem;
+				font-weight: bold;
+				color: white;
+				border-radius: 8px;
+				text-decoration: none;
+				transition: background 0.2s;
+				width: 250px;
+				box-sizing: border-box;
+			}
+			.button-personal {
+				background: #3b82f6;
+			}
+			.button-personal:hover {
+				background: #2563eb;
+			}
+			.button-pen {
+				background: #10b981;
+			}
+			.button-pen:hover {
+				background: #059669;
+			}
+			.choice p {
+				margin-top: 1rem;
+				font-size: 1.1rem;
+				color: var(--gray);
+			}
+			@media (max-width: 600px) {
+				.choices {
+					flex-direction: column;
+				}
+				.button {
+					padding: 1rem 2rem;
+					font-size: 1.2rem;
+				}
+			}
+			.background-left,
+			.background-right {
+				position: fixed;
+				top: 0;
+				bottom: 0;
+				width: 50%;
+				background-size: cover;
+				background-position: center;
+				opacity: 0;
+				transition: opacity 0.3s ease;
+				z-index: 1;
+			}
+			.background-left {
+				left: 0;
+				background-image: var(--personal-bg);
+			}
+			.background-right {
+				right: 0;
+				background-image: url('https://www.dieharddice.com/cdn/shop/files/M0510020_SkyforgeHexbreaker.jpg?v=1750180662');
+			}
+			.background-left:hover,
+			.background-right:hover {
+				opacity: 0;
+			}
+		</style>
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+		<div class="background-left"></div>
+		<div class="background-right"></div>
+		<main style={`--personal-bg: url(${personalBg.src});`}>
+			<h1>Welcome to Lucy's Blog</h1>
+			<div class="choices">
+				<div class="choice">
+					<a href="/personal-blog" class="button button-personal">Personal Blog</a>
+					<p>Read my personal thoughts, stories, and updates about life, technology, and more.</p>
+				</div>
+				<div class="choice">
+					<a href="/pen-and-paper" class="button button-pen">Pen and Paper</a>
+					<p>Explore my tabletop gaming content, including campaigns, character sheets, and resources.</p>
+				</div>
+			</div>
 		</main>
 		<Footer />
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				const leftBg = document.querySelector('.background-left');
+				const rightBg = document.querySelector('.background-right');
+				const leftButton = document.querySelector('.choice:first-child .button');
+				const rightButton = document.querySelector('.choice:last-child .button');
+
+				document.addEventListener('mousemove', (e) => {
+					const mouseX = e.clientX;
+					const mouseY = e.clientY;
+
+					// Get button positions
+					const leftRect = leftButton.getBoundingClientRect();
+					const rightRect = rightButton.getBoundingClientRect();
+
+					// Calculate distance from mouse to button centers
+					const leftCenterX = leftRect.left + leftRect.width / 2;
+					const leftCenterY = leftRect.top + leftRect.height / 2;
+					const rightCenterX = rightRect.left + rightRect.width / 2;
+					const rightCenterY = rightRect.top + rightRect.height / 2;
+
+					const leftDistance = Math.sqrt((mouseX - leftCenterX) ** 2 + (mouseY - leftCenterY) ** 2);
+					const rightDistance = Math.sqrt((mouseX - rightCenterX) ** 2 + (mouseY - rightCenterY) ** 2);
+
+					// Max distance for full opacity (adjust as needed)
+					const maxDistance = 300;
+
+					// Calculate opacity (closer = more opaque, from 20% to 80%)
+					const leftOpacity = 0.2 + (0.6 * Math.max(0, 1 - leftDistance / maxDistance));
+					const rightOpacity = 0.2 + (0.6 * Math.max(0, 1 - rightDistance / maxDistance));
+
+					leftBg.style.opacity = leftOpacity;
+					rightBg.style.opacity = rightOpacity;
+				});
+			});
+		</script>
 	</body>
 </html>

@@ -1,0 +1,31 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Personal Blog`} description="Personal blog section" />
+		<style>
+			body {
+				background: #eff6ff; /* Light blue background */
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Personal Blog</h1>
+			<nav>
+				<ul>
+					<li><a href="/personal-blog/about">About</a></li>
+					<li><a href="/personal-blog/blog">Blog</a></li>
+				</ul>
+			</nav>
+		</main>
+		<Footer />
+	</body>
+</html>
