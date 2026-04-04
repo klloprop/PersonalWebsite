@@ -1,11 +1,13 @@
 ---
-import AboutHeroImage from '../../assets/blog-placeholder-about.jpg';
 import Layout from '../../layouts/BlogPost.astro';
 ---
 
 <style>
 	body {
-		background: #eff6ff; /* Light blue background */
+		background: #eff6ff;
+	}
+	:global(html.dark) body {
+		background: var(--bg);
 	}
 </style>
 
@@ -13,7 +15,6 @@ import Layout from '../../layouts/BlogPost.astro';
 	title="About Me"
 	description="Lorem ipsum dolor sit amet"
 	pubDate={new Date('August 08 2021')}
-	heroImage={AboutHeroImage}
 >
 	<p>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut

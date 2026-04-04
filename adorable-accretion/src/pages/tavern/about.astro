@@ -11,7 +11,10 @@ import { SITE_TITLE } from '../../consts';
 		<BaseHead title={`${SITE_TITLE} - Pen and Paper - About`} description="About pen and paper content" />
 		<style>
 			body {
-				background: #f0fdf4; /* Light green background */
+				background: #f0fdf4;
+			}
+			:global(html.dark) body {
+				background: var(--bg);
 			}
 		</style>
 	</head>

@@ -8,21 +8,25 @@ import { SITE_TITLE } from '../consts';
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`${SITE_TITLE} - Personal Blog`} description="Personal blog section" />
+		<BaseHead title={`${SITE_TITLE} - Pen and Paper Content`} description="Pen and paper content section" />
 		<style>
 			body {
-				background: #eff6ff; /* Light blue background */
+				background: #f0fdf4;
+			}
+			:global(html.dark) body {
+				background: var(--bg);
 			}
 		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<h1>Personal Blog</h1>
+			<h1>Welcome to the Tavern!</h1>
 			<nav>
 				<ul>
-					<li><a href="/personal-blog/about">About</a></li>
-					<li><a href="/personal-blog/blog">Blog</a></li>
+					<li><a href="/tavern/recent">Recent</a></li>
+					<li><a href="/tavern/wiki">Wiki</a></li>
+					<li><a href="/tavern/about">About</a></li>
 				</ul>
 			</nav>
 		</main>

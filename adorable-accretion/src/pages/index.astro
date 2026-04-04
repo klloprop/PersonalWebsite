@@ -3,7 +3,6 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import personalBg from '../assets/blog-placeholder-about.jpg';
 ---
 
 <!doctype html>
@@ -66,22 +65,39 @@ import personalBg from '../assets/blog-placeholder-about.jpg';
 				width: 250px;
 				box-sizing: border-box;
 			}
-			.button-personal {
+			.button-studio {
 				background: #3b82f6;
 			}
-			.button-personal:hover {
+			.button-studio:hover {
 				background: #2563eb;
 			}
-			.button-pen {
+			.button-tavern {
 				background: #10b981;
 			}
-			.button-pen:hover {
+			.button-tavern:hover {
 				background: #059669;
 			}
 			.choice p {
 				margin-top: 1rem;
 				font-size: 1.1rem;
 				color: var(--gray);
+			}
+
+			:global(html.dark) body {
+				background: var(--bg);
+			}
+			:global(html.dark) h1 {
+				color: rgb(var(--black));
+			}
+			:global(html.dark) .choice {
+				background: rgba(34, 34, 58, 0.9);
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+			}
+			:global(html.dark) .choice p {
+				color: rgb(var(--gray));
+			}
+			:global(html.dark) .background-left {
+				background: linear-gradient(180deg, rgba(30, 64, 175, 0.3), rgba(26, 26, 46, 0.2));
 			}
 			@media (max-width: 600px) {
 				.choices {
@@ -106,7 +122,7 @@ import personalBg from '../assets/blog-placeholder-about.jpg';
 			}
 			.background-left {
 				left: 0;
-				background-image: var(--personal-bg);
+				background: linear-gradient(180deg, rgba(59, 130, 246, 0.22), rgba(255, 255, 255, 0.1));
 			}
 			.background-right {
 				right: 0;
@@ -122,16 +138,18 @@ import personalBg from '../assets/blog-placeholder-about.jpg';
 		<Header />
 		<div class="background-left"></div>
 		<div class="background-right"></div>
-		<main style={`--personal-bg: url(${personalBg.src});`}>
+		<main>
 			<h1>Welcome to Lucy's Blog</h1>
 			<div class="choices">
 				<div class="choice">
-					<a href="/personal-blog" class="button button-personal">Personal Blog</a>
-					<p>Read my personal thoughts, stories, and updates about life, technology, and more.</p>
+					<a href="/studio" class="button button-studio">To the Studio!</a>
+					<p>A personal diary-style blog and a small digital studio for you to explore! Just generally stuff I want to share with the world.</p>
 				</div>
 				<div class="choice">
-					<a href="/pen-and-paper" class="button button-pen">Pen and Paper</a>
-					<p>Explore my tabletop gaming content, including campaigns, character sheets, and resources.</p>
+					<a href="/tavern" class="button button-tavern">To the Tavern!</a>
+					<p>Come into my Tavern, there is always a seat reserved for you! <br>
+						Explore Pen and Paper content and recent developments in the latest Campaign.
+					</p>
 				</div>
 			</div>
 		</main>

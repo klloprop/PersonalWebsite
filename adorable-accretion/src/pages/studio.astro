@@ -8,22 +8,24 @@ import { SITE_TITLE } from '../consts';
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`${SITE_TITLE} - Pen and Paper Content`} description="Pen and paper content section" />
+		<BaseHead title={`${SITE_TITLE} - Personal Blog`} description="Personal blog section" />
 		<style>
 			body {
-				background: #f0fdf4; /* Light green background */
+				background: #eff6ff;
+			}
+			:global(html.dark) body {
+				background: var(--bg);
 			}
 		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<h1>Pen and Paper Content</h1>
+			<h1>Welcome to the Studio!</h1>
 			<nav>
 				<ul>
-					<li><a href="/pen-and-paper/recent">Recent</a></li>
-					<li><a href="/pen-and-paper/wiki">Wiki</a></li>
-					<li><a href="/pen-and-paper/about">About</a></li>
+					<li><a href="/studio/about">About</a></li>
+					<li><a href="/studio/blog">Blog</a></li>
 				</ul>
 			</nav>
 		</main>

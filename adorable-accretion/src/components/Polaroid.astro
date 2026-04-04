@@ -1,0 +1,154 @@
+---
+import { Image } from 'astro:assets';
+
+interface Props {
+	src: ImageMetadata;
+	alt?: string;
+	caption?: string;
+	rotate?: number;
+}
+
+const { src, alt = '', caption, rotate = 0 } = Astro.props;
+---
+
+<div class="polaroid-wrapper">
+	<div class="polaroid" style={`--rotate: ${rotate}deg`}>
+		<div class="polaroid-image">
+			<Image src={src} alt={alt} width={280} height={280} />
+		</div>
+		{caption && <p class="polaroid-caption">{caption}</p>}
+	</div>
+
+	<dialog class="polaroid-modal">
+		<div class="modal-inner">
+			<button class="modal-close" aria-label="Close">&times;</button>
+			<Image src={src} alt={alt} width={1600} height={1600} />
+			{caption && <p class="modal-caption">{caption}</p>}
+		</div>
+	</dialog>
+</div>
+
+<script>
+	function initPolaroids() {
+		document.querySelectorAll<HTMLElement>('.polaroid-wrapper').forEach((wrapper) => {
+			const polaroid = wrapper.querySelector('.polaroid') as HTMLElement;
+			const dialog = wrapper.querySelector('dialog') as HTMLDialogElement;
+			if (!polaroid || !dialog) return;
+			if (polaroid.dataset.initialized) return;
+			polaroid.dataset.initialized = 'true';
+
+			polaroid.addEventListener('click', () => {
+				dialog.showModal();
+			});
+
+			dialog.addEventListener('click', (e) => {
+				const target = e.target as HTMLElement;
+				if (target === dialog || target.classList.contains('modal-close')) {
+					dialog.close();
+				}
+			});
+		});
+	}
+
+	initPolaroids();
+	document.addEventListener('astro:after-swap', initPolaroids);
+</script>
+
+<style>
+	.polaroid-wrapper {
+		display: inline-block;
+	}
+	.polaroid {
+		background: #fff;
+		padding: 10px 10px 40px 10px;
+		box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.1);
+		transform: rotate(var(--rotate));
+		display: inline-block;
+		transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+		cursor: pointer;
+	}
+	:global(html.dark) .polaroid {
+		background: #2a2a3e;
+		box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
+	}
+	.polaroid:hover {
+		transform: rotate(0deg) scale(1.05);
+		box-shadow: 4px 6px 20px rgba(0, 0, 0, 0.25);
+		z-index: 10;
+	}
+	.polaroid-image {
+		width: 200px;
+		height: 200px;
+		overflow: hidden;
+	}
+	.polaroid-image img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.polaroid-caption {
+		margin: 8px 0 0 0;
+		text-align: center;
+		font-family: 'Segoe UI', cursive, sans-serif;
+		font-size: 0.8rem;
+		color: #555;
+	}
+	:global(html.dark) .polaroid-caption {
+		color: #aaa;
+	}
+
+	.polaroid-modal {
+		border: none;
+		background: transparent;
+		padding: 0;
+		max-width: 95vw;
+		max-height: 95vh;
+		overflow: hidden;
+	}
+	.polaroid-modal::backdrop {
+		background: rgba(0, 0, 0, 0.85);
+	}
+	.modal-inner {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.modal-inner img {
+		max-width: 85.5vw;
+		max-height: 80.75vh;
+		width: auto;
+		height: auto;
+		object-fit: contain;
+		display: block;
+		border-radius: 4px;
+	}
+	.modal-close {
+		position: absolute;
+		top: -0.5rem;
+		right: -0.5rem;
+		background: rgba(0, 0, 0, 0.6);
+		border: none;
+		color: #fff;
+		font-size: 2rem;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 50%;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+		z-index: 1;
+	}
+	.modal-close:hover {
+		background: rgba(0, 0, 0, 0.8);
+	}
+	.modal-caption {
+		text-align: center;
+		color: #ddd;
+		margin-top: 0.75rem;
+		font-size: 1rem;
+	}
+</style>
