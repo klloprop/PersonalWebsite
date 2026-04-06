@@ -1,0 +1,460 @@
+---
+/**
+ * WikiLinks.astro — Drop this component into any wiki page.
+ * Adds hover-preview tooltips and draggable pop-out panels
+ * for links with class="wiki-link".
+ */
+---
+
+<style is:global>
+	/* ── Wiki-link base styling ── */
+	a.wiki-link {
+		color: #8B6914;
+		text-decoration: underline;
+		text-decoration-style: dotted;
+		text-underline-offset: 3px;
+		cursor: pointer;
+		position: relative;
+	}
+	html.dark a.wiki-link {
+		color: #DEB96E;
+	}
+	a.wiki-link:hover {
+		text-decoration-style: solid;
+	}
+
+	/* ── Hover preview tooltip ── */
+	.wiki-preview {
+		position: fixed;
+		z-index: 9000;
+		width: 360px;
+		max-height: 280px;
+		overflow: hidden;
+		background: #FDF6EC;
+		border: 2px solid #C4A35A;
+		border-radius: 12px;
+		box-shadow: 0 8px 32px rgba(62, 39, 3, 0.18);
+		padding: 1rem 1.15rem;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 0.88rem;
+		color: #3E2703;
+		line-height: 1.6;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateY(6px);
+		transition: opacity 0.18s, transform 0.18s;
+	}
+	.wiki-preview.visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	.wiki-preview::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 48px;
+		background: linear-gradient(transparent, #FDF6EC);
+		pointer-events: none;
+	}
+	html.dark .wiki-preview {
+		background: #2a1c0a;
+		border-color: #7a5c2e;
+		color: #F5E4C4;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+	}
+	html.dark .wiki-preview::after {
+		background: linear-gradient(transparent, #2a1c0a);
+	}
+	.wiki-preview-title {
+		font-size: 1.05rem;
+		font-weight: 700;
+		margin: 0 0 0.5rem;
+		color: #3E2703;
+	}
+	html.dark .wiki-preview-title {
+		color: #DEB96E;
+	}
+	.wiki-preview-body p {
+		margin: 0 0 0.5rem;
+	}
+
+	/* ── Draggable pop-out panel ── */
+	.wiki-popout {
+		position: fixed;
+		z-index: 9500;
+		width: 480px;
+		max-width: calc(100vw - 2rem);
+		max-height: 70vh;
+		display: flex;
+		flex-direction: column;
+		background: #FDF6EC;
+		border: 2px solid #C4A35A;
+		border-radius: 14px;
+		box-shadow: 0 12px 48px rgba(62, 39, 3, 0.22);
+		overflow: hidden;
+		font-family: Georgia, 'Times New Roman', serif;
+		color: #3E2703;
+	}
+	html.dark .wiki-popout {
+		background: #2a1c0a;
+		border-color: #7a5c2e;
+		color: #F5E4C4;
+		box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+	}
+	.wiki-popout-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.65rem 1rem;
+		background: linear-gradient(135deg, #C4A35A, #8B6914);
+		cursor: grab;
+		user-select: none;
+		flex-shrink: 0;
+	}
+	.wiki-popout-header:active {
+		cursor: grabbing;
+	}
+	.wiki-popout-header-title {
+		font-weight: 700;
+		font-size: 0.95rem;
+		color: #FDF6EC;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin-right: 0.5rem;
+	}
+	.wiki-popout-actions {
+		display: flex;
+		gap: 0.35rem;
+		flex-shrink: 0;
+	}
+	.wiki-popout-btn {
+		background: rgba(253, 246, 236, 0.2);
+		border: none;
+		border-radius: 6px;
+		width: 28px;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		color: #FDF6EC;
+		font-size: 1rem;
+		transition: background 0.15s;
+	}
+	.wiki-popout-btn:hover {
+		background: rgba(253, 246, 236, 0.35);
+	}
+	.wiki-popout-body {
+		padding: 1.15rem;
+		overflow-y: auto;
+		flex: 1;
+		font-size: 0.9rem;
+		line-height: 1.7;
+	}
+	.wiki-popout-body h1,
+	.wiki-popout-body h2,
+	.wiki-popout-body h3 {
+		font-family: Georgia, 'Times New Roman', serif;
+		color: #3E2703;
+	}
+	html.dark .wiki-popout-body h1,
+	html.dark .wiki-popout-body h2,
+	html.dark .wiki-popout-body h3 {
+		color: #DEB96E;
+	}
+	.wiki-popout-body a.wiki-link {
+		pointer-events: auto;
+	}
+	.wiki-popout-loading {
+		text-align: center;
+		padding: 2rem;
+		color: #8B6914;
+	}
+
+	/* Resize handle */
+	.wiki-popout-resize {
+		position: absolute;
+		bottom: 0;
+		right: 0;
+		width: 18px;
+		height: 18px;
+		cursor: nwse-resize;
+		opacity: 0.5;
+	}
+	.wiki-popout-resize::after {
+		content: '';
+		position: absolute;
+		bottom: 4px;
+		right: 4px;
+		width: 8px;
+		height: 8px;
+		border-right: 2px solid #C4A35A;
+		border-bottom: 2px solid #C4A35A;
+	}
+</style>
+
+<script>
+	function initWikiLinks() {
+		// ── Preview cache ──
+		const cache: Record<string, { title: string; html: string }> = {};
+
+		// ── Hover preview element ──
+		let preview: HTMLDivElement | null = null;
+		function getPreview(): HTMLDivElement {
+			if (!preview) {
+				preview = document.createElement('div');
+				preview.className = 'wiki-preview';
+				preview.innerHTML = '<h4 class="wiki-preview-title"></h4><div class="wiki-preview-body"></div>';
+				document.body.appendChild(preview);
+			}
+			return preview;
+		}
+
+		let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+		let currentSlug: string | null = null;
+
+		async function fetchWikiContent(slug: string): Promise<{ title: string; html: string }> {
+			if (cache[slug]) return cache[slug];
+
+			const res = await fetch(`/tavern/wiki/${slug}/`);
+			if (!res.ok) {
+				cache[slug] = { title: slug, html: '<p>Page not found.</p>' };
+				return cache[slug];
+			}
+			const text = await res.text();
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(text, 'text/html');
+
+			const title = doc.querySelector('.title h1')?.textContent || slug;
+			const prose = doc.querySelector('.prose');
+			// Get content after the .title div
+			let html = '';
+			if (prose) {
+				const clone = prose.cloneNode(true) as HTMLElement;
+				const titleDiv = clone.querySelector('.title');
+				if (titleDiv) titleDiv.remove();
+				html = clone.innerHTML;
+			}
+
+			const sanitized = sanitizeHTML(html);
+			cache[slug] = { title, html: sanitized };
+			return cache[slug];
+		}
+
+		function sanitizeHTML(html: string): string {
+			// Remove script tags and event handlers
+			const div = document.createElement('div');
+			div.innerHTML = html;
+			div.querySelectorAll('script, iframe, object, embed').forEach(el => el.remove());
+			div.querySelectorAll('*').forEach(el => {
+				for (const attr of Array.from(el.attributes)) {
+					if (attr.name.startsWith('on')) {
+						el.removeAttribute(attr.name);
+					}
+				}
+			});
+			return div.innerHTML;
+		}
+
+		function positionPreview(el: HTMLDivElement, anchor: HTMLElement) {
+			const rect = anchor.getBoundingClientRect();
+			const pw = 360;
+			const ph = 280;
+
+			let left = rect.left + rect.width / 2 - pw / 2;
+			let top = rect.top - ph - 8;
+
+			// Flip below if no room above
+			if (top < 8) {
+				top = rect.bottom + 8;
+			}
+			// Keep horizontally in viewport
+			if (left < 8) left = 8;
+			if (left + pw > window.innerWidth - 8) left = window.innerWidth - 8 - pw;
+
+			el.style.left = left + 'px';
+			el.style.top = top + 'px';
+		}
+
+		function showPreview(link: HTMLAnchorElement) {
+			const slug = link.dataset.wikiSlug;
+			if (!slug) return;
+			currentSlug = slug;
+
+			const el = getPreview();
+			el.querySelector('.wiki-preview-title')!.textContent = 'Loading…';
+			el.querySelector('.wiki-preview-body')!.innerHTML = '';
+			positionPreview(el, link);
+			el.classList.add('visible');
+
+			fetchWikiContent(slug).then((data) => {
+				if (currentSlug !== slug) return; // Mouse moved away
+				el.querySelector('.wiki-preview-title')!.textContent = data.title;
+				el.querySelector('.wiki-preview-body')!.innerHTML = data.html;
+			});
+		}
+
+		function hidePreview() {
+			currentSlug = null;
+			if (preview) preview.classList.remove('visible');
+		}
+
+		// ── Draggable pop-out ──
+		function openPopout(slug: string) {
+			const popout = document.createElement('div');
+			popout.className = 'wiki-popout';
+			popout.style.top = '15vh';
+			popout.style.left = Math.max(16, window.innerWidth / 2 - 240) + 'px';
+
+			popout.innerHTML = `
+				<div class="wiki-popout-header">
+					<span class="wiki-popout-header-title">Loading…</span>
+					<div class="wiki-popout-actions">
+						<button class="wiki-popout-btn wiki-popout-open" title="Open full page" aria-label="Open full page">
+							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+						</button>
+						<button class="wiki-popout-btn wiki-popout-close" title="Close" aria-label="Close pop-out">
+							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+						</button>
+					</div>
+				</div>
+				<div class="wiki-popout-body">
+					<div class="wiki-popout-loading">Loading…</div>
+				</div>
+				<div class="wiki-popout-resize"></div>
+			`;
+
+			document.body.appendChild(popout);
+
+			// Close button
+			popout.querySelector('.wiki-popout-close')!.addEventListener('click', () => {
+				popout.remove();
+			});
+
+			// Open full page button
+			popout.querySelector('.wiki-popout-open')!.addEventListener('click', () => {
+				window.location.href = `/tavern/wiki/${slug}/`;
+			});
+
+			// Load content
+			fetchWikiContent(slug).then((data) => {
+				popout.querySelector('.wiki-popout-header-title')!.textContent = data.title;
+				popout.querySelector('.wiki-popout-body')!.innerHTML = data.html;
+				// Bind wiki-links inside the popout
+				popout.querySelectorAll<HTMLAnchorElement>('a.wiki-link').forEach((link) => {
+					link.addEventListener('click', (e) => {
+						e.preventDefault();
+						const innerSlug = link.dataset.wikiSlug;
+						if (innerSlug) openPopout(innerSlug);
+					});
+				});
+			});
+
+			// ── Drag logic ──
+			const header = popout.querySelector('.wiki-popout-header') as HTMLElement;
+			let isDragging = false;
+			let dragOffsetX = 0;
+			let dragOffsetY = 0;
+
+			header.addEventListener('pointerdown', (e: PointerEvent) => {
+				if ((e.target as HTMLElement).closest('.wiki-popout-btn')) return;
+				isDragging = true;
+				dragOffsetX = e.clientX - popout.getBoundingClientRect().left;
+				dragOffsetY = e.clientY - popout.getBoundingClientRect().top;
+				header.setPointerCapture(e.pointerId);
+				e.preventDefault();
+			});
+
+			header.addEventListener('pointermove', (e: PointerEvent) => {
+				if (!isDragging) return;
+				let newX = e.clientX - dragOffsetX;
+				let newY = e.clientY - dragOffsetY;
+				// Keep in viewport
+				newX = Math.max(0, Math.min(newX, window.innerWidth - 60));
+				newY = Math.max(0, Math.min(newY, window.innerHeight - 40));
+				popout.style.left = newX + 'px';
+				popout.style.top = newY + 'px';
+			});
+
+			header.addEventListener('pointerup', () => {
+				isDragging = false;
+			});
+
+			// ── Resize logic ──
+			const resizeHandle = popout.querySelector('.wiki-popout-resize') as HTMLElement;
+			let isResizing = false;
+			let resizeStartX = 0;
+			let resizeStartY = 0;
+			let startWidth = 0;
+			let startHeight = 0;
+
+			resizeHandle.addEventListener('pointerdown', (e: PointerEvent) => {
+				isResizing = true;
+				resizeStartX = e.clientX;
+				resizeStartY = e.clientY;
+				startWidth = popout.offsetWidth;
+				startHeight = popout.offsetHeight;
+				resizeHandle.setPointerCapture(e.pointerId);
+				e.preventDefault();
+				e.stopPropagation();
+			});
+
+			resizeHandle.addEventListener('pointermove', (e: PointerEvent) => {
+				if (!isResizing) return;
+				const newWidth = Math.max(280, startWidth + (e.clientX - resizeStartX));
+				const newHeight = Math.max(200, startHeight + (e.clientY - resizeStartY));
+				popout.style.width = newWidth + 'px';
+				popout.style.maxHeight = newHeight + 'px';
+			});
+
+			resizeHandle.addEventListener('pointerup', () => {
+				isResizing = false;
+			});
+
+			// Bring to front on click
+			popout.addEventListener('pointerdown', () => {
+				document.querySelectorAll('.wiki-popout').forEach((p) => {
+					(p as HTMLElement).style.zIndex = '9500';
+				});
+				popout.style.zIndex = '9501';
+			});
+		}
+
+		// ── Bind events to all wiki-links ──
+		function bindLinks(root: Document | HTMLElement = document) {
+			root.querySelectorAll<HTMLAnchorElement>('a.wiki-link').forEach((link) => {
+				if (link.dataset.wikiBound) return;
+				link.dataset.wikiBound = 'true';
+
+				// Hover preview
+				link.addEventListener('mouseenter', () => {
+					hoverTimer = setTimeout(() => showPreview(link), 300);
+				});
+				link.addEventListener('mouseleave', () => {
+					if (hoverTimer) clearTimeout(hoverTimer);
+					hidePreview();
+				});
+
+				// Click → pop-out instead of navigate
+				link.addEventListener('click', (e) => {
+					e.preventDefault();
+					hidePreview();
+					const slug = link.dataset.wikiSlug;
+					if (slug) openPopout(slug);
+				});
+			});
+		}
+
+		bindLinks();
+
+		// Re-bind after Astro page transitions
+		document.addEventListener('astro:after-swap', () => bindLinks());
+	}
+
+	// Run on load and after Astro transitions
+	initWikiLinks();
+	document.addEventListener('astro:after-swap', () => initWikiLinks());
+</script>

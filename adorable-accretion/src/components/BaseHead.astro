@@ -26,6 +26,14 @@ const { title, description, image = FallbackImage } = Astro.props;
 	if (localStorage.getItem('theme') === 'dark') {
 		document.documentElement.classList.add('dark');
 	}
+	if (localStorage.getItem('dyslexia') === 'on') {
+		document.documentElement.classList.add('dyslexia');
+	}
+	(function() {
+		var p = window.location.pathname;
+		if (p.startsWith('/tavern')) document.documentElement.setAttribute('data-section', 'tavern');
+		else if (p.startsWith('/studio')) document.documentElement.setAttribute('data-section', 'studio');
+	})();
 </script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" href="/favicon.ico" />

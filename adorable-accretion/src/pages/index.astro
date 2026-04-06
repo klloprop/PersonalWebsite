@@ -72,10 +72,13 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				background: #2563eb;
 			}
 			.button-tavern {
-				background: #10b981;
+				background: linear-gradient(180deg, #8B6914, #5C3D0E);
+				border: 2px solid #3E2703;
+				text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+				font-family: Georgia, 'Times New Roman', serif;
 			}
 			.button-tavern:hover {
-				background: #059669;
+				background: linear-gradient(180deg, #A07818, #6B4710);
 			}
 			.choice p {
 				margin-top: 1rem;
@@ -88,6 +91,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			}
 			:global(html.dark) h1 {
 				color: rgb(var(--black));
+				background: rgba(34, 34, 58, 0.9);
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 			}
 			:global(html.dark) .choice {
 				background: rgba(34, 34, 58, 0.9);
@@ -95,6 +100,16 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			}
 			:global(html.dark) .choice p {
 				color: rgb(var(--gray));
+			}
+			.choice-tavern {
+				background: linear-gradient(180deg, rgba(245, 228, 196, 0.95), rgba(222, 196, 154, 0.95));
+				border: 2px solid #8B6914;
+				box-shadow: inset 0 1px 3px rgba(139, 105, 20, 0.2), 0 4px 6px rgba(0, 0, 0, 0.15);
+			}
+			:global(html.dark) .choice-tavern {
+				background: linear-gradient(180deg, rgba(62, 39, 3, 0.95), rgba(40, 25, 2, 0.95));
+				border-color: #8B6914;
+				box-shadow: inset 0 1px 3px rgba(139, 105, 20, 0.3), 0 4px 6px rgba(0, 0, 0, 0.4);
 			}
 			:global(html.dark) .background-left {
 				background: linear-gradient(180deg, rgba(30, 64, 175, 0.3), rgba(26, 26, 46, 0.2));
@@ -145,8 +160,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					<a href="/studio" class="button button-studio">To the Studio!</a>
 					<p>A personal diary-style blog and a small digital studio for you to explore! Just generally stuff I want to share with the world.</p>
 				</div>
-				<div class="choice">
-					<a href="/tavern" class="button button-tavern">To the Tavern!</a>
+				<div class="choice choice-tavern">
+					<a href="/tavern" class="button button-tavern">&#9876; To the Tavern!</a>
 					<p>Come into my Tavern, there is always a seat reserved for you! <br>
 						Explore Pen and Paper content and recent developments in the latest Campaign.
 					</p>

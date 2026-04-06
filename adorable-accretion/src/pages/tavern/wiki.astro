@@ -1,29 +1,612 @@
 ---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import D20Icon from '../../assets/D20_Icon.png';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
+
+const entries = (await getCollection('wiki')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const defaultHeroImage = D20Icon;
+const getHeroImage = (heroImage: any) =>
+	typeof heroImage === 'string' || !heroImage ? defaultHeroImage : heroImage;
+
+const collectionEntries = (await getCollection('wikiCollections')).sort(
+	(a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+);
+
+// Build tree structure
+interface ColNode {
+	name: string;
+	image: ImageMetadata;
+	description?: string;
+	parent?: string;
+	count: number;          // direct entries
+	totalCount: number;     // entries in this + all descendants
+	children: ColNode[];
+}
+
+function getDescendantNames(node: ColNode): string[] {
+	const names = [node.name];
+	for (const child of node.children) {
+		names.push(...getDescendantNames(child));
+	}
+	return names;
+}
+
+const colMap = new Map<string, ColNode>();
+for (const col of collectionEntries) {
+	colMap.set(col.data.name, {
+		name: col.data.name,
+		image: col.data.image,
+		description: col.data.description,
+		parent: col.data.parent,
+		count: entries.filter((e) => e.data.collection === col.data.name).length,
+		totalCount: 0,
+		children: [],
+	});
+}
+
+// Wire parent-child
+const roots: ColNode[] = [];
+for (const node of colMap.values()) {
+	if (node.parent && colMap.has(node.parent)) {
+		colMap.get(node.parent)!.children.push(node);
+	} else {
+		roots.push(node);
+	}
+}
+
+// Calculate totalCount (includes all descendants)
+function calcTotal(node: ColNode): number {
+	node.totalCount = node.count;
+	for (const child of node.children) {
+		node.totalCount += calcTotal(child);
+	}
+	return node.totalCount;
+}
+roots.forEach(calcTotal);
+
+// Build a map: collection name → array of all names it encompasses
+const collectionDescendants: Record<string, string[]> = {};
+for (const node of colMap.values()) {
+	collectionDescendants[node.name] = getDescendantNames(node);
+}
+
+// Build ancestor chain: collection name → [topmost, ..., parent, self]
+function getAncestors(name: string): string[] {
+	const chain: string[] = [];
+	let current = name;
+	while (current) {
+		chain.unshift(current);
+		const node = colMap.get(current);
+		if (node?.parent && colMap.has(node.parent)) {
+			current = node.parent;
+		} else {
+			break;
+		}
+	}
+	return chain;
+}
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`${SITE_TITLE} - Pen and Paper - Wiki`} description="Pen and paper wiki" />
+		<BaseHead title={`${SITE_TITLE} - Tavern Wiki`} description="Pen and paper wiki" />
 		<style>
-			body {
-				background: #f0fdf4;
+			.wiki-layout {
+				max-width: 1400px;
+				margin: 0 auto;
+				padding: 2.5rem 2rem;
+				display: flex;
+				justify-content: center;
+				gap: 2rem;
+				flex: 1;
 			}
-			:global(html.dark) body {
-				background: var(--bg);
+			main {
+				width: auto;
+				max-width: none;
+				padding: 0;
+				margin: 0;
+			}
+			.sidebar {
+				width: 240px;
+				flex-shrink: 0;
+				position: sticky;
+				top: 1rem;
+				align-self: flex-start;
+				max-height: calc(100vh - 2rem);
+				overflow-y: auto;
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				padding: 1.25rem 0.75rem;
+				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.1);
+			}
+			:global(html.dark) .sidebar {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+			}
+			.sidebar-title {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.9rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				color: #8B6914;
+				margin: 0 0 0.75rem;
+				padding: 0 0.5rem;
+			}
+			:global(html.dark) .sidebar-title {
+				color: #DEB96E;
+			}
+			.sidebar-btn {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				width: 100%;
+				padding: 0.6rem 0.75rem;
+				border: none;
+				border-radius: 10px;
+				background: none;
+				cursor: pointer;
+				text-align: left;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.95rem;
+				color: #3E2703;
+				transition: background 0.2s;
+			}
+			:global(html.dark) .sidebar-btn {
+				color: #F5E4C4;
+			}
+			.sidebar-btn:hover {
+				background: rgba(139, 105, 20, 0.1);
+			}
+			.sidebar-btn.active {
+				background: rgba(139, 105, 20, 0.15);
+				font-weight: 700;
+				color: #5C3D0E;
+			}
+			:global(html.dark) .sidebar-btn.active {
+				background: rgba(222, 185, 110, 0.15);
+				color: #DEB96E;
+			}
+			:global(html.dark) .sidebar-btn:hover {
+				background: rgba(222, 185, 110, 0.1);
+			}
+			.sidebar-btn .collection-img {
+				width: 36px;
+				height: 36px;
+				border-radius: 8px;
+				object-fit: cover;
+				flex-shrink: 0;
+				border: 1px solid #C4A35A;
+			}
+			.sidebar-btn .all-icon {
+				width: 36px;
+				height: 36px;
+				border-radius: 8px;
+				background: linear-gradient(135deg, #8B6914, #5C3D0E);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+				color: #FDF6EC;
+				font-size: 1.1rem;
+			}
+			.sidebar-btn .collection-info {
+				display: flex;
+				flex-direction: column;
+				min-width: 0;
+			}
+			.sidebar-btn .collection-name {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.sidebar-btn .collection-count {
+				font-size: 0.75rem;
+				color: #8B6914;
+			}
+			:global(html.dark) .sidebar-btn .collection-count {
+				color: #C4A35A;
+			}
+			/* ── Tree nesting ── */
+			.sidebar-group {
+				display: flex;
+				flex-direction: column;
+			}
+			.sidebar-group-header {
+				display: flex;
+				align-items: center;
+				width: 100%;
+			}
+			.sidebar-toggle {
+				width: 22px;
+				height: 22px;
+				border: none;
+				background: none;
+				cursor: pointer;
+				padding: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+				color: #8B6914;
+				transition: transform 0.2s;
+				border-radius: 4px;
+			}
+			.sidebar-toggle:hover {
+				background: rgba(139, 105, 20, 0.1);
+			}
+			:global(html.dark) .sidebar-toggle {
+				color: #C4A35A;
+			}
+			.sidebar-toggle.expanded {
+				transform: rotate(90deg);
+			}
+			.sidebar-children {
+				display: none;
+				flex-direction: column;
+				padding-left: 0.75rem;
+				margin-left: 0.65rem;
+				border-left: 1.5px solid rgba(196, 163, 90, 0.3);
+			}
+			.sidebar-children.open {
+				display: flex;
+			}
+			.sidebar-children .sidebar-btn {
+				font-size: 0.88rem;
+				padding: 0.45rem 0.6rem;
+			}
+			.sidebar-children .sidebar-btn .collection-img {
+				width: 28px;
+				height: 28px;
+			}
+			.sidebar-divider {
+				height: 1px;
+				background: #C4A35A;
+				opacity: 0.4;
+				margin: 0.5rem 0;
+			}
+			.wiki-content {
+				flex: 0 1 900px;
+				min-width: 0;
+			}
+			ul.entry-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+				gap: 1.75rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			li.entry-card.featured {
+				grid-column: 1 / -1;
+			}
+			li.entry-card.featured img {
+				height: 360px;
+				object-fit: cover;
+				width: 100%;
+			}
+			li.entry-card {
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.08);
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+			}
+			:global(html.dark) li.entry-card {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+			}
+			.card-link {
+				color: inherit;
+				text-decoration: none;
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+			}
+			.card-content {
+				padding: 2rem;
+				flex: 1;
+			}
+			.wiki-content h2 {
+				margin: 0 0 0.75rem 0;
+				font-size: 1.55rem;
+				font-family: Georgia, 'Times New Roman', serif;
+				color: #3E2703;
+			}
+			:global(html.dark) .wiki-content h2 {
+				color: #DEB96E;
+			}
+			.date {
+				margin: 0 0 1rem;
+				color: #8B6914;
+			}
+			:global(html.dark) .date {
+				color: #C4A35A;
+			}
+			.description {
+				margin: 0;
+				color: #5C3D0E;
+				line-height: 1.75;
+			}
+			:global(html.dark) .description {
+				color: #F5E4C4;
+			}
+			.card-link:hover .description,
+			.card-link:hover h2 {
+				color: #8B6914;
+			}
+			:global(html.dark) .card-link:hover h2 {
+				color: #F5D680;
+			}
+			.badge-chain {
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+				flex-wrap: wrap;
+				margin-bottom: 0.5rem;
+			}
+			.collection-badge {
+				display: inline-block;
+				font-size: 0.75rem;
+				padding: 0.15em 0.6em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.12);
+				color: #5C3D0E;
+				font-family: Georgia, 'Times New Roman', serif;
+			}
+			:global(html.dark) .collection-badge {
+				background: rgba(222, 185, 110, 0.15);
+				color: #DEB96E;
+			}
+			.badge-sep {
+				color: #C4A35A;
+				font-size: 0.85rem;
+				line-height: 1;
+			}
+			@media (max-width: 720px) {
+				.wiki-layout {
+					flex-direction: column;
+					padding: 1.25rem;
+				}
+				.sidebar {
+					width: 100%;
+					position: static;
+					max-height: none;
+					display: flex;
+					gap: 0.5rem;
+					overflow-x: auto;
+					flex-wrap: nowrap;
+					border-radius: 12px;
+					padding: 0.75rem;
+				}
+				.sidebar-title {
+					display: none;
+				}
+				.sidebar-divider {
+					display: none;
+				}
+				.sidebar-group {
+					flex-direction: row;
+					gap: 0.35rem;
+					flex-shrink: 0;
+				}
+				.sidebar-group-header {
+					width: auto;
+				}
+				.sidebar-toggle {
+					display: none;
+				}
+				.sidebar-children {
+					display: flex;
+					flex-direction: row;
+					padding-left: 0;
+					margin-left: 0;
+					border-left: none;
+					gap: 0.35rem;
+				}
+				.sidebar-btn {
+					white-space: nowrap;
+					flex-shrink: 0;
+					padding: 0.5rem 0.75rem;
+					border-radius: 999px;
+					border: 1px solid #C4A35A;
+				}
+				.sidebar-children .sidebar-btn {
+					font-size: 0.85rem;
+					padding: 0.4rem 0.6rem;
+				}
+				.sidebar-btn .collection-img,
+				.sidebar-btn .all-icon {
+					width: 24px;
+					height: 24px;
+				}
+				.sidebar-children .sidebar-btn .collection-img {
+					width: 20px;
+					height: 20px;
+				}
+				.sidebar-btn .collection-count {
+					display: none;
+				}
 			}
 		</style>
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>Wiki</h1>
-			<p>Pen and paper wiki content goes here.</p>
-		</main>
+		<div class="wiki-layout">
+			<aside class="sidebar" data-descendants={JSON.stringify(collectionDescendants)}>
+				<p class="sidebar-title">Collections</p>
+				<button class="sidebar-btn active" data-collection="all">
+					<span class="all-icon">
+						<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+					</span>
+					<span class="collection-info">
+						<span class="collection-name">All Entries</span>
+						<span class="collection-count">{entries.length} entries</span>
+					</span>
+				</button>
+				<div class="sidebar-divider"></div>
+				{roots.map((root) => (
+					root.children.length > 0 ? (
+						<div class="sidebar-group">
+							<div class="sidebar-group-header">
+								<button class="sidebar-toggle" aria-label={`Expand ${root.name}`}>
+									<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
+								</button>
+								<button class="sidebar-btn" data-collection={root.name}>
+									<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
+									<span class="collection-info">
+										<span class="collection-name">{root.name}</span>
+										<span class="collection-count">{root.totalCount} {root.totalCount === 1 ? 'entry' : 'entries'}</span>
+									</span>
+								</button>
+							</div>
+							<div class="sidebar-children">
+								{root.children.map((child) => (
+									<button class="sidebar-btn" data-collection={child.name}>
+										<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
+										<span class="collection-info">
+											<span class="collection-name">{child.name}</span>
+											<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
+										</span>
+									</button>
+								))}
+							</div>
+						</div>
+					) : (
+						<button class="sidebar-btn" data-collection={root.name}>
+							<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
+							<span class="collection-info">
+								<span class="collection-name">{root.name}</span>
+								<span class="collection-count">{root.count} {root.count === 1 ? 'entry' : 'entries'}</span>
+							</span>
+						</button>
+					)
+				))}
+			</aside>
+			<main class="wiki-content">
+				<section>
+					<ul class="entry-grid">
+						{entries.map((entry, i) => (
+							<li class:list={['entry-card', { featured: i === 0 }]} data-collection={entry.data.collection || ''}>
+								<a class="card-link" href={`/tavern/wiki/${entry.slug ?? entry.id}/`}>
+									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} height={320} />}
+									<div class="card-content">
+								{entry.data.collection && (
+									<div class="badge-chain">
+										{getAncestors(entry.data.collection).map((name, idx, arr) => (
+											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
+										))}
+									</div>
+								)}
+										<h2>{entry.data.title}</h2>
+										<p class="date">{entry.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+										<p class="description">{entry.data.description}</p>
+									</div>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			</main>
+		</div>
 		<Footer />
+		<script>
+			function initWikiFilter() {
+				const sidebar = document.querySelector<HTMLElement>('.sidebar');
+				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
+				const cards = document.querySelectorAll<HTMLElement>('.entry-card');
+				const toggles = document.querySelectorAll<HTMLButtonElement>('.sidebar-toggle');
+
+				// Parse the descendants map from the sidebar data attribute
+				const descendants: Record<string, string[]> = JSON.parse(
+					sidebar?.dataset.descendants || '{}'
+				);
+
+				// Expand/collapse toggles
+				toggles.forEach((toggle) => {
+					toggle.addEventListener('click', (e) => {
+						e.stopPropagation();
+						const group = toggle.closest('.sidebar-group');
+						if (!group) return;
+						const children = group.querySelector('.sidebar-children');
+						if (!children) return;
+						const isOpen = children.classList.toggle('open');
+						toggle.classList.toggle('expanded', isOpen);
+						toggle.setAttribute('aria-label',
+							isOpen ? `Collapse ${toggle.nextElementSibling?.textContent?.trim()}` : `Expand ${toggle.nextElementSibling?.textContent?.trim()}`
+						);
+					});
+				});
+
+				function filterTo(selected: string) {
+					// Determine which collection names match
+					let matchNames: Set<string>;
+					if (selected === 'all') {
+						matchNames = new Set(); // show everything
+					} else {
+						matchNames = new Set(descendants[selected] || [selected]);
+					}
+
+					buttons.forEach((b) => {
+						b.classList.toggle('active', b.dataset.collection === selected);
+					});
+
+					let first = true;
+					cards.forEach((card) => {
+						const cardCol = card.dataset.collection || '';
+						const visible = selected === 'all' || matchNames.has(cardCol);
+						card.style.display = visible ? '' : 'none';
+						card.classList.toggle('featured', visible && first);
+						if (visible) first = false;
+					});
+				}
+
+				buttons.forEach((btn) => {
+					btn.addEventListener('click', () => {
+						filterTo(btn.dataset.collection!);
+						// Auto-expand parent group when clicking its button
+						const group = btn.closest('.sidebar-group');
+						if (group) {
+							const children = group.querySelector('.sidebar-children');
+							const toggle = group.querySelector('.sidebar-toggle');
+							if (children && !children.classList.contains('open')) {
+								children.classList.add('open');
+								toggle?.classList.add('expanded');
+							}
+						}
+					});
+				});
+
+				const params = new URLSearchParams(window.location.search);
+				const col = params.get('collection');
+				if (col) {
+					filterTo(col);
+					// Auto-expand the group containing this collection
+					buttons.forEach((btn) => {
+						if (btn.dataset.collection === col) {
+							const group = btn.closest('.sidebar-group');
+							if (group) {
+								const children = group.querySelector('.sidebar-children');
+								const toggle = group.querySelector('.sidebar-toggle');
+								children?.classList.add('open');
+								toggle?.classList.add('expanded');
+							}
+						}
+					});
+				}
+			}
+			initWikiFilter();
+			document.addEventListener('astro:after-swap', initWikiFilter);
+		</script>
 	</body>
 </html>

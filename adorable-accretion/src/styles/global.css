@@ -62,12 +62,16 @@ body {
 	font-size: 20px;
 	line-height: 1.7;
 	transition: background-color 0.3s ease, color 0.3s ease;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
 }
 main {
 	width: 720px;
 	max-width: calc(100% - 2em);
 	margin: auto;
 	padding: 3em 1em;
+	flex: 1;
 }
 h1,
 h2,
@@ -156,6 +160,41 @@ hr {
 	}
 }
 
+/* OpenDyslexic font */
+@font-face {
+	font-family: "OpenDyslexic";
+	src: url("/fonts/OpenDyslexic-Regular.woff") format("woff");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: "OpenDyslexic";
+	src: url("/fonts/OpenDyslexic-Bold.woff") format("woff");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Dyslexia-friendly mode */
+html.dyslexia p,
+html.dyslexia li,
+html.dyslexia td,
+html.dyslexia th,
+html.dyslexia span,
+html.dyslexia a,
+html.dyslexia label,
+html.dyslexia blockquote,
+html.dyslexia figcaption,
+html.dyslexia time,
+html.dyslexia code,
+html.dyslexia pre {
+	font-family: "OpenDyslexic", sans-serif;
+	letter-spacing: 0.07em;
+	word-spacing: 0.12em;
+	line-height: 2;
+}
+
 .sr-only {
 	border: 0;
 	padding: 0;
@@ -172,4 +211,79 @@ hr {
 	clip-path: inset(50%);
 	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
 	white-space: nowrap;
+}
+
+/* Tavern section styles */
+html[data-section="tavern"] body {
+	background: #F5E4C4;
+}
+html[data-section="tavern"] main {
+	color: #3E2703;
+}
+html[data-section="tavern"] h1,
+html[data-section="tavern"] h2,
+html[data-section="tavern"] h3 {
+	font-family: Georgia, 'Times New Roman', serif;
+	color: #3E2703;
+}
+html.dark[data-section="tavern"] body {
+	background: #1a1008;
+}
+html.dark[data-section="tavern"] main {
+	color: #F5E4C4;
+}
+html.dark[data-section="tavern"] h1,
+html.dark[data-section="tavern"] h2,
+html.dark[data-section="tavern"] h3 {
+	color: #DEB96E;
+}
+
+/* Header base styles */
+header {
+	background: white;
+	box-shadow: 0 2px 8px rgba(var(--black), 5%);
+}
+html.dark header {
+	background: #22223a;
+}
+
+/* Section-specific header styling */
+html[data-section="studio"] header {
+	background: #1e40af;
+	color: white;
+}
+html[data-section="studio"] header nav a:hover {
+	background: rgba(96, 165, 250, 0.3);
+}
+html[data-section="studio"] header nav a.active {
+	border-bottom-color: #60a5fa;
+	background: rgba(96, 165, 250, 0.25);
+	box-shadow: 0 2px 4px rgba(96, 165, 250, 0.3);
+}
+html.dark[data-section="studio"] header {
+	background: #0f2a6e;
+}
+
+html[data-section="tavern"] header {
+	background: linear-gradient(180deg, #5C3D0E, #3E2703);
+	color: #F5E4C4;
+	border-bottom: 3px solid #8B6914;
+}
+html[data-section="tavern"] header nav a:hover {
+	color: #FFD700;
+	background: rgba(139, 105, 20, 0.3);
+}
+html[data-section="tavern"] header nav a.active {
+	border-bottom-color: #FFD700;
+	background: rgba(139, 105, 20, 0.25);
+	color: #FFD700;
+	box-shadow: 0 2px 4px rgba(139, 105, 20, 0.4);
+}
+html[data-section="tavern"] header .dark-toggle:hover,
+html[data-section="tavern"] header .dyslexia-toggle:hover {
+	background: rgba(139, 105, 20, 0.3);
+}
+html.dark[data-section="tavern"] header {
+	background: linear-gradient(180deg, #3E2703, #281902);
+	border-bottom-color: #6B4710;
 }

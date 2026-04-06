@@ -10,8 +10,7 @@ import Polaroid from '../components/Polaroid.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage, galleryImages } = Astro.props;
-const heroImageAsset = heroImage || D20Icon;
+const { title, description, pubDate, updatedDate, heroImage, galleryImages, collection } = Astro.props;
 
 const rotations = [-4, 3, -2, 5, -3, 4, -5, 2];
 ---
@@ -112,14 +111,50 @@ const rotations = [-4, 3, -2, 5, -3, 4, -5, 2];
 			.last-updated-on {
 				font-style: italic;
 			}
+			.collection-chip {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 0.3em 0.85em;
+				border-radius: 999px;
+				background: rgba(59, 130, 246, 0.1);
+				color: #1e40af;
+				font-size: 0.85rem;
+				font-weight: 600;
+				text-decoration: none;
+				transition: background 0.2s;
+			}
+			.title-chips {
+				display: flex;
+				gap: 0.5rem;
+				justify-content: center;
+				flex-wrap: wrap;
+				margin-bottom: 0.75rem;
+			}
+			.collection-chip:hover {
+				background: rgba(59, 130, 246, 0.2);
+			}
+			.collection-chip svg {
+				width: 14px;
+				height: 14px;
+			}
+			:global(html.dark) .collection-chip {
+				background: rgba(107, 123, 255, 0.15);
+				color: #8e9aff;
+			}
+			:global(html.dark) .collection-chip:hover {
+				background: rgba(107, 123, 255, 0.25);
+			}
 		</style>
 	</head>
 
 	<body>
 		<Header />
-		<div class="hero-image">
-			<Image src={heroImageAsset} alt={title} width=auto height=auto />
-		</div>
+		{heroImage && (
+			<div class="hero-image">
+				<Image src={heroImage} alt={title} width={1600} height={800} />
+			</div>
+		)}
 		<div class="blog-layout">
 			{galleryImages && galleryImages.length > 0 && (
 				<aside class="polaroid-column polaroid-left">
@@ -139,6 +174,18 @@ const rotations = [-4, 3, -2, 5, -3, 4, -5, 2];
 				<article>
 					<div class="prose">
 						<div class="title">
+							<div class="title-chips">
+								<a class="collection-chip" href="/studio/blog/">
+									<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+									All Posts
+								</a>
+								{collection && (
+									<a class="collection-chip" href={`/studio/blog/?collection=${encodeURIComponent(collection)}`}>
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+										{collection}
+									</a>
+								)}
+							</div>
 							<h1>{title}</h1>
 							<p class="meta-date">Published {new Date(pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 							{

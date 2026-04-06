@@ -1,0 +1,209 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import D20Icon from '../../../assets/D20_Icon.png';
+import BaseHead from '../../../components/BaseHead.astro';
+import Footer from '../../../components/Footer.astro';
+import FormattedDate from '../../../components/FormattedDate.astro';
+import Header from '../../../components/Header.astro';
+import WikiLinks from '../../../components/WikiLinks.astro';
+import { SITE_TITLE } from '../../../consts';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('wiki');
+	return entries.map((entry) => ({ params: { slug: entry.slug ?? entry.id } }));
+}
+
+const entry = await getEntry('wiki', Astro.params.slug);
+if (!entry) {
+	throw new Error('Wiki entry not found');
+}
+
+const { Content } = await render(entry);
+const { title, description, pubDate, updatedDate, heroImage, collection } = entry.data;
+
+// Build ancestor chain for collection chips
+const collectionEntries = await getCollection('wikiCollections');
+const colParentMap = new Map<string, string>();
+for (const col of collectionEntries) {
+	if (col.data.parent) colParentMap.set(col.data.name, col.data.parent);
+}
+function getAncestors(name: string): string[] {
+	const chain: string[] = [];
+	let current: string | undefined = name;
+	while (current) {
+		chain.unshift(current);
+		current = colParentMap.get(current);
+	}
+	return chain;
+}
+const collectionChain = collection ? getAncestors(collection) : [];
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - ${title}`} description={description} />
+		<style>
+			html, body {
+				margin: 0;
+				padding: 0;
+			}
+			main {
+				margin-top: 0;
+				width: 100%;
+				max-width: 100%;
+				padding: 0;
+				flex: 1;
+			}
+			.hero-image {
+				width: 100vw;
+				height: 50vh;
+				min-height: 250px;
+				max-height: 500px;
+				overflow: hidden;
+				position: relative;
+				margin: 0;
+				padding: 0;
+			}
+			.hero-image::after {
+				content: '';
+				display: block;
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(180deg, rgba(245, 228, 196, 0) 55%, rgba(245, 228, 196, 1) 100%);
+				pointer-events: none;
+			}
+			:global(html.dark) .hero-image::after {
+				background: linear-gradient(180deg, rgba(26, 16, 8, 0) 55%, rgba(26, 16, 8, 1) 100%);
+			}
+			.hero-image img {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.prose {
+				width: 720px;
+				max-width: calc(100% - 2em);
+				margin: 0 auto;
+				padding: 1em;
+				color: #3E2703;
+			}
+			:global(html.dark) .prose {
+				color: #F5E4C4;
+			}
+			.meta-date {
+				margin: 0 0 1rem 0;
+				color: #8B6914;
+			}
+			:global(html.dark) .meta-date {
+				color: #C4A35A;
+			}
+			.title {
+				margin-bottom: 1em;
+				padding: 1em 0;
+				text-align: center;
+				line-height: 1;
+			}
+			.title h1 {
+				margin: 0 0 0.75rem 0;
+				font-family: Georgia, 'Times New Roman', serif;
+				color: #3E2703;
+			}
+			:global(html.dark) .title h1 {
+				color: #DEB96E;
+			}
+			.last-updated-on {
+				font-style: italic;
+			}
+			.title-chips {
+				display: flex;
+				gap: 0.5rem;
+				justify-content: center;
+				flex-wrap: wrap;
+				margin-bottom: 0.75rem;
+			}
+			.collection-chip {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 0.3em 0.85em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.12);
+				color: #5C3D0E;
+				font-size: 0.85rem;
+				font-weight: 600;
+				font-family: Georgia, 'Times New Roman', serif;
+				text-decoration: none;
+				transition: background 0.2s;
+			}
+			.chip-sep {
+				color: #C4A35A;
+				font-size: 1rem;
+				line-height: 1;
+			}
+			.collection-chip:hover {
+				background: rgba(139, 105, 20, 0.22);
+			}
+			.collection-chip svg {
+				width: 14px;
+				height: 14px;
+			}
+			:global(html.dark) .collection-chip {
+				background: rgba(222, 185, 110, 0.15);
+				color: #DEB96E;
+			}
+			:global(html.dark) .collection-chip:hover {
+				background: rgba(222, 185, 110, 0.25);
+			}
+		</style>
+	</head>
+
+	<body>
+		<Header />
+		{heroImage && (
+			<div class="hero-image">
+				<Image src={heroImage} alt={title} width={1600} height={800} />
+			</div>
+		)}
+		<main>
+			<article>
+				<div class="prose">
+					<div class="title">
+						<div class="title-chips">
+							<a class="collection-chip" href="/tavern/wiki/">
+								<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+								All Entries
+							</a>
+							{collectionChain.length > 0 && (
+								<span class="chip-sep">›</span>
+							)}
+							{collectionChain.map((name, idx) => (
+								<>
+									<a class="collection-chip" href={`/tavern/wiki/?collection=${encodeURIComponent(name)}`}>
+										<svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+										{name}
+									</a>
+									{idx < collectionChain.length - 1 && <span class="chip-sep">›</span>}
+								</>
+							))}
+						</div>
+						<h1>{title}</h1>
+						<p class="meta-date">{new Date(pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+						{
+							updatedDate && (
+								<div class="last-updated-on">
+									Last updated on <FormattedDate date={updatedDate} />
+								</div>
+							)
+						}
+						<hr />
+					</div>
+					<Content />
+				</div>
+			</article>
+		</main>
+		<Footer />
+		<WikiLinks />
+	</body>
+</html>

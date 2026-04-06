@@ -3,6 +3,7 @@ title: "A First Studio Sample Post"
 description: "A short introduction to the studio blog with the first sample entry."
 pubDate: 2026-04-04
 heroImage: "../../assets/PrideProgressFlag.JPG"
+collection: "Studio Updates"
 galleryImages:
   - src: "../../assets/D20_Icon.png"
     alt: "D20 icon"

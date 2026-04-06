@@ -14,6 +14,7 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			collection: z.string().optional(),
 			galleryImages: z
 				.array(
 					z.object({
@@ -26,4 +27,40 @@ const blog = defineCollection({
 		}),
 });
 
-export const collections = { blog };
+const blogCollections = defineCollection({
+	loader: glob({ base: './src/content/collections', pattern: '**/*.{md,mdx}' }),
+	schema: ({ image }) =>
+		z.object({
+			name: z.string(),
+			image: image(),
+			description: z.string().optional(),
+			order: z.number().optional().default(0),
+		}),
+});
+
+const wiki = defineCollection({
+	loader: glob({ base: './src/content/wiki', pattern: '**/*.{md,mdx}' }),
+	schema: ({ image }) =>
+		z.object({
+			title: z.string(),
+			description: z.string(),
+			pubDate: z.coerce.date(),
+			updatedDate: z.coerce.date().optional(),
+			heroImage: z.optional(image()),
+			collection: z.string().optional(),
+		}),
+});
+
+const wikiCollections = defineCollection({
+	loader: glob({ base: './src/content/wiki-collections', pattern: '**/*.{md,mdx}' }),
+	schema: ({ image }) =>
+		z.object({
+			name: z.string(),
+			image: image(),
+			description: z.string().optional(),
+			order: z.number().optional().default(0),
+			parent: z.string().optional(),
+		}),
+});
+
+export const collections = { blog, blogCollections, wiki, wikiCollections };
