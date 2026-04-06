@@ -8,7 +8,11 @@ import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 
 const entries = (await getCollection('wiki')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+	(a, b) => {
+		const dateDiff = b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+		if (dateDiff !== 0) return dateDiff;
+		return a.data.title.localeCompare(b.data.title, undefined, { numeric: true });
+	},
 );
 const defaultHeroImage = D20Icon;
 const getHeroImage = (heroImage: any) =>
@@ -277,6 +281,23 @@ function getAncestors(name: string): string[] {
 				flex: 0 1 900px;
 				min-width: 0;
 			}
+			.section-heading {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.35rem;
+				color: #3E2703;
+				margin: 0 0 1.25rem 0;
+			}
+			.other-heading {
+				margin-top: 8rem;
+				padding-top: 0.75rem;
+				border-top: 1px solid #C4A35A;
+			}
+			:global(html.dark) .other-heading {
+				border-top-color: #7a5c2e;
+			}
+			:global(html.dark) .section-heading {
+				color: #DEB96E;
+			}
 			ul.entry-grid {
 				display: grid;
 				grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -495,9 +516,32 @@ function getAncestors(name: string): string[] {
 			</aside>
 			<main class="wiki-content">
 				<section>
-					<ul class="entry-grid">
-						{entries.map((entry, i) => (
-							<li class:list={['entry-card', { featured: i === 0 }]} data-collection={entry.data.collection || ''}>
+					<h2 class="section-heading">Most Recent Entry</h2>
+					<ul class="entry-grid featured-section">
+						{entries.slice(0, 1).map((entry) => (
+							<li class="entry-card featured" data-collection={entry.data.collection || ''}>
+								<a class="card-link" href={`/tavern/wiki/${entry.slug ?? entry.id}/`}>
+									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} height={320} />}
+									<div class="card-content">
+								{entry.data.collection && (
+									<div class="badge-chain">
+										{getAncestors(entry.data.collection).map((name, idx, arr) => (
+											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
+										))}
+									</div>
+								)}
+										<h2>{entry.data.title}</h2>
+										<p class="date">{entry.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+										<p class="description">{entry.data.description}</p>
+									</div>
+								</a>
+							</li>
+						))}
+					</ul>
+					<h2 class="section-heading other-heading">Other Entries</h2>
+					<ul class="entry-grid other-section">
+						{entries.slice(1).map((entry) => (
+							<li class="entry-card" data-collection={entry.data.collection || ''}>
 								<a class="card-link" href={`/tavern/wiki/${entry.slug ?? entry.id}/`}>
 									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} height={320} />}
 									<div class="card-content">
@@ -526,6 +570,10 @@ function getAncestors(name: string): string[] {
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
 				const cards = document.querySelectorAll<HTMLElement>('.entry-card');
 				const toggles = document.querySelectorAll<HTMLButtonElement>('.sidebar-toggle');
+				const featuredSection = document.querySelector<HTMLElement>('.featured-section');
+				const otherSection = document.querySelector<HTMLElement>('.other-section');
+				const featuredHeading = document.querySelector<HTMLElement>('.section-heading:not(.other-heading)');
+				const otherHeading = document.querySelector<HTMLElement>('.other-heading');
 
 				// Parse the descendants map from the sidebar data attribute
 				const descendants: Record<string, string[]> = JSON.parse(
@@ -561,14 +609,33 @@ function getAncestors(name: string): string[] {
 						b.classList.toggle('active', b.dataset.collection === selected);
 					});
 
-					let first = true;
+					// Filter cards - first visible goes to featured section, rest to other
+					let visibleCount = 0;
 					cards.forEach((card) => {
 						const cardCol = card.dataset.collection || '';
 						const visible = selected === 'all' || matchNames.has(cardCol);
 						card.style.display = visible ? '' : 'none';
-						card.classList.toggle('featured', visible && first);
-						if (visible) first = false;
+						if (visible) {
+							visibleCount++;
+							if (visibleCount === 1) {
+								card.classList.add('featured');
+								if (featuredSection && !featuredSection.contains(card)) {
+									featuredSection.appendChild(card);
+								}
+							} else {
+								card.classList.remove('featured');
+								if (otherSection && !otherSection.contains(card)) {
+									otherSection.appendChild(card);
+								}
+							}
+						}
 					});
+
+					// Hide "Other Entries" heading if 0 or 1 visible
+					if (otherHeading) otherHeading.style.display = visibleCount > 1 ? '' : 'none';
+					if (otherSection) otherSection.style.display = visibleCount > 1 ? '' : 'none';
+					if (featuredHeading) featuredHeading.style.display = visibleCount > 0 ? '' : 'none';
+					if (featuredSection) featuredSection.style.display = visibleCount > 0 ? '' : 'none';
 				}
 
 				buttons.forEach((btn) => {

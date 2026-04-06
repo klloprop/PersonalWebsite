@@ -144,15 +144,15 @@ const collections = collectionEntries.map((col) => ({
 				flex: 0 1 900px;
 				min-width: 0;
 			}
-			.featured-post {
-				margin-bottom: 2rem;
+			.section-heading {
+				font-size: 1.35rem;
+				margin: 0 0 1.25rem 0;
+				color: rgb(var(--gray-dark));
 			}
-			.featured-post li {
-				grid-column: 1 / -1;
-				min-height: 560px;
-			}
-			.featured-post .image-placeholder {
-				height: 360px;
+			.other-heading {
+				margin-top: 8rem;
+				padding-top: 0.75rem;
+				border-top: 1px solid rgb(var(--gray-light));
 			}
 			ul.post-grid {
 				display: grid;
@@ -289,9 +289,26 @@ const collections = collectionEntries.map((col) => ({
 			</aside>
 			<main class="blog-content">
 				<section>
-					<ul class="post-grid">
-					{posts.map((post, i) => (
-						<li class:list={['post-card', { featured: i === 0 }]} data-collection={post.data.collection || ''}>
+					<h2 class="section-heading">Most Recent Post</h2>
+					<ul class="post-grid featured-section">
+					{posts.slice(0, 1).map((post) => (
+						<li class="post-card featured" data-collection={post.data.collection || ''}>
+								<a class="card-link" href={`/studio/blog/${post.slug ?? post.id}/`}>
+									<Image src={getHeroImage(post.data.heroImage)} alt={post.data.title} width={680} height={320} />
+									<div class="card-content">
+										{post.data.collection && <span class="collection-badge">{post.data.collection}</span>}
+										<h2>{post.data.title}</h2>
+										<p class="date">Published {post.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+										<p class="description">{post.data.description}</p>
+									</div>
+								</a>
+							</li>
+						))}
+					</ul>
+					<h2 class="section-heading other-heading">Other Posts</h2>
+					<ul class="post-grid other-section">
+					{posts.slice(1).map((post) => (
+						<li class="post-card" data-collection={post.data.collection || ''}>
 								<a class="card-link" href={`/studio/blog/${post.slug ?? post.id}/`}>
 									<Image src={getHeroImage(post.data.heroImage)} alt={post.data.title} width={680} height={320} />
 									<div class="card-content">
@@ -312,18 +329,38 @@ const collections = collectionEntries.map((col) => ({
 			function initCollectionFilter() {
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
 				const cards = document.querySelectorAll<HTMLElement>('.post-card');
+				const featuredSection = document.querySelector<HTMLElement>('.featured-section');
+				const otherSection = document.querySelector<HTMLElement>('.other-section');
+				const featuredHeading = document.querySelector<HTMLElement>('.section-heading:not(.other-heading)');
+				const otherHeading = document.querySelector<HTMLElement>('.other-heading');
 
 				function filterTo(selected: string) {
 					buttons.forEach((b) => {
 						b.classList.toggle('active', b.dataset.collection === selected);
 					});
-					let first = true;
+					let visibleCount = 0;
 					cards.forEach((card) => {
 						const visible = selected === 'all' || card.dataset.collection === selected;
 						card.style.display = visible ? '' : 'none';
-						card.classList.toggle('featured', visible && first);
-						if (visible) first = false;
+						if (visible) {
+							visibleCount++;
+							if (visibleCount === 1) {
+								card.classList.add('featured');
+								if (featuredSection && !featuredSection.contains(card)) {
+									featuredSection.appendChild(card);
+								}
+							} else {
+								card.classList.remove('featured');
+								if (otherSection && !otherSection.contains(card)) {
+									otherSection.appendChild(card);
+								}
+							}
+						}
 					});
+					if (otherHeading) otherHeading.style.display = visibleCount > 1 ? '' : 'none';
+					if (otherSection) otherSection.style.display = visibleCount > 1 ? '' : 'none';
+					if (featuredHeading) featuredHeading.style.display = visibleCount > 0 ? '' : 'none';
+					if (featuredSection) featuredSection.style.display = visibleCount > 0 ? '' : 'none';
 				}
 
 				buttons.forEach((btn) => {

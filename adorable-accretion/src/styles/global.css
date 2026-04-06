@@ -242,6 +242,14 @@ html.dark[data-section="tavern"] h3 {
 header {
 	background: white;
 	box-shadow: 0 2px 8px rgba(var(--black), 5%);
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+}
+body {
+	padding-top: 60px;
 }
 html.dark header {
 	background: #22223a;

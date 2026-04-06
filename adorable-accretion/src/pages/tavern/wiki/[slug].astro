@@ -44,7 +44,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 	<head>
 		<BaseHead title={`${SITE_TITLE} - ${title}`} description={description} />
 		<style>
-			html, body {
+			html {
 				margin: 0;
 				padding: 0;
 			}
@@ -62,7 +62,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 				max-height: 500px;
 				overflow: hidden;
 				position: relative;
-				margin: 0;
+				margin: -60px 0 0 0;
 				padding: 0;
 			}
 			.hero-image::after {
