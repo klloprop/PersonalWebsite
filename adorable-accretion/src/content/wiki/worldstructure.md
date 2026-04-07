@@ -2,7 +2,7 @@
 title: "The Structure of the World"
 description: "XXXX"
 pubDate: 2026-04-06
-heroImage: "../../assets/WikiImages/StormPicture.JPG"
+heroImage: "../../assets/WikiImages/StormPicture.jpg"
 collection: "Geography"
 ---
 ### Cosmos

@@ -2,7 +2,7 @@
 title: "Magic"
 description: "A guide to Storms in Abaron."
 pubDate: 2026-04-06
-heroImage: "../../assets/WikiImages/StormPicture.JPG"
+heroImage: "../../assets/WikiImages/StormPicture.jpg"
 collection: "Abaron"
 ---
 The Magic in Abaron has been heavily influenced by the leyline shift.

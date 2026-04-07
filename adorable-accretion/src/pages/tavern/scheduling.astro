@@ -352,12 +352,9 @@ const events = allEvents.map((event) => {
 				.scheduling-layout .event-card-content {
 					padding: 1rem 1.25rem;
 				}
-				.scheduling-layout .avail-options {
-					flex-direction: column;
-				}
 			}
 
-			/* ── Availability poll ── */
+			/* ── Availability poll (2-column table) ── */
 			.scheduling-layout .avail-section {
 				margin-top: 1rem;
 				padding-top: 1rem;
@@ -373,10 +370,28 @@ const events = allEvents.map((event) => {
 			html.dark .scheduling-layout .avail-label {
 				color: #C4A35A;
 			}
-			.scheduling-layout .avail-options {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.4rem;
+			.scheduling-layout .avail-table {
+				width: 100%;
+				border-collapse: collapse;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.78rem;
+			}
+			.scheduling-layout .avail-table tr {
+				border-bottom: 1px solid rgba(196, 163, 90, 0.15);
+			}
+			.scheduling-layout .avail-table tr:last-child {
+				border-bottom: none;
+			}
+			.scheduling-layout .avail-table td {
+				padding: 0.45rem 0.5rem;
+				vertical-align: middle;
+			}
+			.scheduling-layout .avail-table td.avail-option-cell {
+				width: 60%;
+			}
+			.scheduling-layout .avail-table td.avail-result-cell {
+				width: 40%;
+				text-align: right;
 			}
 			.scheduling-layout .avail-btn {
 				display: inline-flex;
@@ -392,6 +407,8 @@ const events = allEvents.map((event) => {
 				cursor: pointer;
 				transition: all 0.15s ease;
 				line-height: 1.4;
+				width: 100%;
+				box-sizing: border-box;
 			}
 			.scheduling-layout .avail-btn:hover {
 				border-color: #C4A35A;
@@ -421,25 +438,25 @@ const events = allEvents.map((event) => {
 				font-size: 0.9rem;
 				line-height: 1;
 			}
-			.scheduling-layout .avail-btn .avail-count {
+			.scheduling-layout .avail-result-cell .avail-count {
 				display: inline-flex;
 				align-items: center;
 				justify-content: center;
-				min-width: 1.2em;
-				height: 1.2em;
-				padding: 0 0.25em;
+				min-width: 1.6em;
+				height: 1.6em;
+				padding: 0 0.35em;
 				border-radius: 999px;
 				background: rgba(139, 105, 20, 0.15);
 				color: #5C3D0E;
-				font-size: 0.7rem;
+				font-size: 0.75rem;
 				font-weight: 700;
 				line-height: 1;
 			}
-			html.dark .scheduling-layout .avail-btn .avail-count {
+			html.dark .scheduling-layout .avail-result-cell .avail-count {
 				background: rgba(222, 185, 110, 0.15);
 				color: #DEB96E;
 			}
-			.scheduling-layout .avail-btn .avail-count.zero {
+			.scheduling-layout .avail-result-cell .avail-count.zero {
 				opacity: 0.4;
 			}
 			.scheduling-layout .avail-error {
@@ -666,16 +683,20 @@ const events = allEvents.map((event) => {
 				function buildAvailPoll(eventId: string, isPast: boolean): string {
 					if (isPast) return '';
 					const safeId = eventId.replace(/[^a-zA-Z0-9_-]/g, '_');
-					const buttons = availOptions.map(opt =>
+					const rows = availOptions.map(opt =>
+						`<tr>` +
+						`<td class="avail-option-cell">` +
 						`<button class="avail-btn" data-event-id="${eventId}" data-status="${opt.key}">` +
-						`<span class="avail-icon">${opt.icon}</span> ${opt.label} ` +
+						`<span class="avail-icon">${opt.icon}</span> ${opt.label}` +
+						`</button></td>` +
+						`<td class="avail-result-cell">` +
 						`<span class="avail-count zero" data-count-for="${opt.key}">0</span>` +
-						`</button>`
+						`</td></tr>`
 					).join('');
 					return `
 						<div class="avail-section" data-avail-poll="${eventId}" id="avail-${safeId}">
 							<p class="avail-label">Availability</p>
-							<div class="avail-options">${buttons}</div>
+							<table class="avail-table">${rows}</table>
 						</div>
 					`;
 				}
@@ -720,7 +741,8 @@ const events = allEvents.map((event) => {
 					if (!poll) return;
 					poll.querySelectorAll('.avail-btn').forEach(btn => {
 						const status = (btn as HTMLElement).dataset.status;
-						const countEl = btn.querySelector('.avail-count');
+						const row = btn.closest('tr');
+						const countEl = row?.querySelector('.avail-count');
 						const count = votes[status || ''] || 0;
 						if (countEl) {
 							countEl.textContent = String(count);

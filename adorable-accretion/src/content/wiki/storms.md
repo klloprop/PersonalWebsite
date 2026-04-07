@@ -2,7 +2,7 @@
 title: "Storms"
 description: "A guide to Storms in Abaron."
 pubDate: 2026-04-06
-heroImage: "../../assets/WikiImages/StormPicture.JPG"
+heroImage: "../../assets/WikiImages/StormPicture.jpg"
 collection: "Abaron"
 ---
 Storms have forever been a part of Abaron, but with the magic weakening and less fey around and willing to bestow blessings over the lands the storms started growing stronger and stronger. At first this was only a nuisance to farmers, travelers and traders, but the storms grew stronger still.

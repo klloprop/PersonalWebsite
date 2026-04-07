@@ -2,7 +2,7 @@
 title: "Setting"
 description: "A guide to Storms in Abaron."
 pubDate: 2026-04-03
-heroImage: "../../assets/WikiImages/StormPicture.JPG"
+heroImage: "../../assets/WikiImages/StormPicture.jpg"
 collection: "Abaron"
 ---
 ## Setting 
