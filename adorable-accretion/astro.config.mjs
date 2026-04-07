@@ -8,7 +8,7 @@ import { remarkWikiLinks } from './src/plugins/remark-wiki-links.mjs';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://personal-website-zc5n.vercel.app',
+	site: 'https://lucieswebsite.vercel.app',
 	output: 'static',
 	adapter: vercel(),
 	integrations: [mdx(), sitemap()],

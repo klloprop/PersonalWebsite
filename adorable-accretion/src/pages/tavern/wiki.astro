@@ -11,7 +11,7 @@ const entries = (await getCollection('wiki')).sort(
 	(a, b) => {
 		const dateDiff = b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
 		if (dateDiff !== 0) return dateDiff;
-		return a.data.title.localeCompare(b.data.title, undefined, { numeric: true });
+		return b.data.title.localeCompare(a.data.title, undefined, { numeric: true });
 	},
 );
 const defaultHeroImage = D20Icon;
@@ -401,12 +401,14 @@ function getAncestors(name: string): string[] {
 				}
 				.sidebar {
 					width: 100%;
+					max-width: 100%;
+					box-sizing: border-box;
 					position: static;
 					max-height: none;
 					display: flex;
 					gap: 0.5rem;
 					overflow-x: auto;
-					flex-wrap: nowrap;
+					flex-wrap: wrap;
 					border-radius: 12px;
 					padding: 0.75rem;
 				}
@@ -419,7 +421,8 @@ function getAncestors(name: string): string[] {
 				.sidebar-group {
 					flex-direction: row;
 					gap: 0.35rem;
-					flex-shrink: 0;
+					flex-shrink: 1;
+					flex-wrap: wrap;
 				}
 				.sidebar-group-header {
 					width: auto;
@@ -434,17 +437,33 @@ function getAncestors(name: string): string[] {
 					margin-left: 0;
 					border-left: none;
 					gap: 0.35rem;
+					flex-wrap: wrap;
 				}
 				.sidebar-btn {
 					white-space: nowrap;
-					flex-shrink: 0;
+					flex-shrink: 1;
 					padding: 0.5rem 0.75rem;
 					border-radius: 999px;
 					border: 1px solid #C4A35A;
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
 				}
 				.sidebar-children .sidebar-btn {
 					font-size: 0.85rem;
 					padding: 0.4rem 0.6rem;
+					padding-left: 1.4rem;
+					position: relative;
+				}
+				.sidebar-children .sidebar-btn::before {
+					content: '└';
+					position: absolute;
+					left: 0.45rem;
+					top: 50%;
+					transform: translateY(-50%);
+					font-size: 0.75rem;
+					color: #C4A35A;
+					pointer-events: none;
 				}
 				.sidebar-btn .collection-img,
 				.sidebar-btn .all-icon {
@@ -458,9 +477,20 @@ function getAncestors(name: string): string[] {
 				.sidebar-btn .collection-count {
 					display: none;
 				}
-				.wiki-grid,
-				ul.wiki-grid {
+				ul.entry-grid {
 					grid-template-columns: 1fr;
+				}
+				.card-content {
+					padding: 1.25rem;
+				}
+				.wiki-content h2 {
+					font-size: 1.25rem;
+				}
+				.section-heading {
+					font-size: 1.1rem;
+				}
+				li.entry-card.featured img {
+					height: 200px;
 				}
 			}
 		</style>

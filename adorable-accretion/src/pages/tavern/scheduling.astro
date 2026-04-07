@@ -354,21 +354,18 @@ const events = allEvents.map((event) => {
 				}
 				.scheduling-layout .avail-table td.avail-option-cell {
 					width: auto;
-					display: block;
 				}
 				.scheduling-layout .avail-table td.avail-bar-cell {
-					width: auto;
-					display: block;
-					padding: 0.2rem 0.5rem;
+					display: none;
 				}
 				.scheduling-layout .avail-table td.avail-result-cell {
 					width: auto;
-					display: block;
-					text-align: left;
-					padding: 0.2rem 0.5rem 0.5rem;
+					text-align: right;
 				}
 				.scheduling-layout .avail-table tr {
-					display: block;
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
 					padding: 0.4rem 0;
 				}
 				.scheduling-layout .next-event-top-row {
