@@ -1,0 +1,836 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+const allEvents = await getCollection('events');
+
+// Parse Berlin datetimes and sort by date/time
+const events = allEvents.map((event) => {
+	const { date, time } = event.data;
+	// Build an ISO string in Europe/Berlin
+	const berlinISO = `${date}T${time}:00`;
+	return { ...event, berlinISO };
+}).sort((a, b) => a.berlinISO.localeCompare(b.berlinISO));
+
+// We'll split into past/upcoming on the client side since we need the user's current time,
+// but we can also do a server-side split using build time as a rough guide.
+// For static sites, client-side is more accurate.
+---
+
+<!doctype html>
+<html lang="en" data-section="tavern">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Scheduling`} description="Upcoming and past sessions" />
+		<style is:global>
+			/* Scoped under .scheduling-layout to avoid leaking */
+			.scheduling-layout {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 2.5rem 2rem;
+			}
+			.scheduling-layout .page-title {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 2rem;
+				color: #3E2703;
+				margin: 0 0 0.5rem;
+			}
+			html.dark .scheduling-layout .page-title {
+				color: #DEB96E;
+			}
+			.scheduling-layout .page-subtitle {
+				color: #8B6914;
+				margin: 0 0 2.5rem;
+				font-size: 1rem;
+			}
+			html.dark .scheduling-layout .page-subtitle {
+				color: #C4A35A;
+			}
+
+			/* ── Next event hero ── */
+			.scheduling-layout .next-event {
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.08);
+				margin-bottom: 3rem;
+			}
+			html.dark .scheduling-layout .next-event {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+				box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+			}
+			.scheduling-layout .next-event-content {
+				padding: 1.75rem 2rem;
+			}
+			.scheduling-layout .next-event-top-row {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				margin-bottom: 0.6rem;
+			}
+			.scheduling-layout .next-event-label {
+				display: inline-block;
+				font-size: 0.7rem;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				padding: 0.2em 0.65em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.15);
+				color: #8B6914;
+				font-weight: 700;
+				margin: 0;
+			}
+			html.dark .scheduling-layout .next-event-label {
+				background: rgba(222, 185, 110, 0.15);
+				color: #C4A35A;
+			}
+			.scheduling-layout .next-event-title {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.55rem;
+				color: #3E2703;
+				margin: 0 0 0.75rem;
+			}
+			html.dark .scheduling-layout .next-event-title {
+				color: #DEB96E;
+			}
+			.scheduling-layout .next-event-datetime {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				flex-wrap: wrap;
+				margin-bottom: 1rem;
+			}
+			.scheduling-layout .next-event-description {
+				color: #5C3D0E;
+				line-height: 1.7;
+				margin: 0 0 1rem;
+			}
+			html.dark .scheduling-layout .next-event-description {
+				color: #F5E4C4;
+			}
+			.scheduling-layout .next-event-body {
+				color: #5C3D0E;
+				line-height: 1.7;
+				font-size: 0.95rem;
+			}
+			html.dark .scheduling-layout .next-event-body {
+				color: #F5E4C4;
+			}
+			.scheduling-layout .next-event-body p {
+				margin: 0 0 0.75rem;
+			}
+			.scheduling-layout .next-event-body strong {
+				color: #3E2703;
+			}
+			html.dark .scheduling-layout .next-event-body strong {
+				color: #DEB96E;
+			}
+			.scheduling-layout .next-event-body ul {
+				margin: 0.25rem 0 0.75rem 1.25rem;
+			}
+
+			/* ── Time badge ── */
+			.scheduling-layout .time-badge {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.3rem;
+				padding: 0.25em 0.7em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.15);
+				color: #5C3D0E;
+				font-size: 0.82rem;
+				font-weight: 600;
+				font-family: Georgia, 'Times New Roman', serif;
+				line-height: 1.4;
+			}
+			html.dark .scheduling-layout .time-badge {
+				background: rgba(222, 185, 110, 0.15);
+				color: #DEB96E;
+			}
+			.scheduling-layout .time-badge svg {
+				width: 14px;
+				height: 14px;
+				flex-shrink: 0;
+			}
+			.scheduling-layout .time-converted {
+				background: rgba(34, 139, 34, 0.12);
+				color: #2d6b2d;
+				border: 1px dashed rgba(34, 139, 34, 0.4);
+			}
+			html.dark .scheduling-layout .time-converted {
+				background: rgba(100, 200, 100, 0.12);
+				color: #7ddb7d;
+				border-color: rgba(100, 200, 100, 0.3);
+			}
+			.scheduling-layout .time-note {
+				font-size: 0.7rem;
+				color: #8B6914;
+				font-weight: 400;
+			}
+			html.dark .scheduling-layout .time-note {
+				color: #C4A35A;
+			}
+
+			/* ── Section headings ── */
+			.scheduling-layout .section-heading {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.35rem;
+				color: #3E2703;
+				margin: 0 0 1.25rem;
+			}
+			html.dark .scheduling-layout .section-heading {
+				color: #DEB96E;
+			}
+			.scheduling-layout .section-heading.past-heading {
+				margin-top: 3rem;
+				padding-top: 0.75rem;
+				border-top: 1px solid #C4A35A;
+			}
+			html.dark .scheduling-layout .section-heading.past-heading {
+				border-top-color: #7a5c2e;
+			}
+
+			/* ── Event cards (wiki-style frame) ── */
+			.scheduling-layout .event-list {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				gap: 1.25rem;
+			}
+			.scheduling-layout .event-card {
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.08);
+				transition: box-shadow 0.2s ease, transform 0.2s ease;
+			}
+			html.dark .scheduling-layout .event-card {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+			}
+			.scheduling-layout .event-card:not(.past):hover {
+				box-shadow: 0 4px 18px rgba(62, 39, 3, 0.16);
+				transform: translateY(-2px);
+			}
+			html.dark .scheduling-layout .event-card:not(.past):hover {
+				box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+			}
+			.scheduling-layout .event-card.past {
+				opacity: 0.55;
+				border-style: dashed;
+			}
+			.scheduling-layout .event-card-content {
+				padding: 1.5rem 1.75rem;
+			}
+			.scheduling-layout .event-card-top-row {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin-bottom: 0.4rem;
+			}
+			.scheduling-layout .event-card-title {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.15rem;
+				color: #3E2703;
+				margin: 0 0 0.65rem;
+			}
+			html.dark .scheduling-layout .event-card-title {
+				color: #DEB96E;
+			}
+			.scheduling-layout .event-card-meta {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				flex-wrap: wrap;
+				margin-bottom: 0.6rem;
+			}
+			.scheduling-layout .event-card-description {
+				color: #5C3D0E;
+				font-size: 0.9rem;
+				line-height: 1.6;
+				margin: 0;
+			}
+			html.dark .scheduling-layout .event-card-description {
+				color: #F5E4C4;
+			}
+
+			/* ── Countdown badge with hover tooltip ── */
+			.scheduling-layout .countdown-badge {
+				position: relative;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.3rem;
+				padding: 0.2em 0.65em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.12);
+				color: #5C3D0E;
+				font-size: 0.75rem;
+				font-weight: 600;
+				font-family: Georgia, 'Times New Roman', serif;
+				cursor: default;
+				white-space: nowrap;
+			}
+			html.dark .scheduling-layout .countdown-badge {
+				background: rgba(222, 185, 110, 0.12);
+				color: #DEB96E;
+			}
+			.scheduling-layout .countdown-badge.past-badge {
+				background: rgba(139, 105, 20, 0.06);
+				color: #8B6914;
+			}
+			html.dark .scheduling-layout .countdown-badge.past-badge {
+				background: rgba(222, 185, 110, 0.06);
+				color: #C4A35A;
+			}
+			.scheduling-layout .countdown-badge svg {
+				width: 12px;
+				height: 12px;
+				flex-shrink: 0;
+			}
+			.scheduling-layout .countdown-tooltip {
+				position: absolute;
+				bottom: calc(100% + 8px);
+				left: 50%;
+				transform: translateX(-50%);
+				background: #3E2703;
+				color: #FDF6EC;
+				font-size: 0.72rem;
+				font-weight: 400;
+				padding: 0.4em 0.75em;
+				border-radius: 6px;
+				white-space: nowrap;
+				pointer-events: none;
+				opacity: 0;
+				transition: opacity 0.15s ease;
+				z-index: 10;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			}
+			.scheduling-layout .countdown-tooltip::after {
+				content: '';
+				position: absolute;
+				top: 100%;
+				left: 50%;
+				transform: translateX(-50%);
+				border: 5px solid transparent;
+				border-top-color: #3E2703;
+			}
+			html.dark .scheduling-layout .countdown-tooltip {
+				background: #DEB96E;
+				color: #1a1008;
+			}
+			html.dark .scheduling-layout .countdown-tooltip::after {
+				border-top-color: #DEB96E;
+			}
+			.scheduling-layout .countdown-badge:hover .countdown-tooltip {
+				opacity: 1;
+			}
+
+			.scheduling-layout .no-events {
+				color: #8B6914;
+				font-style: italic;
+				padding: 1rem 0;
+			}
+			html.dark .scheduling-layout .no-events {
+				color: #C4A35A;
+			}
+
+			@media (max-width: 720px) {
+				.scheduling-layout {
+					padding: 1.25rem;
+				}
+				.scheduling-layout .next-event-content {
+					padding: 1.25rem;
+				}
+				.scheduling-layout .next-event-title {
+					font-size: 1.25rem;
+				}
+				.scheduling-layout .event-card-content {
+					padding: 1rem 1.25rem;
+				}
+				.scheduling-layout .avail-options {
+					flex-direction: column;
+				}
+			}
+
+			/* ── Availability poll ── */
+			.scheduling-layout .avail-section {
+				margin-top: 1rem;
+				padding-top: 1rem;
+				border-top: 1px solid rgba(196, 163, 90, 0.25);
+			}
+			.scheduling-layout .avail-label {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.8rem;
+				color: #8B6914;
+				margin: 0 0 0.6rem;
+				font-weight: 600;
+			}
+			html.dark .scheduling-layout .avail-label {
+				color: #C4A35A;
+			}
+			.scheduling-layout .avail-options {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.4rem;
+			}
+			.scheduling-layout .avail-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.35rem;
+				padding: 0.35em 0.75em;
+				border-radius: 8px;
+				border: 1px solid rgba(196, 163, 90, 0.4);
+				background: rgba(139, 105, 20, 0.05);
+				color: #5C3D0E;
+				font-size: 0.78rem;
+				font-family: Georgia, 'Times New Roman', serif;
+				cursor: pointer;
+				transition: all 0.15s ease;
+				line-height: 1.4;
+			}
+			.scheduling-layout .avail-btn:hover {
+				border-color: #C4A35A;
+				background: rgba(139, 105, 20, 0.12);
+			}
+			html.dark .scheduling-layout .avail-btn {
+				border-color: rgba(122, 92, 46, 0.5);
+				background: rgba(222, 185, 110, 0.05);
+				color: #F5E4C4;
+			}
+			html.dark .scheduling-layout .avail-btn:hover {
+				border-color: #C4A35A;
+				background: rgba(222, 185, 110, 0.12);
+			}
+			.scheduling-layout .avail-btn.selected {
+				border-color: #8B6914;
+				background: rgba(139, 105, 20, 0.2);
+				font-weight: 700;
+				box-shadow: 0 0 0 1px #8B6914;
+			}
+			html.dark .scheduling-layout .avail-btn.selected {
+				border-color: #DEB96E;
+				background: rgba(222, 185, 110, 0.2);
+				box-shadow: 0 0 0 1px #DEB96E;
+			}
+			.scheduling-layout .avail-btn .avail-icon {
+				font-size: 0.9rem;
+				line-height: 1;
+			}
+			.scheduling-layout .avail-btn .avail-count {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				min-width: 1.2em;
+				height: 1.2em;
+				padding: 0 0.25em;
+				border-radius: 999px;
+				background: rgba(139, 105, 20, 0.15);
+				color: #5C3D0E;
+				font-size: 0.7rem;
+				font-weight: 700;
+				line-height: 1;
+			}
+			html.dark .scheduling-layout .avail-btn .avail-count {
+				background: rgba(222, 185, 110, 0.15);
+				color: #DEB96E;
+			}
+			.scheduling-layout .avail-btn .avail-count.zero {
+				opacity: 0.4;
+			}
+			.scheduling-layout .avail-error {
+				color: #a33;
+				font-size: 0.75rem;
+				margin-top: 0.4rem;
+			}
+		</style>
+	</head>
+
+	<body>
+		<Header />
+		<div class="scheduling-layout">
+			<h1 class="page-title">Scheduling</h1>
+			<p class="page-subtitle">Session times are shown in your local timezone.</p>
+
+			<!-- Next upcoming event (rendered as hero) — replaced client-side -->
+			<div id="next-event-container"></div>
+
+			<!-- Upcoming events -->
+			<div id="upcoming-container"></div>
+
+			<!-- Past events -->
+			<div id="past-container"></div>
+		</div>
+		<Footer />
+
+		<!-- Embed all event data as JSON for client-side timezone conversion -->
+		<script define:vars={{ events: await Promise.all(events.map(async (e) => {
+			const { Content } = await render(e);
+			return null; // We can't serialize components
+		})) }}>
+		</script>
+
+		<!-- Pass event data as JSON -->
+		<script is:inline define:vars={{ eventsJSON: JSON.stringify(events.map(e => ({
+			id: e.id,
+			slug: e.slug ?? e.id,
+			title: e.data.title,
+			description: e.data.description,
+			date: e.data.date,
+			time: e.data.time,
+			duration: e.data.duration,
+			berlinISO: e.berlinISO,
+		}))) }}>
+			window.__EVENTS_DATA__ = JSON.parse(eventsJSON);
+		</script>
+
+		<!-- Rendered event bodies for the next-event detail view -->
+		<div id="event-bodies" style="display:none;">
+			{events.map(async (event) => {
+				const { Content } = await render(event);
+				return (
+					<div data-event-id={event.id}>
+						<Content />
+					</div>
+				);
+			})}
+		</div>
+
+		<script>
+			function initScheduling() {
+				const events = (window as any).__EVENTS_DATA__ as Array<{
+					id: string;
+					slug: string;
+					title: string;
+					description: string;
+					date: string;
+					time: string;
+					duration?: number;
+					berlinISO: string;
+				}>;
+
+				if (!events || events.length === 0) return;
+
+				const now = new Date();
+
+				// Convert Berlin time → user's local time
+				function berlinToLocal(dateStr: string, timeStr: string): Date {
+					// Create a date string as if it's in Europe/Berlin
+					const isoStr = `${dateStr}T${timeStr}:00`;
+					// Use Intl to figure out Berlin's UTC offset for that datetime
+					const berlinFormatter = new Intl.DateTimeFormat('en-US', {
+						timeZone: 'Europe/Berlin',
+						year: 'numeric', month: '2-digit', day: '2-digit',
+						hour: '2-digit', minute: '2-digit', second: '2-digit',
+						hour12: false,
+					});
+
+					// Parse the given date/time as a UTC reference, then adjust
+					// Strategy: find Berlin's offset by comparing formatted output
+					const testDate = new Date(isoStr + 'Z'); // treat as UTC first
+					const berlinParts = berlinFormatter.formatToParts(testDate);
+					const getPart = (type: string) => berlinParts.find(p => p.type === type)?.value || '0';
+					const berlinHour = parseInt(getPart('hour'));
+					const berlinDay = parseInt(getPart('day'));
+
+					// The offset is Berlin's displayed time minus UTC
+					const utcHour = testDate.getUTCHours();
+					const utcDay = testDate.getUTCDate();
+					let offsetHours = berlinHour - utcHour + (berlinDay - utcDay) * 24;
+
+					// Now: the user gave us time in Berlin. We need UTC.
+					// Berlin time = UTC + offset → UTC = Berlin time - offset
+					const berlinAsUTC = new Date(isoStr + 'Z');
+					berlinAsUTC.setUTCHours(berlinAsUTC.getUTCHours() - offsetHours);
+					return berlinAsUTC;
+				}
+
+				function formatLocalTime(date: Date): string {
+					return date.toLocaleTimeString(undefined, {
+						hour: '2-digit',
+						minute: '2-digit',
+						hour12: true,
+					});
+				}
+
+				function formatLocalDate(date: Date): string {
+					return date.toLocaleDateString(undefined, {
+						weekday: 'long',
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric',
+					});
+				}
+
+				function formatBerlinTime(timeStr: string): string {
+					const [h, m] = timeStr.split(':').map(Number);
+					const period = h >= 12 ? 'PM' : 'AM';
+					const h12 = h % 12 || 12;
+					return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+				}
+
+				function getUserTZ(): string {
+					return Intl.DateTimeFormat().resolvedOptions().timeZone;
+				}
+
+				function isBerlinTZ(): boolean {
+					const tz = getUserTZ();
+					return tz === 'Europe/Berlin' || tz === 'Europe/Paris' || tz === 'Europe/Amsterdam' || tz === 'Europe/Brussels' || tz === 'Europe/Madrid' || tz === 'Europe/Rome' || tz === 'Europe/Vienna' || tz === 'Europe/Zurich' || tz === 'Europe/Warsaw' || tz === 'Europe/Prague' || tz === 'Europe/Budapest' || tz === 'Europe/Stockholm' || tz === 'Europe/Oslo' || tz === 'Europe/Copenhagen';
+				}
+
+				function formatDuration(mins: number): string {
+					const h = Math.floor(mins / 60);
+					const m = mins % 60;
+					if (h && m) return `${h}h ${m}m`;
+					if (h) return `${h}h`;
+					return `${m}m`;
+				}
+
+				function clockSVG(): string {
+					return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>`;
+				}
+
+				function calendarSVG(): string {
+					return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>`;
+				}
+
+				function hourglassSVG(): string {
+					return `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5-4-4V4h8v3.5l-4 4z"/></svg>`;
+				}
+
+				function formatCountdown(ms: number): { short: string; full: string } {
+					const totalMinutes = Math.floor(Math.abs(ms) / 60000);
+					const minutes = totalMinutes % 60;
+					const totalHours = Math.floor(totalMinutes / 60);
+					const hours = totalHours % 24;
+					const days = Math.floor(totalHours / 24);
+					const isPast = ms < 0;
+
+					let short = '';
+					if (days > 0) short = `${days}d`;
+					else if (hours > 0) short = `${hours}h`;
+					else short = `${minutes}m`;
+					if (isPast) short += ' ago';
+					else short = 'in ' + short;
+
+					const parts: string[] = [];
+					if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+					if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+					if (minutes > 0 || parts.length === 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+					const full = isPast ? `${parts.join(', ')} ago` : `${parts.join(', ')} from now`;
+
+					return { short, full };
+				}
+
+				function countdownBadge(localDate: Date, isPast: boolean): string {
+					const diff = localDate.getTime() - now.getTime();
+					const { short, full } = formatCountdown(diff);
+					const cls = isPast ? 'countdown-badge past-badge' : 'countdown-badge';
+					return `<span class="${cls}">${hourglassSVG()} ${short}<span class="countdown-tooltip">${full}</span></span>`;
+				}
+
+				// Split events
+				const parsed = events.map(ev => ({
+					...ev,
+					localDate: berlinToLocal(ev.date, ev.time),
+				}));
+
+				const upcoming = parsed.filter(ev => ev.localDate >= now).sort((a, b) => a.localDate.getTime() - b.localDate.getTime());
+				const past = parsed.filter(ev => ev.localDate < now).sort((a, b) => b.localDate.getTime() - a.localDate.getTime());
+
+				const sameTimezone = isBerlinTZ();
+
+				function buildTimeBadges(ev: typeof parsed[0]): string {
+					let html = `<span class="time-badge">${calendarSVG()} ${formatLocalDate(ev.localDate)}</span>`;
+					html += `<span class="time-badge">${clockSVG()} ${formatBerlinTime(ev.time)} <span class="time-note">Berlin</span></span>`;
+
+					if (!sameTimezone) {
+						html += `<span class="time-badge time-converted">${clockSVG()} ${formatLocalTime(ev.localDate)} <span class="time-note">Your time</span></span>`;
+					}
+
+					return html;
+				}
+
+				// Availability poll options
+				const availOptions = [
+					{ key: 'can-make-it', icon: '✅', label: 'I can make it' },
+					{ key: 'low-energy', icon: '😴', label: 'I\'ll be low energy' },
+					{ key: 'cannot-play-without', icon: '❌', label: 'Can\'t make it — don\'t play without me' },
+					{ key: 'cannot-do-not-play', icon: '👋', label: 'Can\'t make it — play without me' },
+				];
+
+				function buildAvailPoll(eventId: string, isPast: boolean): string {
+					if (isPast) return '';
+					const safeId = eventId.replace(/[^a-zA-Z0-9_-]/g, '_');
+					const buttons = availOptions.map(opt =>
+						`<button class="avail-btn" data-event-id="${eventId}" data-status="${opt.key}">` +
+						`<span class="avail-icon">${opt.icon}</span> ${opt.label} ` +
+						`<span class="avail-count zero" data-count-for="${opt.key}">0</span>` +
+						`</button>`
+					).join('');
+					return `
+						<div class="avail-section" data-avail-poll="${eventId}" id="avail-${safeId}">
+							<p class="avail-label">Availability</p>
+							<div class="avail-options">${buttons}</div>
+						</div>
+					`;
+				}
+
+				async function fetchAvailability(eventId: string): Promise<void> {
+					try {
+						const resp = await fetch(`/api/availability?eventId=${encodeURIComponent(eventId)}`);
+						if (!resp.ok) return;
+						const data = await resp.json();
+						updatePollUI(eventId, data.votes, data.myVote);
+					} catch {
+						// silently fail — poll is non-critical
+					}
+				}
+
+				async function submitVote(eventId: string, status: string): Promise<void> {
+					const poll = document.querySelector(`[data-avail-poll="${eventId}"]`);
+					try {
+						const resp = await fetch('/api/availability', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ eventId, status }),
+						});
+						if (!resp.ok) throw new Error('Failed');
+						const data = await resp.json();
+						updatePollUI(eventId, data.votes, data.myVote);
+					} catch {
+						if (poll) {
+							let errEl = poll.querySelector('.avail-error');
+							if (!errEl) {
+								errEl = document.createElement('p');
+								errEl.className = 'avail-error';
+								poll.appendChild(errEl);
+							}
+							errEl.textContent = 'Could not save — please try again.';
+						}
+					}
+				}
+
+				function updatePollUI(eventId: string, votes: Record<string, number>, myVote: string | null): void {
+					const poll = document.querySelector(`[data-avail-poll="${eventId}"]`);
+					if (!poll) return;
+					poll.querySelectorAll('.avail-btn').forEach(btn => {
+						const status = (btn as HTMLElement).dataset.status;
+						const countEl = btn.querySelector('.avail-count');
+						const count = votes[status || ''] || 0;
+						if (countEl) {
+							countEl.textContent = String(count);
+							countEl.classList.toggle('zero', count === 0);
+						}
+						btn.classList.toggle('selected', status === myVote);
+					});
+				}
+
+				// Render next event hero
+				const nextContainer = document.getElementById('next-event-container');
+				if (nextContainer && upcoming.length > 0) {
+					const next = upcoming[0];
+					const bodyEl = document.querySelector(`#event-bodies [data-event-id="${next.id}"]`);
+					const bodyHTML = bodyEl ? bodyEl.innerHTML : '';
+
+					nextContainer.innerHTML = `
+						<div class="next-event">
+							<div class="next-event-content">
+								<div class="next-event-top-row">
+									<span class="next-event-label">Next Session</span>
+									${countdownBadge(next.localDate, false)}
+								</div>
+								<h2 class="next-event-title">${next.title}</h2>
+								<div class="next-event-datetime">${buildTimeBadges(next)}</div>
+								<p class="next-event-description">${next.description}</p>
+								${bodyHTML ? `<div class="next-event-body">${bodyHTML}</div>` : ''}
+								${buildAvailPoll(next.id, false)}
+							</div>
+						</div>
+					`;
+				}
+
+				// Render upcoming events (skip first since it's the hero)
+				const upcomingContainer = document.getElementById('upcoming-container');
+				if (upcomingContainer) {
+					if (upcoming.length > 1) {
+						const cards = upcoming.slice(1).map(ev => `
+							<li class="event-card">
+								<div class="event-card-content">
+									<div class="event-card-top-row">
+										<h3 class="event-card-title">${ev.title}</h3>
+										${countdownBadge(ev.localDate, false)}
+									</div>
+									<div class="event-card-meta">${buildTimeBadges(ev)}</div>
+									<p class="event-card-description">${ev.description}</p>
+									${buildAvailPoll(ev.id, false)}
+								</div>
+							</li>
+						`).join('');
+						upcomingContainer.innerHTML = `
+							<h2 class="section-heading">Upcoming Sessions</h2>
+							<ul class="event-list">${cards}</ul>
+						`;
+					}
+				}
+
+				// Render past events
+				const pastContainer = document.getElementById('past-container');
+				if (pastContainer && past.length > 0) {
+					const cards = past.map(ev => `
+						<li class="event-card past">
+							<div class="event-card-content">
+								<div class="event-card-top-row">
+									<h3 class="event-card-title">${ev.title}</h3>
+									${countdownBadge(ev.localDate, true)}
+								</div>
+								<div class="event-card-meta">${buildTimeBadges(ev)}</div>
+								<p class="event-card-description">${ev.description}</p>
+							</div>
+						</li>
+					`).join('');
+					pastContainer.innerHTML = `
+						<h2 class="section-heading past-heading">Past Sessions</h2>
+						<ul class="event-list">${cards}</ul>
+					`;
+				}
+
+				// If no events at all
+				if (upcoming.length === 0 && past.length === 0) {
+					const nextContainer = document.getElementById('next-event-container');
+					if (nextContainer) {
+						nextContainer.innerHTML = '<p class="no-events">No sessions scheduled yet.</p>';
+					}
+				} else if (upcoming.length === 0) {
+					const nextContainer = document.getElementById('next-event-container');
+					if (nextContainer) {
+						nextContainer.innerHTML = '<p class="no-events">No upcoming sessions scheduled.</p>';
+					}
+				}
+
+				// Wire up vote buttons (event delegation)
+				document.querySelector('.scheduling-layout')?.addEventListener('click', (e) => {
+					const btn = (e.target as HTMLElement).closest('.avail-btn') as HTMLElement | null;
+					if (!btn) return;
+					const eventId = btn.dataset.eventId;
+					const status = btn.dataset.status;
+					if (eventId && status) {
+						submitVote(eventId, status);
+					}
+				});
+
+				// Fetch initial availability data for all upcoming events
+				for (const ev of upcoming) {
+					fetchAvailability(ev.id);
+				}
+			}
+
+			initScheduling();
+			document.addEventListener('astro:after-swap', initScheduling);
+		</script>
+	</body>
+</html>

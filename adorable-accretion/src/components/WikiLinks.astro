@@ -151,7 +151,7 @@
 		padding: 1.15rem;
 		overflow-y: auto;
 		flex: 1;
-		font-size: 0.9rem;
+		font-size: 1.05rem;
 		line-height: 1.7;
 	}
 	.wiki-popout-body h1,
@@ -313,6 +313,12 @@
 				<div class="wiki-popout-header">
 					<span class="wiki-popout-header-title">Loading…</span>
 					<div class="wiki-popout-actions">
+						<button class="wiki-popout-btn wiki-popout-font-down" title="Decrease text size" aria-label="Decrease text size">
+							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+						</button>
+						<button class="wiki-popout-btn wiki-popout-font-up" title="Increase text size" aria-label="Increase text size">
+							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
+						</button>
 						<button class="wiki-popout-btn wiki-popout-open" title="Open full page" aria-label="Open full page">
 							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
 						</button>
@@ -337,6 +343,22 @@
 			// Open full page button
 			popout.querySelector('.wiki-popout-open')!.addEventListener('click', () => {
 				window.location.href = `/tavern/wiki/${slug}/`;
+			});
+
+			// Font size buttons
+			const body = popout.querySelector('.wiki-popout-body') as HTMLElement;
+			const MIN_FONT = 0.8;
+			const MAX_FONT = 1.6;
+			const STEP = 0.1;
+			let currentSize = 1.05;
+
+			popout.querySelector('.wiki-popout-font-up')!.addEventListener('click', () => {
+				currentSize = Math.min(MAX_FONT, currentSize + STEP);
+				body.style.fontSize = currentSize.toFixed(2) + 'rem';
+			});
+			popout.querySelector('.wiki-popout-font-down')!.addEventListener('click', () => {
+				currentSize = Math.max(MIN_FONT, currentSize - STEP);
+				body.style.fontSize = currentSize.toFixed(2) + 'rem';
 			});
 
 			// Load content

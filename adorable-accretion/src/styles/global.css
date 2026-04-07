@@ -258,9 +258,27 @@ html.dark header {
 
 /* Section-specific header styling */
 html[data-section="studio"] header {
-	background: #1e40af;
-	color: white;
+	background: linear-gradient(180deg, #9b1088, #b428a2);
+	color: #F5E4C4;
+	border-bottom: 3px solid #8B6914;
 }
+
+html.dark[data-section="studio"] header {
+	background: linear-gradient(180deg, #f364e0, #ffa0f2);
+	color: #F5E4C4;
+	border-bottom: 3px solid #8B6914;
+}
+
+/* Section-specific footer styling */
+html[data-section="studio"] footer {
+	background: linear-gradient(180deg, transparent, #1e40af);
+	color: rgba(255, 255, 255, 0.7);
+}
+html.dark[data-section="studio"] footer {
+	background: linear-gradient(180deg, transparent, #0f2a6e);
+	color: rgba(255, 255, 255, 0.5);
+}
+
 html[data-section="studio"] header nav a:hover {
 	background: rgba(96, 165, 250, 0.3);
 }
@@ -269,15 +287,28 @@ html[data-section="studio"] header nav a.active {
 	background: rgba(96, 165, 250, 0.25);
 	box-shadow: 0 2px 4px rgba(96, 165, 250, 0.3);
 }
-html.dark[data-section="studio"] header {
-	background: #0f2a6e;
-}
 
+/* Light mode header style*/
 html[data-section="tavern"] header {
-	background: linear-gradient(180deg, #5C3D0E, #3E2703);
+	background: linear-gradient(180deg, #744908, #c99026);
 	color: #F5E4C4;
 	border-bottom: 3px solid #8B6914;
 }
+/* Dark mode overrides for Tavern header */
+html.dark[data-section="tavern"] header {
+	background: linear-gradient(180deg, #633e04, #311e0e);
+	border-bottom-color: #6B4710;
+}
+
+html[data-section="tavern"] footer {
+	background: linear-gradient(180deg, #c99026, #744908);
+	color: #FDF6EC;
+}
+html.dark[data-section="tavern"] footer {
+	background: linear-gradient(180deg, #311e0e, #633e04);
+	color: #C4A35A;
+}
+
 html[data-section="tavern"] header nav a:hover {
 	color: #FFD700;
 	background: rgba(139, 105, 20, 0.3);
@@ -292,7 +323,7 @@ html[data-section="tavern"] header .dark-toggle:hover,
 html[data-section="tavern"] header .dyslexia-toggle:hover {
 	background: rgba(139, 105, 20, 0.3);
 }
-html.dark[data-section="tavern"] header {
-	background: linear-gradient(180deg, #3E2703, #281902);
-	border-bottom-color: #6B4710;
-}
+
+
+
+

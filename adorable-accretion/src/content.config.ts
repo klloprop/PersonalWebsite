@@ -63,4 +63,18 @@ const wikiCollections = defineCollection({
 		}),
 });
 
-export const collections = { blog, blogCollections, wiki, wikiCollections };
+const events = defineCollection({
+	loader: glob({ base: './src/content/events', pattern: '**/*.{md,mdx}' }),
+	schema: z.object({
+		title: z.string(),
+		description: z.string(),
+		// Date in YYYY-MM-DD format
+		date: z.string(),
+		// Time in HH:MM format (Berlin timezone, Europe/Berlin)
+		time: z.string(),
+		// Optional duration in minutes
+		duration: z.number().optional(),
+	}),
+});
+
+export const collections = { blog, blogCollections, wiki, wikiCollections, events };
