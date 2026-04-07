@@ -47,6 +47,7 @@ html.dark {
 	font-style: normal;
 	font-display: swap;
 }
+
 body {
 	font-family: "Atkinson", sans-serif;
 	margin: 0;
@@ -190,8 +191,8 @@ html.dyslexia time,
 html.dyslexia code,
 html.dyslexia pre {
 	font-family: "OpenDyslexic", sans-serif;
-	letter-spacing: 0.07em;
-	word-spacing: 0.12em;
+	letter-spacing: 0.01em;
+	word-spacing: 0.10em;
 	line-height: 2;
 }
 
