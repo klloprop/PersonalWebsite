@@ -352,6 +352,31 @@ const events = allEvents.map((event) => {
 				.scheduling-layout .event-card-content {
 					padding: 1rem 1.25rem;
 				}
+				.scheduling-layout .avail-table td.avail-option-cell {
+					width: auto;
+					display: block;
+				}
+				.scheduling-layout .avail-table td.avail-bar-cell {
+					width: auto;
+					display: block;
+					padding: 0.2rem 0.5rem;
+				}
+				.scheduling-layout .avail-table td.avail-result-cell {
+					width: auto;
+					display: block;
+					text-align: left;
+					padding: 0.2rem 0.5rem 0.5rem;
+				}
+				.scheduling-layout .avail-table tr {
+					display: block;
+					padding: 0.4rem 0;
+				}
+				.scheduling-layout .next-event-top-row {
+					flex-wrap: wrap;
+				}
+				.scheduling-layout .time-badges {
+					flex-wrap: wrap;
+				}
 			}
 
 			/* ── Availability poll (2-column table) ── */
@@ -387,10 +412,34 @@ const events = allEvents.map((event) => {
 				vertical-align: middle;
 			}
 			.scheduling-layout .avail-table td.avail-option-cell {
-				width: 60%;
+				width: 45%;
+			}
+			.scheduling-layout .avail-table td.avail-bar-cell {
+				width: 40%;
+				padding: 0.45rem 0.6rem;
+			}
+			.scheduling-layout .avail-bar-track {
+				width: 100%;
+				height: 8px;
+				border-radius: 4px;
+				background: rgba(139, 105, 20, 0.1);
+				overflow: hidden;
+			}
+			html.dark .scheduling-layout .avail-bar-track {
+				background: rgba(222, 185, 110, 0.1);
+			}
+			.scheduling-layout .avail-bar-fill {
+				height: 100%;
+				width: 0%;
+				border-radius: 4px;
+				background: #C4A35A;
+				transition: width 0.3s ease;
+			}
+			html.dark .scheduling-layout .avail-bar-fill {
+				background: #DEB96E;
 			}
 			.scheduling-layout .avail-table td.avail-result-cell {
-				width: 40%;
+				width: 15%;
 				text-align: right;
 			}
 			.scheduling-layout .avail-btn {
@@ -434,10 +483,7 @@ const events = allEvents.map((event) => {
 				background: rgba(222, 185, 110, 0.2);
 				box-shadow: 0 0 0 1px #DEB96E;
 			}
-			.scheduling-layout .avail-btn .avail-icon {
-				font-size: 0.9rem;
-				line-height: 1;
-			}
+
 			.scheduling-layout .avail-result-cell .avail-count {
 				display: inline-flex;
 				align-items: center;
@@ -674,10 +720,10 @@ const events = allEvents.map((event) => {
 
 				// Availability poll options
 				const availOptions = [
-					{ key: 'can-make-it', icon: '✅', label: 'I can make it' },
-					{ key: 'low-energy', icon: '😴', label: 'I\'ll be low energy' },
-					{ key: 'cannot-play-without', icon: '❌', label: 'Can\'t make it — don\'t play without me' },
-					{ key: 'cannot-do-not-play', icon: '👋', label: 'Can\'t make it — play without me' },
+					{ key: 'can-make-it', label: 'I can make it' },
+					{ key: 'low-energy', label: 'I\'ll be low energy' },
+					{ key: 'cannot-play-without', label: 'Can\'t make it, don\'t play without me' },
+					{ key: 'cannot-do-not-play', label: 'Can\'t make it, play without me' },
 				];
 
 				function buildAvailPoll(eventId: string, isPast: boolean): string {
@@ -687,8 +733,11 @@ const events = allEvents.map((event) => {
 						`<tr>` +
 						`<td class="avail-option-cell">` +
 						`<button class="avail-btn" data-event-id="${eventId}" data-status="${opt.key}">` +
-						`<span class="avail-icon">${opt.icon}</span> ${opt.label}` +
+						`${opt.label}` +
 						`</button></td>` +
+						`<td class="avail-bar-cell">` +
+						`<div class="avail-bar-track"><div class="avail-bar-fill" data-bar-for="${opt.key}"></div></div>` +
+						`</td>` +
 						`<td class="avail-result-cell">` +
 						`<span class="avail-count zero" data-count-for="${opt.key}">0</span>` +
 						`</td></tr>`
@@ -739,14 +788,20 @@ const events = allEvents.map((event) => {
 				function updatePollUI(eventId: string, votes: Record<string, number>, myVote: string | null): void {
 					const poll = document.querySelector(`[data-avail-poll="${eventId}"]`);
 					if (!poll) return;
+					const totalVotes = Object.values(votes).reduce((sum, n) => sum + n, 0);
 					poll.querySelectorAll('.avail-btn').forEach(btn => {
 						const status = (btn as HTMLElement).dataset.status;
 						const row = btn.closest('tr');
 						const countEl = row?.querySelector('.avail-count');
+						const barEl = row?.querySelector('.avail-bar-fill') as HTMLElement | null;
 						const count = votes[status || ''] || 0;
 						if (countEl) {
 							countEl.textContent = String(count);
 							countEl.classList.toggle('zero', count === 0);
+						}
+						if (barEl) {
+							const pct = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
+							barEl.style.width = `${pct}%`;
 						}
 						btn.classList.toggle('selected', status === myVote);
 					});

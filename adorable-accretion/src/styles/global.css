@@ -159,6 +159,24 @@ hr {
 	main {
 		padding: 1em;
 	}
+	h1 {
+		font-size: 2em;
+	}
+	h2 {
+		font-size: 1.6em;
+	}
+	h3 {
+		font-size: 1.3em;
+	}
+	pre {
+		padding: 1em;
+		font-size: 0.85em;
+		overflow-x: auto;
+	}
+	blockquote {
+		padding: 0 0 0 1em;
+		font-size: 1.1em;
+	}
 }
 
 /* OpenDyslexic font */

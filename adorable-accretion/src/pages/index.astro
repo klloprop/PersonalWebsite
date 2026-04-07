@@ -41,17 +41,20 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			.choices {
 				display: flex;
 				flex-direction: row;
-				gap: 8rem; /* Increased gap for further apart buttons */
+				gap: 2rem;
 				align-items: center;
 				justify-content: center;
+				flex-wrap: wrap;
 			}
 			.choice {
-				width: 400px;
+				max-width: 400px;
+				width: 100%;
 				border-radius: 10px;
 				padding: 1.5rem;
 				background: rgba(255, 255, 255, 0.9);
 				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 				text-align: center;
+				box-sizing: border-box;
 			}
 			.button {
 				display: inline-block;
@@ -62,7 +65,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				border-radius: 8px;
 				text-decoration: none;
 				transition: background 0.2s;
-				width: 250px;
+				max-width: 250px;
+				width: 100%;
 				box-sizing: border-box;
 			}
 			.button-studio {
@@ -117,10 +121,21 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			@media (max-width: 600px) {
 				.choices {
 					flex-direction: column;
+					gap: 1.5rem;
+				}
+				h1 {
+					font-size: 1.8rem;
+					padding: 0.75rem;
 				}
 				.button {
 					padding: 1rem 2rem;
-					font-size: 1.2rem;
+					font-size: 1.1rem;
+				}
+				.choice p {
+					font-size: 0.95rem;
+				}
+				main {
+					padding: 1rem;
 				}
 			}
 			.background-left,

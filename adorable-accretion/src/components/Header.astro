@@ -15,11 +15,19 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 					<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="margin-right: 8px;">
 						<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
 					</svg>
-					{siteTitle}
+					<span class="site-title-text">{siteTitle}</span>
 				</a></h2>
 			)}
 		</div>
-		<div class="nav-center">
+		<button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+			<svg class="hamburger-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+				<path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+			</svg>
+			<svg class="close-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+				<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+			</svg>
+		</button>
+		<div class="nav-center" id="nav-center">
 			{pathname.startsWith('/studio') && (
 				<div class="internal-links">
 					<HeaderLink href="/studio">Home</HeaderLink>
@@ -86,9 +94,31 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		});
 	}
 
+	function initNavToggle() {
+		const toggle = document.getElementById('nav-toggle');
+		const navCenter = document.getElementById('nav-center');
+		if (!toggle || !navCenter) return;
+
+		toggle.addEventListener('click', () => {
+			const isOpen = navCenter.classList.toggle('nav-open');
+			toggle.classList.toggle('active', isOpen);
+			toggle.setAttribute('aria-expanded', String(isOpen));
+		});
+
+		// Close menu when clicking a link
+		navCenter.querySelectorAll('a').forEach(link => {
+			link.addEventListener('click', () => {
+				navCenter.classList.remove('nav-open');
+				toggle.classList.remove('active');
+				toggle.setAttribute('aria-expanded', 'false');
+			});
+		});
+	}
+
 	initDarkMode();
 	initDyslexiaMode();
-	document.addEventListener('astro:after-swap', () => { initDarkMode(); initDyslexiaMode(); });
+	initNavToggle();
+	document.addEventListener('astro:after-swap', () => { initDarkMode(); initDyslexiaMode(); initNavToggle(); });
 </script>
 <style>
 	header {
@@ -163,11 +193,75 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		display: flex;
 		align-items: center;
 		position: relative;
+		min-height: 3.5rem;
 	}
 	.nav-center {
 		position: absolute;
 		left: 50%;
 		transform: translateX(-50%);
+	}
+	.nav-toggle {
+		display: none;
+		background: none;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		border-radius: 8px;
+		padding: 0.35em;
+		cursor: pointer;
+		color: #fff;
+		align-items: center;
+		justify-content: center;
+		margin-left: auto;
+		margin-right: 0.5em;
+	}
+	.nav-toggle .close-icon {
+		display: none;
+	}
+	.nav-toggle.active .hamburger-icon {
+		display: none;
+	}
+	.nav-toggle.active .close-icon {
+		display: block;
+	}
+	.site-title-text {
+		display: inline;
+	}
+	@media (max-width: 720px) {
+		.nav-toggle {
+			display: flex;
+		}
+		.nav-center {
+			position: fixed;
+			top: 3.5rem;
+			left: 0;
+			right: 0;
+			transform: none;
+			background: inherit;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			padding: 0.5rem 1rem 1rem;
+			display: none;
+			z-index: 999;
+		}
+		.nav-center.nav-open {
+			display: block;
+		}
+		.nav-center .internal-links {
+			display: flex;
+			flex-direction: column;
+			gap: 0;
+		}
+		.nav-center .internal-links :global(a) {
+			display: block;
+			padding: 0.75em 1em;
+			border-bottom: none;
+			border-radius: 8px;
+		}
+		.site-title-text {
+			display: none;
+		}
+		h2 a,
+		h2 a.active {
+			padding: 0.4em 0.6em;
+		}
 	}
 	nav a {
 		padding: 1em 0.5em;
