@@ -17,28 +17,62 @@ function buildTitleMap() {
 
 	if (!fs.existsSync(wikiDir)) return { titleMap: map, titleRegex: null };
 
-	for (const file of fs.readdirSync(wikiDir)) {
-		if (!file.endsWith('.md') && !file.endsWith('.mdx')) continue;
-		const content = fs.readFileSync(path.join(wikiDir, file), 'utf-8');
-		const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-		if (!fmMatch) continue;
+	function scanDir(dir) {
+		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			if (entry.isDirectory()) {
+				scanDir(path.join(dir, entry.name));
+				continue;
+			}
+			if (!entry.name.endsWith('.md') && !entry.name.endsWith('.mdx')) continue;
+			const content = fs.readFileSync(path.join(dir, entry.name), 'utf-8');
+			const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+			if (!fmMatch) continue;
 
-		const titleMatch = fmMatch[1].match(/^title:\s*["']?(.+?)["']?\s*$/m);
-		if (!titleMatch) continue;
+			const titleMatch = fmMatch[1].match(/^title:\s*["']?(.+?)["']?\s*$/m);
+			if (!titleMatch) continue;
 
-		const title = titleMatch[1];
-		const slug = file.replace(/\.(md|mdx)$/, '').toLowerCase().replace(/\s+/g, '-');
-		map.set(title.toLowerCase(), { title, slug });
+			const title = titleMatch[1];
+			const slug = entry.name.replace(/\.(md|mdx)$/, '').toLowerCase().replace(/\s+/g, '-');
+			map.set(title.toLowerCase(), { title, slug });
+
+			// Parse tags from frontmatter and add as aliases
+			const tagsMatch = fmMatch[1].match(/^tags:\s*\[([^\]]+)\]/m)
+				|| fmMatch[1].match(/^tags:\s*\n((?:\s*-\s*.+\n?)+)/m);
+			if (tagsMatch) {
+				let tags = [];
+				if (tagsMatch[1].includes(',')) {
+					// Inline array: tags: ["dros", "pupil"]
+					tags = tagsMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, ''));
+				} else if (tagsMatch[1].includes('-')) {
+					// YAML list:
+					// tags:
+					//   - dros
+					tags = tagsMatch[1].split('\n').map(t => t.replace(/^\s*-\s*/, '').trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+				} else {
+					// Single item inline: tags: ["dros"]
+					tags = [tagsMatch[1].trim().replace(/^["']|["']$/g, '')];
+				}
+				for (const tag of tags) {
+					if (tag && !map.has(tag.toLowerCase())) {
+						map.set(tag.toLowerCase(), { title: tag, slug });
+					}
+				}
+			}
+		}
 	}
+
+	scanDir(wikiDir);
 
 	titleMapCache = map;
 
-	// Build a regex that matches any title (longest first to avoid partial matches)
+	// Build a regex that matches any title/tag (longest first to avoid partial matches)
 	if (map.size > 0) {
 		const titles = [...map.values()]
 			.map((v) => v.title)
 			.sort((a, b) => b.length - a.length);
-		const escaped = titles.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+		// Deduplicate (multiple tags can map to the same title text)
+		const unique = [...new Set(titles)];
+		const escaped = unique.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 		titleRegexCache = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
 	}
 

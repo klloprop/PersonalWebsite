@@ -18,6 +18,10 @@ const defaultHeroImage = D20Icon;
 const getHeroImage = (heroImage: any) =>
 	typeof heroImage === 'string' || !heroImage ? defaultHeroImage : heroImage;
 
+function flatSlug(entry: any) {
+	return (entry.slug ?? entry.id).split('/').pop();
+}
+
 const collectionEntries = (await getCollection('wikiCollections')).sort(
 	(a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 );
@@ -314,6 +318,11 @@ function getAncestors(name: string): string[] {
 				object-fit: cover;
 				width: 100%;
 			}
+			li.entry-card img {
+				height: 220px;
+				object-fit: cover;
+				width: 100%;
+			}
 			li.entry-card {
 				background: #FDF6EC;
 				border: 2px solid #C4A35A;
@@ -527,13 +536,41 @@ function getAncestors(name: string): string[] {
 							</div>
 							<div class="sidebar-children">
 								{root.children.map((child) => (
-									<button class="sidebar-btn" data-collection={child.name}>
-										<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
-										<span class="collection-info">
-											<span class="collection-name">{child.name}</span>
-											<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
-										</span>
-									</button>
+									child.children.length > 0 ? (
+										<div class="sidebar-group">
+											<div class="sidebar-group-header">
+												<button class="sidebar-toggle" aria-label={`Expand ${child.name}`}>
+													<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
+												</button>
+												<button class="sidebar-btn" data-collection={child.name}>
+													<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
+													<span class="collection-info">
+														<span class="collection-name">{child.name}</span>
+														<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
+													</span>
+												</button>
+											</div>
+											<div class="sidebar-children">
+												{child.children.map((grandchild) => (
+													<button class="sidebar-btn" data-collection={grandchild.name}>
+														<Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={28} height={28} />
+														<span class="collection-info">
+															<span class="collection-name">{grandchild.name}</span>
+															<span class="collection-count">{grandchild.totalCount} {grandchild.totalCount === 1 ? 'entry' : 'entries'}</span>
+														</span>
+													</button>
+												))}
+											</div>
+										</div>
+									) : (
+										<button class="sidebar-btn" data-collection={child.name}>
+											<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
+											<span class="collection-info">
+												<span class="collection-name">{child.name}</span>
+												<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
+											</span>
+										</button>
+									)
 								))}
 							</div>
 						</div>
@@ -554,8 +591,8 @@ function getAncestors(name: string): string[] {
 					<ul class="entry-grid featured-section">
 						{entries.slice(0, 1).map((entry) => (
 							<li class="entry-card featured" data-collection={entry.data.collection || ''}>
-								<a class="card-link" href={`/tavern/wiki/${entry.slug ?? entry.id}/`}>
-									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} height={320} />}
+								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
+									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
 									<div class="card-content">
 								{entry.data.collection && (
 									<div class="badge-chain">
@@ -576,8 +613,8 @@ function getAncestors(name: string): string[] {
 					<ul class="entry-grid other-section">
 						{entries.slice(1).map((entry) => (
 							<li class="entry-card" data-collection={entry.data.collection || ''}>
-								<a class="card-link" href={`/tavern/wiki/${entry.slug ?? entry.id}/`}>
-									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} height={320} />}
+								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
+									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
 									<div class="card-content">
 								{entry.data.collection && (
 									<div class="badge-chain">

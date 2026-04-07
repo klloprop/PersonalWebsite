@@ -11,16 +11,19 @@ import { SITE_TITLE } from '../../../consts';
 
 export async function getStaticPaths() {
 	const entries = await getCollection('wiki');
-	return entries.map((entry) => ({ params: { slug: entry.slug ?? entry.id } }));
+	return entries.map((entry) => ({
+		params: { slug: (entry.slug ?? entry.id).split('/').pop()! },
+		props: { entry },
+	}));
 }
 
-const entry = await getEntry('wiki', Astro.params.slug);
+const { entry } = Astro.props;
 if (!entry) {
 	throw new Error('Wiki entry not found');
 }
 
 const { Content } = await render(entry);
-const { title, description, pubDate, updatedDate, heroImage, collection } = entry.data;
+const { title, description, pubDate, updatedDate, heroImage, heroImagePosition, collection } = entry.data;
 
 // Build ancestor chain for collection chips
 const collectionEntries = await getCollection('wikiCollections');
@@ -81,6 +84,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 				width: 100%;
 				height: 100%;
 				object-fit: cover;
+				object-position: var(--hero-position, center);
 			}
 			.prose {
 				width: 720px;
@@ -162,8 +166,8 @@ const collectionChain = collection ? getAncestors(collection) : [];
 	<body>
 		<Header />
 		{heroImage && (
-			<div class="hero-image">
-				<Image src={heroImage} alt={title} width={1600} height={800} />
+			<div class="hero-image" style={`--hero-position: ${heroImagePosition}`}>
+				<Image src={heroImage} alt={title} width={1600} densities={[1]} />
 			</div>
 		)}
 		<main>
