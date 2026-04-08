@@ -145,6 +145,42 @@ const rotations = [-4, 3, -2, 5, -3, 4, -5, 2];
 			:global(html.dark) .collection-chip:hover {
 				background: rgba(107, 123, 255, 0.25);
 			}
+
+			/* Override global main styles inside blog layout */
+			.blog-layout main {
+				width: auto !important;
+				max-width: none !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			@media (max-width: 720px) {
+				.hero-image {
+					height: 35vh;
+					min-height: 150px;
+					max-height: 300px;
+				}
+				.prose {
+					width: 100%;
+					max-width: 100%;
+					padding: 0.75em;
+					box-sizing: border-box;
+				}
+				.title h1 {
+					font-size: 1.75rem;
+				}
+				.title {
+					padding: 0.5em 0;
+					margin-bottom: 0.5em;
+				}
+				.title-chips {
+					gap: 0.35rem;
+				}
+				.collection-chip {
+					font-size: 0.75rem;
+					padding: 0.25em 0.65em;
+				}
+			}
 		</style>
 	</head>
 

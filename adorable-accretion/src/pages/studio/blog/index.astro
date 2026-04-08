@@ -133,6 +133,10 @@ const collections = collectionEntries.map((col) => ({
 			.blog-content {
 				flex: 0 1 900px;
 				min-width: 0;
+				width: auto !important;
+				max-width: none !important;
+				padding: 0 !important;
+				margin: 0 !important;
 			}
 			.section-heading {
 				font-size: 1.35rem;
@@ -216,13 +220,15 @@ const collections = collectionEntries.map((col) => ({
 				}
 				.sidebar {
 					width: 100%;
+					max-width: 100%;
+					box-sizing: border-box;
 					position: static;
 					max-height: none;
 					display: flex;
 					gap: 0.5rem;
 					overflow-x: auto;
-					flex-wrap: nowrap;
-					border-radius: 16px;
+					flex-wrap: wrap;
+					border-radius: 12px;
 					padding: 0.75rem;
 				}
 				.sidebar-title {
@@ -233,10 +239,13 @@ const collections = collectionEntries.map((col) => ({
 				}
 				.sidebar-btn {
 					white-space: nowrap;
-					flex-shrink: 0;
+					flex-shrink: 1;
 					padding: 0.5rem 0.75rem;
 					border-radius: 999px;
 					border: 1px solid rgb(var(--gray-light));
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
 				}
 				.sidebar-btn .collection-img,
 				.sidebar-btn .all-icon {
@@ -248,6 +257,21 @@ const collections = collectionEntries.map((col) => ({
 				}
 				ul.post-grid {
 					grid-template-columns: 1fr;
+				}
+				li.post-card.featured img {
+					height: 200px;
+				}
+				.card-content {
+					padding: 1.25rem;
+				}
+				.blog-content h2 {
+					font-size: 1.25rem;
+				}
+				.section-heading {
+					font-size: 1.15rem;
+				}
+				.other-heading {
+					margin-top: 3rem;
 				}
 			}
 			:global(html.dark) li.post-card {
