@@ -28,26 +28,26 @@ const collections = collectionEntries.map((col) => ({
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
 			.blog-layout {
+				position: relative;
 				max-width: 1400px;
 				margin: 0 auto;
 				padding: 2.5rem 2rem;
 				display: flex;
 				justify-content: center;
-				gap: 2rem;
 			}
 			/* Sidebar */
 			.sidebar {
 				width: 240px;
-				flex-shrink: 0;
-				position: sticky;
-				top: 1rem;
-				align-self: flex-start;
-				max-height: calc(100vh - 2rem);
+				position: fixed;
+				top: 5rem;
+				left: max(1rem, calc((100vw - 1400px) / 2 + 1rem));
+				max-height: calc(100vh - 6rem);
 				overflow-y: auto;
 				background: white;
 				border-radius: 20px;
 				box-shadow: var(--box-shadow);
 				padding: 1.25rem 0.75rem;
+				z-index: 10;
 			}
 			:global(html.dark) .sidebar {
 				background: #2a1428;

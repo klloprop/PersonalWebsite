@@ -14,7 +14,7 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 <div class="polaroid-wrapper">
 	<div class="polaroid" style={`--rotate: ${rotate}deg`}>
 		<div class="polaroid-image">
-			<Image src={src} alt={alt} width={280} height={280} />
+			<Image src={src} alt={alt} width={280} height={280} loading="lazy" />
 		</div>
 		{caption && <p class="polaroid-caption">{caption}</p>}
 	</div>

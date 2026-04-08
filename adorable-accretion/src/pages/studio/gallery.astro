@@ -10,18 +10,24 @@ import exifReader from 'exif-reader';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Eagerly import all images from StudioImages for Astro's image pipeline
+// Eagerly import all images from StudioImages (including subfolders)
 const imageModules = import.meta.glob<{ default: ImageMetadata }>(
-	'/src/assets/StudioImages/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	'/src/assets/StudioImages/**/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
 	{ eager: true }
 );
 
-// Read EXIF dates at build time
-const imagesWithDates: { src: ImageMetadata; filename: string; date: Date }[] = [];
+// Read EXIF dates and derive collections from folder structure
+const imagesWithDates: { src: ImageMetadata; filename: string; date: Date; collection: string }[] = [];
 
 for (const [modulePath, mod] of Object.entries(imageModules)) {
 	const filename = modulePath.split('/').pop()!;
-	const filePath = path.join(process.cwd(), 'src/assets/StudioImages', filename);
+	// Path relative to StudioImages, e.g. "subfolder/image.jpg" or "image.jpg"
+	const relPath = modulePath.replace('/src/assets/StudioImages/', '');
+	const parts = relPath.split('/');
+	// Direct children → no collection; subfolder images → collection = folder name
+	const collection = parts.length > 1 ? parts[0] : '';
+
+	const filePath = path.join(process.cwd(), 'src/assets/StudioImages', ...parts);
 
 	let date: Date;
 	try {
@@ -37,11 +43,22 @@ for (const [modulePath, mod] of Object.entries(imageModules)) {
 		date = new Date(fs.statSync(filePath).mtime);
 	}
 
-	imagesWithDates.push({ src: mod.default, filename, date });
+	imagesWithDates.push({ src: mod.default, filename, date, collection });
 }
 
 // Sort newest first
 imagesWithDates.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+// Discover collections from folder names
+const collectionCounts = new Map<string, number>();
+for (const img of imagesWithDates) {
+	if (img.collection) {
+		collectionCounts.set(img.collection, (collectionCounts.get(img.collection) || 0) + 1);
+	}
+}
+const collections = [...collectionCounts.entries()]
+	.sort((a, b) => a[0].localeCompare(b[0]))
+	.map(([name, count]) => ({ name, count }));
 
 // Generate rotation values: alternating slight rotations
 const rotations = imagesWithDates.map((_, i) => {
@@ -57,29 +74,228 @@ const rotations = imagesWithDates.map((_, i) => {
 	</head>
 	<body>
 		<Header />
-		<main class="gallery-main">
-			<h1>Gallery</h1>
-			<div class="gallery-grid">
-				{imagesWithDates.map((img, i) => (
-					<div class="gallery-item">
-						<Polaroid
-							src={img.src}
-							alt={img.filename.replace(/\.[^.]+$/, '')}
-							rotate={rotations[i]}
-						/>
-					</div>
-				))}
-			</div>
-		</main>
+		<div class="gallery-layout">
+			{collections.length > 0 && (
+				<aside class="sidebar">
+					<p class="sidebar-title">Collections</p>
+					<button class="sidebar-btn active" data-collection="all">
+						<span class="all-icon">
+							<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
+						</span>
+						<span class="collection-info">
+							<span class="collection-name">All Photos</span>
+							<span class="collection-count">{imagesWithDates.length} photos</span>
+						</span>
+					</button>
+					<div class="sidebar-divider"></div>
+					{collections.map((col) => (
+						<button class="sidebar-btn" data-collection={col.name}>
+							<span class="all-icon">
+								<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+							</span>
+							<span class="collection-info">
+								<span class="collection-name">{col.name}</span>
+								<span class="collection-count">{col.count} {col.count === 1 ? 'photo' : 'photos'}</span>
+							</span>
+						</button>
+					))}
+				</aside>
+			)}
+			<main class="gallery-main">
+				<h1>Gallery</h1>
+				<div class="gallery-grid">
+					{imagesWithDates.map((img, i) => (
+						<div class="gallery-item" data-collection={img.collection}>
+							<Polaroid
+								src={img.src}
+								alt={img.filename.replace(/\.[^.]+$/, '')}
+								rotate={rotations[i]}
+							/>
+						</div>
+					))}
+				</div>
+				<div class="scroll-sentinel"></div>
+				<div class="loading-spinner" style="display:none">
+					<div class="spinner"></div>
+				</div>
+			</main>
+		</div>
 		<Footer />
+		<script>
+			const BATCH = 24;
+
+			function initGallery() {
+				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
+				const allItems = Array.from(document.querySelectorAll<HTMLElement>('.gallery-item'));
+				const sentinel = document.querySelector<HTMLElement>('.scroll-sentinel');
+				const spinner = document.querySelector<HTMLElement>('.loading-spinner');
+
+				let currentCollection = 'all';
+				let shown = 0;
+				let filtered: HTMLElement[] = [];
+
+				function getFiltered(): HTMLElement[] {
+					return allItems.filter((item) => {
+						const col = item.dataset.collection || '';
+						return currentCollection === 'all' || col === currentCollection;
+					});
+				}
+
+				function renderBatch() {
+					const end = Math.min(shown + BATCH, filtered.length);
+					for (let i = shown; i < end; i++) {
+						filtered[i].style.display = '';
+					}
+					shown = end;
+					if (spinner) spinner.style.display = shown < filtered.length ? '' : 'none';
+				}
+
+				function reset() {
+					allItems.forEach((item) => { item.style.display = 'none'; });
+					filtered = getFiltered();
+					shown = 0;
+					renderBatch();
+				}
+
+				// IntersectionObserver for infinite scroll
+				let observer: IntersectionObserver | null = null;
+				if (sentinel) {
+					observer = new IntersectionObserver((entries) => {
+						if (entries[0].isIntersecting && shown < filtered.length) {
+							renderBatch();
+						}
+					}, { rootMargin: '400px' });
+					observer.observe(sentinel);
+				}
+
+				buttons.forEach((btn) => {
+					btn.addEventListener('click', () => {
+						currentCollection = btn.dataset.collection!;
+						buttons.forEach((b) => b.classList.toggle('active', b.dataset.collection === currentCollection));
+						reset();
+						window.scrollTo({ top: 0, behavior: 'smooth' });
+					});
+				});
+
+				const params = new URLSearchParams(window.location.search);
+				const col = params.get('collection');
+				if (col) {
+					currentCollection = col;
+					buttons.forEach((b) => b.classList.toggle('active', b.dataset.collection === col));
+				}
+
+				reset();
+			}
+			initGallery();
+			document.addEventListener('astro:after-swap', initGallery);
+		</script>
 	</body>
 </html>
 
 <style>
+	.gallery-layout {
+		position: relative;
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 2.5rem 2rem;
+		display: flex;
+		justify-content: center;
+	}
+	/* Sidebar */
+	.sidebar {
+		width: 240px;
+		position: fixed;
+		top: 5rem;
+		left: max(1rem, calc((100vw - 1400px) / 2 + 1rem));
+		max-height: calc(100vh - 6rem);
+		overflow-y: auto;
+		background: white;
+		border-radius: 20px;
+		box-shadow: var(--box-shadow);
+		padding: 1.25rem 0.75rem;
+		z-index: 10;
+	}
+	:global(html.dark) .sidebar {
+		background: #2a1428;
+	}
+	.sidebar-title {
+		font-size: 0.85rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: rgb(var(--gray));
+		margin: 0 0 0.75rem;
+		padding: 0 0.5rem;
+	}
+	.sidebar-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.6rem 0.75rem;
+		border: none;
+		border-radius: 10px;
+		background: none;
+		cursor: pointer;
+		text-align: left;
+		font-size: 0.95rem;
+		color: rgb(var(--gray-dark));
+		transition: background 0.2s;
+	}
+	.sidebar-btn:hover {
+		background: rgba(155, 16, 136, 0.08);
+	}
+	.sidebar-btn.active {
+		background: rgba(155, 16, 136, 0.12);
+		font-weight: 700;
+		color: #6b1d5e;
+	}
+	:global(html.dark) .sidebar-btn.active {
+		background: rgba(243, 132, 224, 0.15);
+		color: #f384e0;
+	}
+	:global(html.dark) .sidebar-btn:hover {
+		background: rgba(243, 132, 224, 0.1);
+	}
+	.sidebar-btn .all-icon {
+		width: 36px;
+		height: 36px;
+		border-radius: 8px;
+		background: #9b1088;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		color: white;
+		font-size: 1.1rem;
+	}
+	.sidebar-btn .collection-info {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+	.sidebar-btn .collection-name {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.sidebar-btn .collection-count {
+		font-size: 0.75rem;
+		color: rgb(var(--gray));
+	}
+	.sidebar-divider {
+		height: 1px;
+		background: rgb(var(--gray-light));
+		margin: 0.5rem 0;
+	}
+	/* Main content */
 	.gallery-main {
-		width: 100% !important;
-		max-width: 1200px !important;
-		padding: 2em 2em !important;
+		flex: 0 1 1100px;
+		min-width: 0;
+		width: auto !important;
+		max-width: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
 	}
 	h1 {
 		text-align: center;
@@ -87,7 +303,7 @@ const rotations = imagesWithDates.map((_, i) => {
 	}
 	.gallery-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		grid-template-columns: repeat(3, 1fr);
 		gap: 2rem;
 		padding: 1rem;
 		justify-items: center;
@@ -97,14 +313,74 @@ const rotations = imagesWithDates.map((_, i) => {
 		align-items: center;
 		justify-content: center;
 	}
+	.scroll-sentinel {
+		height: 1px;
+	}
+	.loading-spinner {
+		display: flex;
+		justify-content: center;
+		padding: 2rem 0;
+	}
+	.spinner {
+		width: 32px;
+		height: 32px;
+		border: 3px solid rgba(155, 16, 136, 0.2);
+		border-top-color: #9b1088;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+	:global(html.dark) .spinner {
+		border-color: rgba(243, 132, 224, 0.2);
+		border-top-color: #f384e0;
+	}
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
 	@media (max-width: 720px) {
+		.gallery-layout {
+			flex-direction: column;
+			padding: 1.25rem;
+		}
+		.sidebar {
+			width: 100%;
+			max-width: 100%;
+			box-sizing: border-box;
+			position: static;
+			max-height: none;
+			display: flex;
+			gap: 0.5rem;
+			overflow-x: auto;
+			flex-wrap: wrap;
+			border-radius: 12px;
+			padding: 0.75rem;
+		}
+		.sidebar-title {
+			display: none;
+		}
+		.sidebar-divider {
+			display: none;
+		}
+		.sidebar-btn {
+			white-space: nowrap;
+			flex-shrink: 1;
+			padding: 0.5rem 0.75rem;
+			border-radius: 999px;
+			border: 1px solid rgb(var(--gray-light));
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.sidebar-btn .all-icon {
+			width: 24px;
+			height: 24px;
+		}
+		.sidebar-btn .collection-count {
+			display: none;
+		}
 		.gallery-grid {
 			grid-template-columns: repeat(2, 1fr);
 			gap: 1rem;
 			padding: 0.5rem;
-		}
-		.gallery-main {
-			padding: 1em 0.5em !important;
 		}
 	}
 </style>

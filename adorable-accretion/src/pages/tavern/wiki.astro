@@ -110,33 +110,35 @@ function getAncestors(name: string): string[] {
 				scrollbar-gutter: stable;
 			}
 			.wiki-layout {
+				position: relative;
 				width: 100%;
-				max-width: 1180px;
+				max-width: 1480px;
 				margin: 0 auto;
-				padding: 2.5rem 2rem;
-				display: grid;
-				grid-template-columns: 240px 1fr;
-				gap: 2rem;
+				padding: 2.5rem 2rem 2.5rem calc(240px + 3rem);
+				display: flex;
+				justify-content: center;
 				flex: 1;
 				box-sizing: border-box;
 			}
 			.wiki-layout > :global(main) {
 				width: auto !important;
-				max-width: none !important;
+				max-width: 900px;
 				padding: 0 !important;
 				margin: 0 !important;
 			}
 			.sidebar {
-				position: sticky;
-				top: calc(60px + 1rem);
-				align-self: start;
-				max-height: calc(100vh - 60px - 2rem);
+				width: 240px;
+				position: fixed;
+				top: 6rem;
+				left: max(1rem, calc((100vw - 1260px) / 2 + 1rem));
+				max-height: calc(100vh - 6rem);
 				overflow-y: auto;
 				background: #FDF6EC;
 				border: 2px solid #C4A35A;
 				border-radius: 16px;
 				padding: 1.25rem 0.75rem;
 				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.1);
+				z-index: 10;
 			}
 			:global(html.dark) .sidebar {
 				background: #2a1c0a;
