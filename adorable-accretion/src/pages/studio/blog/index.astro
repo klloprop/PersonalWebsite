@@ -1,7 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
-import D20Icon from '../../../assets/D20_Icon.png';
 import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
 import Header from '../../../components/Header.astro';
@@ -10,9 +9,6 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
-const defaultHeroImage = D20Icon;
-const getHeroImage = (heroImage) =>
-	typeof heroImage === 'string' || !heroImage ? defaultHeroImage : heroImage;
 
 // Load collections from content and count matching posts
 const collectionEntries = (await getCollection('blogCollections')).sort(
@@ -291,7 +287,7 @@ const collections = collectionEntries.map((col) => ({
 					{posts.slice(0, 1).map((post) => (
 						<li class="post-card featured" data-collection={post.data.collection || ''}>
 								<a class="card-link" href={`/studio/blog/${post.slug ?? post.id}/`}>
-									<Image src={getHeroImage(post.data.heroImage)} alt={post.data.title} width={680} height={320} />
+								{post.data.heroImage && <Image src={post.data.heroImage} alt={post.data.title} width={680} height={320} />}
 									<div class="card-content">
 										{post.data.collection && <span class="collection-badge">{post.data.collection}</span>}
 										<h2>{post.data.title}</h2>
@@ -307,7 +303,7 @@ const collections = collectionEntries.map((col) => ({
 					{posts.slice(1).map((post) => (
 						<li class="post-card" data-collection={post.data.collection || ''}>
 								<a class="card-link" href={`/studio/blog/${post.slug ?? post.id}/`}>
-									<Image src={getHeroImage(post.data.heroImage)} alt={post.data.title} width={680} height={320} />
+								{post.data.heroImage && <Image src={post.data.heroImage} alt={post.data.title} width={680} height={320} />}
 									<div class="card-content">
 										{post.data.collection && <span class="collection-badge">{post.data.collection}</span>}
 										<h2>{post.data.title}</h2>
