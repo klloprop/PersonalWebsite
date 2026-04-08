@@ -106,27 +106,30 @@ function getAncestors(name: string): string[] {
 	<head>
 		<BaseHead title={`${SITE_TITLE} - Tavern Wiki`} description="Pen and paper wiki" />
 		<style>
+			:global(html) {
+				scrollbar-gutter: stable;
+			}
 			.wiki-layout {
-				max-width: 1400px;
+				width: 100%;
+				max-width: 1180px;
 				margin: 0 auto;
 				padding: 2.5rem 2rem;
-				display: flex;
-				justify-content: flex-start;
+				display: grid;
+				grid-template-columns: 240px 1fr;
 				gap: 2rem;
 				flex: 1;
+				box-sizing: border-box;
 			}
-			main {
-				width: auto;
-				max-width: none;
-				padding: 0;
-				margin: 0;
+			.wiki-layout > :global(main) {
+				width: auto !important;
+				max-width: none !important;
+				padding: 0 !important;
+				margin: 0 !important;
 			}
 			.sidebar {
-				width: 240px;
-				flex-shrink: 0;
 				position: sticky;
 				top: calc(60px + 1rem);
-				align-self: flex-start;
+				align-self: start;
 				max-height: calc(100vh - 60px - 2rem);
 				overflow-y: auto;
 				background: #FDF6EC;
@@ -282,8 +285,20 @@ function getAncestors(name: string): string[] {
 				margin: 0.5rem 0;
 			}
 			.wiki-content {
-				flex: 1 1 0%;
 				min-width: 0;
+				min-height: 400px;
+			}
+			.empty-state {
+				display: none;
+				text-align: center;
+				padding: 4rem 2rem;
+				color: #8B6914;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.1rem;
+				font-style: italic;
+			}
+			:global(html.dark) .empty-state {
+				color: #C4A35A;
 			}
 			.section-heading {
 				font-family: Georgia, 'Times New Roman', serif;
@@ -291,20 +306,12 @@ function getAncestors(name: string): string[] {
 				color: #3E2703;
 				margin: 0 0 1.25rem 0;
 			}
-			.other-heading {
-				margin-top: 8rem;
-				padding-top: 0.75rem;
-				border-top: 1px solid #C4A35A;
-			}
-			:global(html.dark) .other-heading {
-				border-top-color: #7a5c2e;
-			}
 			:global(html.dark) .section-heading {
 				color: #DEB96E;
 			}
 			ul.entry-grid {
 				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+				grid-template-columns: repeat(2, 1fr);
 				gap: 1.75rem;
 				list-style: none;
 				margin: 0;
@@ -405,7 +412,7 @@ function getAncestors(name: string): string[] {
 			}
 			@media (max-width: 720px) {
 				.wiki-layout {
-					flex-direction: column;
+					grid-template-columns: 1fr;
 					padding: 1.25rem;
 				}
 				.sidebar {
@@ -588,31 +595,10 @@ function getAncestors(name: string): string[] {
 			<main class="wiki-content">
 				<section>
 					<h2 class="section-heading">Most Recent Entry</h2>
-					<ul class="entry-grid featured-section">
-						{entries.slice(0, 1).map((entry) => (
-							<li class="entry-card featured" data-collection={entry.data.collection || ''}>
-								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
-									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
-									<div class="card-content">
-								{entry.data.collection && (
-									<div class="badge-chain">
-										{getAncestors(entry.data.collection).map((name, idx, arr) => (
-											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
-										))}
-									</div>
-								)}
-										<h2>{entry.data.title}</h2>
-										<p class="date">{entry.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-										<p class="description">{entry.data.description}</p>
-									</div>
-								</a>
-							</li>
-						))}
-					</ul>
-					<h2 class="section-heading other-heading">Other Entries</h2>
-					<ul class="entry-grid other-section">
-						{entries.slice(1).map((entry) => (
-							<li class="entry-card" data-collection={entry.data.collection || ''}>
+					<p class="empty-state">No entries in this collection yet.</p>
+					<ul class="entry-grid">
+						{entries.map((entry, i) => (
+							<li class={`entry-card${i === 0 ? ' featured' : ''}`} data-collection={entry.data.collection || ''}>
 								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
 									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
 									<div class="card-content">
@@ -641,10 +627,9 @@ function getAncestors(name: string): string[] {
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
 				const cards = document.querySelectorAll<HTMLElement>('.entry-card');
 				const toggles = document.querySelectorAll<HTMLButtonElement>('.sidebar-toggle');
-				const featuredSection = document.querySelector<HTMLElement>('.featured-section');
-				const otherSection = document.querySelector<HTMLElement>('.other-section');
-				const featuredHeading = document.querySelector<HTMLElement>('.section-heading:not(.other-heading)');
-				const otherHeading = document.querySelector<HTMLElement>('.other-heading');
+				const heading = document.querySelector<HTMLElement>('.section-heading');
+				const emptyState = document.querySelector<HTMLElement>('.empty-state');
+				const grid = document.querySelector<HTMLElement>('.entry-grid');
 
 				// Parse the descendants map from the sidebar data attribute
 				const descendants: Record<string, string[]> = JSON.parse(
@@ -680,33 +665,29 @@ function getAncestors(name: string): string[] {
 						b.classList.toggle('active', b.dataset.collection === selected);
 					});
 
-					// Filter cards - first visible goes to featured section, rest to other
+					// Filter cards — just toggle display + featured class, no DOM movement
 					let visibleCount = 0;
 					cards.forEach((card) => {
 						const cardCol = card.dataset.collection || '';
 						const visible = selected === 'all' || matchNames.has(cardCol);
 						card.style.display = visible ? '' : 'none';
+						card.classList.remove('featured');
 						if (visible) {
 							visibleCount++;
 							if (visibleCount === 1) {
 								card.classList.add('featured');
-								if (featuredSection && !featuredSection.contains(card)) {
-									featuredSection.appendChild(card);
-								}
-							} else {
-								card.classList.remove('featured');
-								if (otherSection && !otherSection.contains(card)) {
-									otherSection.appendChild(card);
-								}
 							}
 						}
 					});
 
-					// Hide "Other Entries" heading if 0 or 1 visible
-					if (otherHeading) otherHeading.style.display = visibleCount > 1 ? '' : 'none';
-					if (otherSection) otherSection.style.display = visibleCount > 1 ? '' : 'none';
-					if (featuredHeading) featuredHeading.style.display = visibleCount > 0 ? '' : 'none';
-					if (featuredSection) featuredSection.style.display = visibleCount > 0 ? '' : 'none';
+					// Update heading text
+					if (heading) {
+						heading.style.display = visibleCount > 0 ? '' : 'none';
+						heading.textContent = selected === 'all' ? 'Most Recent Entry' : selected;
+					}
+					// Show/hide empty state and grid
+					if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+					if (grid) grid.style.display = visibleCount > 0 ? '' : 'none';
 				}
 
 				buttons.forEach((btn) => {

@@ -1,0 +1,110 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import Polaroid from '../../components/Polaroid.astro';
+import { SITE_TITLE } from '../../consts';
+
+import sharp from 'sharp';
+import exifReader from 'exif-reader';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Eagerly import all images from StudioImages for Astro's image pipeline
+const imageModules = import.meta.glob<{ default: ImageMetadata }>(
+	'/src/assets/StudioImages/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	{ eager: true }
+);
+
+// Read EXIF dates at build time
+const imagesWithDates: { src: ImageMetadata; filename: string; date: Date }[] = [];
+
+for (const [modulePath, mod] of Object.entries(imageModules)) {
+	const filename = modulePath.split('/').pop()!;
+	const filePath = path.join(process.cwd(), 'src/assets/StudioImages', filename);
+
+	let date: Date;
+	try {
+		const metadata = await sharp(filePath).metadata();
+		if (metadata.exif) {
+			const exif = exifReader(metadata.exif);
+			const exifDate = exif.Photo?.DateTimeOriginal || exif.Image?.DateTime;
+			date = exifDate instanceof Date ? exifDate : new Date(fs.statSync(filePath).mtime);
+		} else {
+			date = new Date(fs.statSync(filePath).mtime);
+		}
+	} catch {
+		date = new Date(fs.statSync(filePath).mtime);
+	}
+
+	imagesWithDates.push({ src: mod.default, filename, date });
+}
+
+// Sort newest first
+imagesWithDates.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+// Generate rotation values: alternating slight rotations
+const rotations = imagesWithDates.map((_, i) => {
+	const base = ((i % 5) - 2) * 1.5; // -3, -1.5, 0, 1.5, 3
+	return base;
+});
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Gallery`} description="Photo gallery" />
+	</head>
+	<body>
+		<Header />
+		<main class="gallery-main">
+			<h1>Gallery</h1>
+			<div class="gallery-grid">
+				{imagesWithDates.map((img, i) => (
+					<div class="gallery-item">
+						<Polaroid
+							src={img.src}
+							alt={img.filename.replace(/\.[^.]+$/, '')}
+							rotate={rotations[i]}
+						/>
+					</div>
+				))}
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.gallery-main {
+		width: 100% !important;
+		max-width: 1200px !important;
+		padding: 2em 2em !important;
+	}
+	h1 {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+	.gallery-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 2rem;
+		padding: 1rem;
+		justify-items: center;
+	}
+	.gallery-item {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	@media (max-width: 720px) {
+		.gallery-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 1rem;
+			padding: 0.5rem;
+		}
+		.gallery-main {
+			padding: 1em 0.5em !important;
+		}
+	}
+</style>

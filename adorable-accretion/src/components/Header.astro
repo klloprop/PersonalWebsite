@@ -28,26 +28,25 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			</svg>
 		</button>
 		<div class="nav-center" id="nav-center">
-			{pathname !== '/' && (
-				<a class="mobile-home-link" href="/">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-					Home
-				</a>
-			)}
-			{pathname.startsWith('/studio') && (
-				<div class="internal-links">
-					<HeaderLink href="/studio">Studio Home</HeaderLink>
-					<HeaderLink href="/studio/blog">Blog</HeaderLink>
-					<HeaderLink href="/studio/about">About</HeaderLink>
-				</div>
-			)}
-			{pathname.startsWith('/tavern') && (
-				<div class="internal-links">
-					<HeaderLink href="/tavern/scheduling">Scheduling</HeaderLink>
-					<HeaderLink href="/tavern/wiki">Wiki</HeaderLink>
-					<HeaderLink href="/tavern/about">About</HeaderLink>
-				</div>
-			)}
+			<div class="internal-links">
+				{pathname !== '/' && (
+					<a class="mobile-home-link" href="/">Home</a>
+				)}
+				{pathname.startsWith('/studio') && (
+					<>
+						<HeaderLink href="/studio/blog">Blog</HeaderLink>
+						<HeaderLink href="/studio/gallery">Gallery</HeaderLink>
+						<HeaderLink href="/studio/about">About</HeaderLink>
+					</>
+				)}
+				{pathname.startsWith('/tavern') && (
+					<>
+						<HeaderLink href="/tavern/scheduling">Scheduling</HeaderLink>
+						<HeaderLink href="/tavern/wiki">Wiki</HeaderLink>
+						<HeaderLink href="/tavern/about">About</HeaderLink>
+					</>
+				)}
+			</div>
 		</div>
 		<div class="nav-right">
 			<button class="dyslexia-toggle" id="dyslexia-toggle" aria-label="Toggle dyslexia-friendly mode" title="Dyslexia-friendly mode">
@@ -230,7 +229,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		display: inline;
 	}
 	.mobile-home-link {
-		display: none;
+		display: none !important;
 	}
 	@media (max-width: 720px) {
 		nav {
@@ -262,7 +261,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			background: linear-gradient(180deg, #b428a2, #9b1088);
 		}
 		:global(html.dark[data-section="studio"]) .nav-center {
-			background: linear-gradient(180deg, #ffa0f2, #f364e0);
+			background: linear-gradient(180deg, #3d0a38, #5c1054);
 		}
 		:global(html[data-section="tavern"]) .nav-center {
 			background: linear-gradient(180deg, #c99026, #744908);
@@ -278,12 +277,6 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			flex-direction: column;
 			gap: 0;
 		}
-		.nav-center .internal-links :global(a) {
-			display: block;
-			padding: 0.75em 1em;
-			border-bottom: none;
-			border-radius: 8px;
-		}
 		.site-title-text {
 			display: none;
 		}
@@ -295,19 +288,32 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			padding: 0.4em 0.6em;
 		}
 		.mobile-home-link {
-			display: flex;
-			align-items: center;
-			gap: 0.5em;
-			padding: 0.75em 1em;
-			color: #fff;
-			text-decoration: none;
-			border-radius: 8px;
-			font-size: 0.95rem;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-			margin-bottom: 0.25rem;
+			display: block !important;
 		}
-		.mobile-home-link:hover {
-			background: rgba(255, 255, 255, 0.15);
+		.nav-center .internal-links :global(a) {
+			display: block;
+			padding: 0.75em 1em;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+			border-radius: 0;
+		}
+		.nav-center .internal-links :global(a:last-child) {
+			border-bottom: none;
+		}
+		.nav-center :global(a) {
+			border-radius: 0 !important;
+			transform: none !important;
+			box-shadow: none !important;
+			position: static;
+		}
+		.nav-center :global(a:hover) {
+			transform: none !important;
+			box-shadow: none !important;
+		}
+		.nav-center :global(a.active) {
+			transform: none !important;
+			box-shadow: none !important;
+			border-bottom-color: transparent;
+			background: rgba(255, 255, 255, 0.1);
 		}
 	}
 	nav a {

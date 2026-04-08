@@ -257,6 +257,42 @@ html.dark[data-section="tavern"] h3 {
 	color: #DEB96E;
 }
 
+/* Studio section styles */
+html[data-section="studio"] body {
+	background: #fdf2f8;
+}
+html[data-section="studio"] main {
+	color: #4a1942;
+}
+html[data-section="studio"] h1,
+html[data-section="studio"] h2,
+html[data-section="studio"] h3 {
+	color: #6b1d5e;
+}
+html[data-section="studio"] a {
+	color: #9b1088;
+}
+html[data-section="studio"] a:hover {
+	color: #b428a2;
+}
+html.dark[data-section="studio"] body {
+	background: #1a0a18;
+}
+html.dark[data-section="studio"] main {
+	color: #f0d4ec;
+}
+html.dark[data-section="studio"] h1,
+html.dark[data-section="studio"] h2,
+html.dark[data-section="studio"] h3 {
+	color: #f0a0e4;
+}
+html.dark[data-section="studio"] a {
+	color: #f384e0;
+}
+html.dark[data-section="studio"] a:hover {
+	color: #ffa0f2;
+}
+
 /* Header base styles */
 header {
 	background: white;
@@ -277,33 +313,39 @@ html.dark header {
 /* Section-specific header styling */
 html[data-section="studio"] header {
 	background: linear-gradient(180deg, #9b1088, #b428a2);
-	color: #F5E4C4;
-	border-bottom: 3px solid #8B6914;
+	color: #fff;
+	border-bottom: 3px solid #6b1d5e;
 }
 
 html.dark[data-section="studio"] header {
-	background: linear-gradient(180deg, #f364e0, #ffa0f2);
-	color: #F5E4C4;
-	border-bottom: 3px solid #8B6914;
+	background: linear-gradient(180deg, #3d0a38, #5c1054);
+	color: #f0d4ec;
+	border-bottom: 3px solid #7a2070;
 }
 
 /* Section-specific footer styling */
 html[data-section="studio"] footer {
-	background: linear-gradient(180deg, transparent, #1e40af);
+	background: linear-gradient(180deg, transparent, #7a1b6a);
 	color: rgba(255, 255, 255, 0.7);
 }
 html.dark[data-section="studio"] footer {
-	background: linear-gradient(180deg, transparent, #0f2a6e);
-	color: rgba(255, 255, 255, 0.5);
+	background: linear-gradient(180deg, transparent, #2a0826);
+	color: rgba(240, 212, 236, 0.5);
 }
 
 html[data-section="studio"] header nav a:hover {
-	background: rgba(96, 165, 250, 0.3);
+	color: #ffd6f6;
+	background: rgba(255, 160, 242, 0.25);
 }
 html[data-section="studio"] header nav a.active {
-	border-bottom-color: #60a5fa;
-	background: rgba(96, 165, 250, 0.25);
-	box-shadow: 0 2px 4px rgba(96, 165, 250, 0.3);
+	border-bottom-color: #ffa0f2;
+	background: rgba(255, 160, 242, 0.2);
+	color: #ffd6f6;
+	box-shadow: 0 2px 4px rgba(155, 16, 136, 0.3);
+}
+html[data-section="studio"] header .dark-toggle:hover,
+html[data-section="studio"] header .dyslexia-toggle:hover {
+	background: rgba(255, 160, 242, 0.25);
 }
 
 /* Light mode header style*/

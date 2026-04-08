@@ -31,12 +31,6 @@ const collections = collectionEntries.map((col) => ({
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
-			body {
-				background: #eff6ff;
-			}
-			:global(html.dark) body {
-				background: var(--bg);
-			}
 			.blog-layout {
 				max-width: 1400px;
 				margin: 0 auto;
@@ -60,7 +54,7 @@ const collections = collectionEntries.map((col) => ({
 				padding: 1.25rem 0.75rem;
 			}
 			:global(html.dark) .sidebar {
-				background: #22223a;
+				background: #2a1428;
 			}
 			.sidebar-title {
 				font-size: 0.85rem;
@@ -87,19 +81,19 @@ const collections = collectionEntries.map((col) => ({
 				transition: background 0.2s;
 			}
 			.sidebar-btn:hover {
-				background: rgba(59, 130, 246, 0.08);
+				background: rgba(155, 16, 136, 0.08);
 			}
 			.sidebar-btn.active {
-				background: rgba(59, 130, 246, 0.12);
+				background: rgba(155, 16, 136, 0.12);
 				font-weight: 700;
-				color: #1e40af;
+				color: #6b1d5e;
 			}
 			:global(html.dark) .sidebar-btn.active {
-				background: rgba(107, 123, 255, 0.15);
-				color: #8e9aff;
+				background: rgba(243, 132, 224, 0.15);
+				color: #f384e0;
 			}
 			:global(html.dark) .sidebar-btn:hover {
-				background: rgba(107, 123, 255, 0.1);
+				background: rgba(243, 132, 224, 0.1);
 			}
 			.sidebar-btn .collection-img {
 				width: 36px;
@@ -112,7 +106,7 @@ const collections = collectionEntries.map((col) => ({
 				width: 36px;
 				height: 36px;
 				border-radius: 8px;
-				background: #3b82f6;
+				background: #9b1088;
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -211,13 +205,13 @@ const collections = collectionEntries.map((col) => ({
 				font-size: 0.75rem;
 				padding: 0.15em 0.6em;
 				border-radius: 999px;
-				background: rgba(59, 130, 246, 0.1);
-				color: #1e40af;
+				background: rgba(155, 16, 136, 0.1);
+				color: #6b1d5e;
 				margin-bottom: 0.5rem;
 			}
 			:global(html.dark) .collection-badge {
-				background: rgba(107, 123, 255, 0.15);
-				color: #8e9aff;
+				background: rgba(243, 132, 224, 0.15);
+				color: #f384e0;
 			}
 			@media (max-width: 720px) {
 				.blog-layout {
@@ -261,7 +255,7 @@ const collections = collectionEntries.map((col) => ({
 				}
 			}
 			:global(html.dark) li.post-card {
-				background: #22223a;
+				background: #2a1428;
 			}
 		</style>
 	</head>
