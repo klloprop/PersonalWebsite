@@ -83,9 +83,9 @@ const rotations = imagesWithDates.map((_, i) => {
 	<head>
 		<BaseHead title={`${SITE_TITLE} - Gallery`} description="Photo gallery" />
 	</head>
-	<body>
+	<body style="min-height: 100vh; display: flex; flex-direction: column;">
 		<Header />
-		<div class="gallery-layout">
+		<div class="gallery-layout" style="flex: 1;">
 			{collections.length > 0 && (
 				<aside class="sidebar">
 					<p class="sidebar-title">Collections</p>

@@ -132,6 +132,12 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 	.polaroid-modal::backdrop {
 		background: rgba(0, 0, 0, 0.85);
 	}
+	.polaroid-modal:focus {
+		outline: none;
+		-webkit-tap-highlight-color: transparent;
+		-webkit-focus-ring-color: transparent;
+		box-shadow: none;
+	}
 	.modal-inner {
 		position: relative;
 		display: flex;
