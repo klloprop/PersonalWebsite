@@ -223,6 +223,43 @@ const collections = collectionEntries.map((col) => ({
 				background: rgba(243, 132, 224, 0.15);
 				color: #f384e0;
 			}
+			@media (max-width: 1350px) {
+				.blog-layout {
+					flex-direction: column;
+				}
+				.sidebar {
+					width: 100%;
+					max-width: 100%;
+					box-sizing: border-box;
+					position: static;
+					max-height: none;
+					display: flex;
+					gap: 0.5rem;
+					overflow-x: auto;
+					flex-wrap: wrap;
+					border-radius: 12px;
+					padding: 0.75rem;
+					margin-bottom: 1.5rem;
+				}
+				.sidebar-title {
+					display: none;
+				}
+				.sidebar-divider {
+					display: none;
+				}
+				.sidebar-btn {
+					white-space: nowrap;
+					flex-shrink: 1;
+					padding: 0.5rem 0.75rem;
+					border-radius: 999px;
+					border: 1px solid rgb(var(--gray-light));
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+
+
+			}
 			@media (max-width: 720px) {
 				.blog-layout {
 					flex-direction: column;
@@ -285,6 +322,7 @@ const collections = collectionEntries.map((col) => ({
 					margin-top: 3rem;
 				}
 			}
+
 			:global(html.dark) li.post-card {
 				background: #2a1428;
 			}

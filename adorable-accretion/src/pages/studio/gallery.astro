@@ -347,7 +347,7 @@ const rotations = imagesWithDates.map((_, i) => {
 	@keyframes spin {
 		to { transform: rotate(360deg); }
 	}
-	@media (max-width: 720px) {
+	@media (max-width: 1350px) {
 		.gallery-layout {
 			flex-direction: column;
 			padding: 1.25rem;
@@ -392,7 +392,6 @@ const rotations = imagesWithDates.map((_, i) => {
 			display: none;
 		}
 		.gallery-grid {
-			grid-template-columns: repeat(2, 1fr);
 			gap: 1rem;
 			padding: 0.5rem;
 		}
@@ -404,6 +403,27 @@ const rotations = imagesWithDates.map((_, i) => {
 			max-width: 100% !important;
 			width: 100% !important;
 			box-sizing: border-box;
+		}
+	}
+
+		@media (max-width: 1000px) {
+		.gallery-grid {
+			gap: 0.5rem;
+			padding: 0.5rem;
+		}
+		.gallery-item {
+			min-width: 0;
+			overflow: hidden;
+		}
+		.gallery-main {
+			max-width: 100% !important;
+			width: 100% !important;
+			box-sizing: border-box;
+		}
+	}
+	@media (max-width: 720px) {
+		.gallery-grid {
+			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 </style>
