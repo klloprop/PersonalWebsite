@@ -49,11 +49,16 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 			polaroid.dataset.initialized = 'true';
 
 			polaroid.addEventListener('click', () => {
+				document.body.style.overflow = 'hidden';
 				dialog.showModal();
 			});
 
 			dialog.addEventListener('click', () => {
 				dialog.close();
+			});
+
+			dialog.addEventListener('close', () => {
+				document.body.style.overflow = '';
 			});
 		});
 	}
