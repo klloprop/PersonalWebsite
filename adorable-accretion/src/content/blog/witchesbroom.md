@@ -4,9 +4,10 @@ description: "A short story thats just cute and romantic."
 pubDate: 2026-04-08
 collection: "Short Stories"
 ---
-Tags: romantic, character exploration, unspoken feelings 
-Word count: 1,5K words (6 minute read)
+**Tags**: romantic, character exploration, unspoken feelings 
 
+**Read Time:** 6 min (~1500 words)
+___
 I check the clock on the tiled wall, the exam finished 30 minutes ago, she should be here soon. 
 
 Ana has been so nervous for her witch's exam, which in turn means I could barely sleep or do much of anything today. In the end all I did, and still do, is sit in our little kitchen dressed in comfortable pajamas, waiting for her. 

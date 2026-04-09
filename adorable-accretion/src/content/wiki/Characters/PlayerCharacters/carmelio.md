@@ -2,5 +2,6 @@
 title: "Carmelio"
 description: ""
 pubDate: 2026-04-07
-collection: "Characters"
+collection: "Player Characters"
+tags: ["Carm"]
 ---

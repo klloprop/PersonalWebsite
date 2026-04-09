@@ -6,8 +6,9 @@ heroImage: "../../assets/shattered_glass.webp"
 collection: "Short Stories"
 ---
 **Tags:** Eldritch, Exploration, Despair, empty world, Horror, slow burn
-Read Time: 8 min (~1900 words)
 
+**Read Time:** 8 min (~1900 words)
+___
 I don't remember how I got here. The streets are empty, truly and absolutely empty. 
 I find myself standing on the sidewalk between skyscrapers, in fact, all i can see are skyscrapers. Grey monoliths as far as the eye can see.
 I don't recognize anything here. The buildings look more like the idea of buildings, their facades are featureless, only windows break up the concrete monotony. There are no street signs or any signs for that matter. All of it looks the same. 
