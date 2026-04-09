@@ -351,6 +351,8 @@ const rotations = imagesWithDates.map((_, i) => {
 		.gallery-layout {
 			flex-direction: column;
 			padding: 1.25rem;
+			box-sizing: border-box;
+			max-width: 100%;
 		}
 		.sidebar {
 			width: 100%;
@@ -393,6 +395,15 @@ const rotations = imagesWithDates.map((_, i) => {
 			grid-template-columns: repeat(2, 1fr);
 			gap: 1rem;
 			padding: 0.5rem;
+		}
+		.gallery-item {
+			min-width: 0;
+			overflow: hidden;
+		}
+		.gallery-main {
+			max-width: 100% !important;
+			width: 100% !important;
+			box-sizing: border-box;
 		}
 	}
 </style>

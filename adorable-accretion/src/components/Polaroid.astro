@@ -65,6 +65,7 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 <style>
 	.polaroid-wrapper {
 		display: inline-block;
+		max-width: 100%;
 	}
 	.polaroid {
 		background: #fff;
@@ -74,6 +75,8 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 		display: inline-block;
 		transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 		cursor: pointer;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 	:global(html.dark) .polaroid {
 		background: #2a2a3e;
@@ -90,7 +93,7 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 		max-width: 100%;
 		overflow: hidden;
 	}
-	@media (max-width: 720) {
+	@media (max-width: 720px) {
 		.polaroid {
 			padding: 10px 10px 36px 10px;
 		}
@@ -154,8 +157,8 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 			padding: 3% 3% 15% 3%;
 		}
 		.modal-inner img {
-			max-width: 110vw;
-			max-height: 105vh;
+			max-width: 90vw;
+			max-height: 80vh;
 		}
 	}
 
