@@ -128,8 +128,6 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 		max-width: none;
 		max-height: none;
 		overflow: visible;	
-		box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-
 	}
 	.polaroid-modal::backdrop {
 		background: rgba(0, 0, 0, 0.85);
@@ -142,7 +140,6 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 	}
 	:global(html.dark) .polaroid-modal {
 		background: #2a2a3e;
-		box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
 	}
 	.modal-inner img {
 		max-width: 80vw;
