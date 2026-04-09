@@ -1,3 +1,12 @@
+/**
+ * api/availability.ts — Server-side API for session availability voting.
+ *
+ * Non-prerendered (SSR). Uses Upstash Redis to store per-event votes.
+ * Identifies visitors by a cookie-based ID.
+ *
+ * GET  /api/availability?eventId=...  — Returns current vote tallies.
+ * POST /api/availability               — Submits or updates a vote.
+ */
 export const prerender = false;
 
 import type { APIRoute } from 'astro';

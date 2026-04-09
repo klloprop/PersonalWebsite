@@ -310,6 +310,28 @@ html.dark header {
 	background: #22223a;
 }
 
+/* Landing page (no section) button colors */
+html:not([data-section]) header .dark-toggle,
+html:not([data-section]) header .dyslexia-toggle,
+html:not([data-section]) header .nav-toggle {
+	color: #333;
+	border-color: rgba(0, 0, 0, 0.2);
+}
+html:not([data-section]) header .dark-toggle:hover,
+html:not([data-section]) header .dyslexia-toggle:hover {
+	background: rgba(0, 0, 0, 0.08);
+}
+html.dark:not([data-section]) header .dark-toggle,
+html.dark:not([data-section]) header .dyslexia-toggle,
+html.dark:not([data-section]) header .nav-toggle {
+	color: #fff;
+	border-color: rgba(255, 255, 255, 0.3);
+}
+html.dark:not([data-section]) header .dark-toggle:hover,
+html.dark:not([data-section]) header .dyslexia-toggle:hover {
+	background: rgba(255, 255, 255, 0.15);
+}
+
 /* Section-specific header styling */
 html[data-section="studio"] header {
 	background: linear-gradient(180deg, #9b1088, #b428a2);

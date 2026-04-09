@@ -1,4 +1,14 @@
 ---
+/**
+ * studio/blog/index.astro — Blog listing page.
+ *
+ * Features:
+ *  - Fixed sidebar with content-driven collection filters.
+ *  - Featured post (latest) shown large, rest in card grid.
+ *  - Collection badges on each card.
+ *  - Client-side filtering via ?collection= query param.
+ *  - Responsive: sidebar becomes horizontal pills on mobile.
+ */
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import BaseHead from '../../../components/BaseHead.astro';
@@ -230,6 +240,7 @@ const collections = collectionEntries.map((col) => ({
 					flex-wrap: wrap;
 					border-radius: 12px;
 					padding: 0.75rem;
+					margin-bottom: 1.5rem;
 				}
 				.sidebar-title {
 					display: none;

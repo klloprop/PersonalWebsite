@@ -1,4 +1,14 @@
 ---
+/**
+ * tavern/scheduling.astro — Session scheduling page.
+ *
+ * Features:
+ *  - Reads events from the events content collection.
+ *  - Converts Berlin timezone dates to visitor's local timezone.
+ *  - Groups events into Next, Upcoming, and Past sections.
+ *  - Countdown badges for upcoming events.
+ *  - Availability polling via Upstash Redis API (/api/availability).
+ */
 import { getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';

@@ -1,3 +1,16 @@
+/**
+ * content.config.ts — Content collection definitions.
+ *
+ * Collections:
+ *  - blog            — Studio blog posts (Markdown/MDX) with optional gallery images.
+ *  - blogCollections  — Blog category metadata with display order and cover images.
+ *  - wiki            — Tavern wiki entries with optional tags and hero image positioning.
+ *  - wikiCollections  — Wiki categories with parent-child hierarchy for tree navigation.
+ *  - events          — Tavern session events with Berlin timezone dates.
+ *
+ * All collections use glob loaders pointed at src/content/ subdirectories.
+ * Schemas are validated with Zod at build time.
+ */
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';

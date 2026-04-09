@@ -1,4 +1,16 @@
 ---
+/**
+ * Header.astro — Fixed site header with section-aware navigation.
+ *
+ * Features:
+ *  - Section detection: renders Studio or Tavern nav links based on pathname.
+ *  - Dark mode toggle: persists to localStorage, toggles html.dark class.
+ *  - Dyslexia-friendly toggle: switches to OpenDyslexic font via html.dyslexia.
+ *  - Mobile hamburger menu: collapsible nav with slide-down panel.
+ *  - Home icon link: shown on all pages except the landing page.
+ *
+ * Section-specific gradient backgrounds are applied via global.css.
+ */
 import HeaderLink from './HeaderLink.astro';
 
 const pathname = Astro.url.pathname;

@@ -1,4 +1,15 @@
 ---
+/**
+ * studio/gallery.astro — Photo gallery with infinite scroll.
+ *
+ * Features:
+ *  - Reads images from src/assets/StudioImages/ subfolders.
+ *  - Extracts EXIF DateTimeOriginal via Sharp for chronological sorting.
+ *  - Folder-based collection sidebar for filtering.
+ *  - IntersectionObserver-driven infinite scroll (batch size: 24).
+ *  - Renders each image as a Polaroid card with random rotation.
+ *  - Responsive: 3-column desktop, 2-column mobile grid.
+ */
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
@@ -353,6 +364,7 @@ const rotations = imagesWithDates.map((_, i) => {
 			flex-wrap: wrap;
 			border-radius: 12px;
 			padding: 0.75rem;
+			margin-bottom: 1rem;
 		}
 		.sidebar-title {
 			display: none;

@@ -1,4 +1,14 @@
 ---
+/**
+ * tavern/wiki.astro — Wiki entry listing page.
+ *
+ * Features:
+ *  - Hierarchical collection sidebar with tree-structured expand/collapse.
+ *  - Card grid with featured first entry.
+ *  - Collection breadcrumb chains showing ancestor paths.
+ *  - Client-side filtering via ?collection= query param.
+ *  - Responsive: sidebar becomes scrollable pills on mobile.
+ */
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import D20Icon from '../../assets/D20_Icon.png';
@@ -414,7 +424,7 @@ function getAncestors(name: string): string[] {
 			}
 			@media (max-width: 720px) {
 				.wiki-layout {
-					grid-template-columns: 1fr;
+					flex-direction: column;
 					padding: 1.25rem;
 				}
 				.sidebar {
@@ -422,13 +432,15 @@ function getAncestors(name: string): string[] {
 					max-width: 100%;
 					box-sizing: border-box;
 					position: static;
-					max-height: none;
+					max-height: 40vh;
+					overflow-y: auto;
 					display: flex;
 					gap: 0.5rem;
 					overflow-x: auto;
 					flex-wrap: wrap;
 					border-radius: 12px;
 					padding: 0.75rem;
+					margin-bottom: 1.5rem;
 				}
 				.sidebar-title {
 					display: none;

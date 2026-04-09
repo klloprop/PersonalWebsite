@@ -1,4 +1,9 @@
 ---
+/**
+ * studio/blog/[slug].astro — Individual blog post page.
+ * Uses getStaticPaths to generate one page per blog entry.
+ * Renders content inside the BlogPost layout.
+ */
 import BlogPost from '../../../layouts/BlogPost.astro';
 import { getCollection, getEntry, render } from 'astro:content';
 

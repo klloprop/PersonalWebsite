@@ -1,4 +1,16 @@
 ---
+/**
+ * Polaroid.astro — Reusable polaroid-style image card with click-to-expand modal.
+ *
+ * Renders a thumbnail inside a rotated polaroid frame. Clicking opens a <dialog>
+ * overlay showing the full-resolution image. Closing is handled by clicking
+ * anywhere or pressing Escape.
+ *
+ * @prop {ImageMetadata} src    — Astro image import to display.
+ * @prop {string}        alt    — Alt text for accessibility.
+ * @prop {string}        caption — Optional caption shown below the image.
+ * @prop {number}        rotate — CSS rotation in degrees (default 0).
+ */
 import { Image } from 'astro:assets';
 
 interface Props {
@@ -21,7 +33,6 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 
 	<dialog class="polaroid-modal">
 		<div class="modal-inner">
-			<button class="modal-close" aria-label="Close">&times;</button>
 			<Image src={src} alt={alt} width={1600} height={1600} />
 			{caption && <p class="modal-caption">{caption}</p>}
 		</div>
@@ -41,11 +52,8 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 				dialog.showModal();
 			});
 
-			dialog.addEventListener('click', (e) => {
-				const target = e.target as HTMLElement;
-				if (target === dialog || target.classList.contains('modal-close')) {
-					dialog.close();
-				}
+			dialog.addEventListener('click', () => {
+				dialog.close();
 			});
 		});
 	}
@@ -82,7 +90,7 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 		max-width: 100%;
 		overflow: hidden;
 	}
-	@media (max-width: 720px) {
+	@media (max-width: 720) {
 		.polaroid {
 			padding: 10px 10px 36px 10px;
 		}
@@ -111,24 +119,25 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 	.polaroid-modal {
 		border: none;
 		background: transparent;
-		padding: 0;
-		max-width: 95vw;
-		max-height: 95vh;
-		overflow: visible;
+		padding: 5% 5% 12% 5%;
+		background: #fff;
+		margin: auto;
+		max-width: none;
+		max-height: none;
+		overflow: visible;	
+		box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+
 	}
 	.polaroid-modal::backdrop {
 		background: rgba(0, 0, 0, 0.85);
 	}
 	.modal-inner {
 		position: relative;
-		background: #fff;
-		padding: 7% 7% 30% 7%;
-		box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-		display: inline-flex;
+		display: flex;
 		flex-direction: column;
 		align-items: center;
 	}
-	:global(html.dark) .modal-inner {
+	:global(html.dark) .polaroid-modal {
 		background: #2a2a3e;
 		box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
 	}
@@ -140,27 +149,16 @@ const { src, alt = '', caption, rotate = 0 } = Astro.props;
 		object-fit: contain;
 		display: block;
 	}
-	.modal-close {
-		position: absolute;
-		top: -0.75rem;
-		right: -0.75rem;
-		background: rgba(0, 0, 0, 0.6);
-		border: none;
-		color: #fff;
-		font-size: 2rem;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 50%;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 1;
-		z-index: 1;
+	@media (max-width: 720px) {
+		.modal-inner {
+			padding: 3% 3% 15% 3%;
+		}
+		.modal-inner img {
+			max-width: 110vw;
+			max-height: 105vh;
+		}
 	}
-	.modal-close:hover {
-		background: rgba(0, 0, 0, 0.8);
-	}
+
 	.modal-caption {
 		text-align: center;
 		color: #555;

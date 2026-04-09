@@ -1,3 +1,102 @@
+# Lucy's Blog — v1.0.0
+
+A personal website with two themed sections — **Studio** (diary-style blog & photo gallery) and **Tavern** (D&D wiki & session scheduling). Built with [Astro](https://astro.build) and deployed on [Vercel](https://vercel.com).
+
+## Features
+
+- **Two themed sections** with distinct colour palettes (Studio = pink/purple, Tavern = gold/brown)
+- **Blog** with collection-based filtering, featured post layout, and MDX support
+- **Photo gallery** with EXIF-based sorting, folder-based collections, infinite scroll, and Polaroid-style cards
+- **Wiki** with hierarchical collections, `[[wiki-link]]` syntax, hover previews, and draggable pop-out panels
+- **Session scheduling** with Berlin→local timezone conversion, countdown timers, and availability polling (Upstash Redis)
+- **Dark mode** and **dyslexia-friendly font** toggles, persisted in localStorage
+- **Responsive** layouts with fixed sidebars on desktop, collapsible pills on mobile
+- RSS feed, sitemap, Open Graph meta, crawler protection (noindex + robots.txt)
+
+## Project Structure
+
+```
+src/
+├── assets/              # Images (StudioImages/ subfolders for gallery)
+├── components/
+│   ├── BaseHead.astro   # Shared <head>: meta, fonts, dark mode, section detection
+│   ├── Header.astro     # Fixed navbar with section-aware nav, dark/dyslexia toggles
+│   ├── Footer.astro     # Copyright footer with section-specific gradients
+│   ├── HeaderLink.astro # Nav link with active-state highlighting
+│   ├── FormattedDate.astro  # <time> element with human-readable date
+│   ├── Polaroid.astro   # Image card with click-to-expand <dialog> modal
+│   └── WikiLinks.astro  # Hover preview tooltips and pop-out panels for wiki links
+├── content/
+│   ├── blog/            # Blog posts (Markdown/MDX)
+│   ├── collections/     # Blog collection metadata
+│   ├── wiki/            # Wiki entries (Markdown/MDX)
+│   ├── wiki-collections/# Wiki collection metadata (supports parent hierarchy)
+│   └── events/          # Session events (date/time in Berlin timezone)
+├── layouts/
+│   └── BlogPost.astro   # Blog post layout with hero image, gallery, breadcrumbs
+├── pages/
+│   ├── index.astro      # Landing page with Studio/Tavern choice
+│   ├── rss.xml.js       # RSS 2.0 feed endpoint
+│   ├── api/
+│   │   └── availability.ts  # SSR endpoint for session availability voting (Redis)
+│   ├── studio/
+│   │   ├── blog/
+│   │   │   ├── index.astro  # Blog listing with collection sidebar
+│   │   │   └── [slug].astro # Individual blog post
+│   │   ├── gallery.astro    # Photo gallery with infinite scroll
+│   │   └── about.astro      # Studio about page
+│   └── tavern/
+│       ├── wiki.astro       # Wiki listing with tree-structured sidebar
+│       ├── wiki/[slug].astro# Individual wiki entry
+│       ├── scheduling.astro # Session scheduling with availability polling
+│       └── about.astro      # Tavern about page
+├── plugins/
+│   └── remark-wiki-links.mjs # Remark plugin: [[slug]] → wiki links + auto-linking
+├── styles/
+│   └── global.css        # CSS variables, fonts, section themes, dark mode
+├── consts.ts             # Site-wide constants (title, description)
+└── content.config.ts     # Content collection schemas (Zod validation)
+```
+
+## Content Collections
+
+| Collection         | Source                     | Purpose                              |
+| :----------------- | :------------------------- | :----------------------------------- |
+| `blog`             | `src/content/blog/`        | Studio blog posts                    |
+| `blogCollections`  | `src/content/collections/` | Blog category metadata               |
+| `wiki`             | `src/content/wiki/`        | Tavern wiki entries                  |
+| `wikiCollections`  | `src/content/wiki-collections/` | Wiki categories (tree hierarchy) |
+| `events`           | `src/content/events/`      | Session scheduling events            |
+
+## Commands
+
+| Command             | Action                                       |
+| :------------------ | :------------------------------------------- |
+| `npm install`       | Install dependencies                         |
+| `npm run dev`       | Start dev server at `localhost:4321`          |
+| `npm run build`     | Build production site to `./dist/`            |
+| `npm run preview`   | Preview build locally before deploying        |
+
+## Environment Variables
+
+For the scheduling availability feature (SSR):
+
+| Variable                    | Purpose                        |
+| :-------------------------- | :----------------------------- |
+| `UPSTASH_REDIS_REST_URL`    | Upstash Redis REST endpoint    |
+| `UPSTASH_REDIS_REST_TOKEN`  | Upstash Redis auth token       |
+
+## Tech Stack
+
+- [Astro](https://astro.build) v6 — Static site generator
+- [Vercel](https://vercel.com) — Hosting & SSR adapter
+- [Sharp](https://sharp.pixelplumbing.com/) + exif-reader — EXIF metadata extraction
+- [Upstash Redis](https://upstash.com/) — Serverless key-value store for availability votes
+- [MDX](https://mdxjs.com/) — Markdown with components
+
+## Credit
+
+Originally scaffolded from the Astro [Bear Blog](https://github.com/HermanMartinus/bearblog/) template.
 # Personal Blog Project
 
 This is a personal blog project to just kinda fool around.
