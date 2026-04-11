@@ -802,6 +802,10 @@ function fileIcon(ext: string): string {
 					});
 				});
 
+				// Start with all collections expanded
+				document.querySelectorAll('.sidebar-children').forEach(c => c.classList.add('open'));
+				document.querySelectorAll('.sidebar-toggle').forEach(t => t.classList.add('expanded'));
+
 				filterItems();
 			}
 

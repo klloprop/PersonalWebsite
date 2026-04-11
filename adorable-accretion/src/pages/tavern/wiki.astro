@@ -666,6 +666,10 @@ function getAncestors(name: string): string[] {
 					});
 				});
 
+				// Start with all collections expanded
+				document.querySelectorAll('.sidebar-children').forEach(c => c.classList.add('open'));
+				document.querySelectorAll('.sidebar-toggle').forEach(t => t.classList.add('expanded'));
+
 				function filterTo(selected: string) {
 					// Determine which collection names match
 					let matchNames: Set<string>;
