@@ -32,10 +32,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return context.redirect('/tavern/login');
 	}
 
-	// ---- Protected: admin only ----
+	// ---- Protected: admin only (except the one-time setup route) ----
 	const needsAdmin =
-		pathname.startsWith('/tavern/admin') ||
-		pathname.startsWith('/api/admin');
+		(pathname.startsWith('/tavern/admin') ||
+		pathname.startsWith('/api/admin')) &&
+		pathname !== '/api/admin/setup';
 
 	if (needsAdmin) {
 		if (!context.locals.user || context.locals.user.role !== 'admin') {
