@@ -538,14 +538,14 @@ function fileIcon(ext: string): string {
 				overflow: hidden;
 				position: relative;
 			}
-			.preview-body iframe {
+			.preview-body :global(iframe) {
 				position: absolute;
 				inset: 0;
 				width: 100%;
 				height: 100%;
 				border: none;
 			}
-			.preview-body img {
+			.preview-body :global(img) {
 				position: absolute;
 				inset: 0;
 				width: 100%;
