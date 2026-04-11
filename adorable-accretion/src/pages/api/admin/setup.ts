@@ -23,10 +23,7 @@ export const GET: APIRoute = async ({ url }) => {
 
 	const providedSecret = (url.searchParams.get('secret') ?? '').trim();
 	if (!providedSecret || providedSecret !== secret) {
-		return new Response(
-			`Forbidden. Secret length expected: ${secret.length}, got: ${providedSecret.length}`,
-			{ status: 403 },
-		);
+		return new Response('Forbidden', { status: 403 });
 	}
 
 	const username = url.searchParams.get('username');

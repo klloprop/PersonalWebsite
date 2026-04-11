@@ -57,6 +57,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 						<HeaderLink href="/tavern/wiki">Wiki</HeaderLink>
 						<HeaderLink href="/tavern/library">Library</HeaderLink>
 						<HeaderLink href="/tavern/about">About</HeaderLink>
+						<a href="/tavern/admin" class="admin-link" id="admin-link" hidden>Admin</a>
 					</>
 				)}
 			</div>
@@ -133,10 +134,22 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		});
 	}
 
+	function initAdminLink() {
+		const link = document.getElementById('admin-link');
+		if (!link) return;
+		fetch('/api/auth/me')
+			.then(r => r.ok ? r.json() : null)
+			.then(data => {
+				if (data?.role === 'admin') link.hidden = false;
+			})
+			.catch(() => {});
+	}
+
 	initDarkMode();
 	initDyslexiaMode();
 	initNavToggle();
-	document.addEventListener('astro:after-swap', () => { initDarkMode(); initDyslexiaMode(); initNavToggle(); });
+	initAdminLink();
+	document.addEventListener('astro:after-swap', () => { initDarkMode(); initDyslexiaMode(); initNavToggle(); initAdminLink(); });
 </script>
 <style>
 	header {
@@ -362,6 +375,16 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 	.social-links,
 	.social-links a {
 		display: flex;
+	}
+	.admin-link {
+		background: rgba(255, 215, 0, 0.2);
+		border: 1px solid rgba(255, 215, 0, 0.4);
+		border-radius: 4px;
+		font-size: 0.85em;
+		padding: 0.5em 0.8em;
+	}
+	.admin-link:hover {
+		background: rgba(255, 215, 0, 0.35);
 	}
 	@media (max-width: 720px) {
 		.social-links {

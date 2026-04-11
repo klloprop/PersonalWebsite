@@ -19,8 +19,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	// ---- Protected: authenticated users only ----
 	const needsAuth =
-		pathname.startsWith('/tavern/library') ||
-		pathname.startsWith('/api/library');
+		pathname.startsWith('/tavern/library');
 
 	if (needsAuth && !context.locals.user) {
 		if (pathname.startsWith('/api/')) {

@@ -26,14 +26,8 @@ const user = Astro.locals.user!;
 				</div>
 			</div>
 
-			<!-- Tabs -->
-			<div class="tabs">
-				<button class="tab active" data-tab="users">User Management</button>
-				<button class="tab" data-tab="library">Library Resources</button>
-			</div>
-
 			<!-- ============ USER MANAGEMENT ============ -->
-			<section id="tab-users" class="tab-content active">
+			<section>
 				<h2>Create User</h2>
 				<form id="create-user-form" class="inline-form">
 					<input type="text" id="new-username" placeholder="Username" required
@@ -48,32 +42,6 @@ const user = Astro.locals.user!;
 
 				<h2>Existing Users</h2>
 				<div id="users-list" class="card-list">
-					<p class="loading">Loading…</p>
-				</div>
-			</section>
-
-			<!-- ============ LIBRARY RESOURCES ============ -->
-			<section id="tab-library" class="tab-content">
-				<h2>Add Resource</h2>
-				<form id="add-resource-form" class="stacked-form">
-					<label for="res-title">Title *</label>
-					<input type="text" id="res-title" required />
-
-					<label for="res-url">URL *</label>
-					<input type="url" id="res-url" required placeholder="https://..." />
-
-					<label for="res-description">Description</label>
-					<input type="text" id="res-description" />
-
-					<label for="res-category">Category</label>
-					<input type="text" id="res-category" placeholder="General" />
-
-					<button type="submit">Add Resource</button>
-				</form>
-				<div id="resource-result" class="result-box" hidden></div>
-
-				<h2>Existing Resources</h2>
-				<div id="resources-list" class="card-list">
 					<p class="loading">Loading…</p>
 				</div>
 			</section>
@@ -111,37 +79,6 @@ const user = Astro.locals.user!;
 		background: rgba(201, 144, 38, 0.15);
 	}
 
-	/* Tabs */
-	.tabs {
-		display: flex;
-		gap: 0;
-		border-bottom: 2px solid #c99026;
-		margin-bottom: 1.5rem;
-	}
-	.tab {
-		padding: 0.6rem 1.2rem;
-		border: none;
-		background: transparent;
-		color: #744908;
-		cursor: pointer;
-		font-size: 1rem;
-		font-weight: bold;
-		border-bottom: 3px solid transparent;
-		margin-bottom: -2px;
-	}
-	.tab:hover {
-		background: rgba(201, 144, 38, 0.1);
-	}
-	.tab.active {
-		border-bottom-color: #744908;
-	}
-	.tab-content {
-		display: none;
-	}
-	.tab-content.active {
-		display: block;
-	}
-
 	/* Forms */
 	.inline-form {
 		display: flex;
@@ -167,37 +104,6 @@ const user = Astro.locals.user!;
 		font-weight: bold;
 	}
 	.inline-form button:hover {
-		background: #c99026;
-	}
-	.stacked-form {
-		max-width: 500px;
-		margin-bottom: 1rem;
-	}
-	.stacked-form label {
-		display: block;
-		margin-bottom: 0.2rem;
-		font-weight: bold;
-		margin-top: 0.5rem;
-	}
-	.stacked-form input {
-		width: 100%;
-		padding: 0.5rem;
-		border: 1px solid #c99026;
-		border-radius: 4px;
-		box-sizing: border-box;
-		background: rgba(255, 255, 255, 0.8);
-	}
-	.stacked-form button {
-		margin-top: 1rem;
-		padding: 0.6rem 1.2rem;
-		background: #744908;
-		color: #F5E4C4;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		font-weight: bold;
-	}
-	.stacked-form button:hover {
 		background: #c99026;
 	}
 
@@ -276,25 +182,16 @@ const user = Astro.locals.user!;
 		color: #DEB96E;
 		border-color: #6B4710;
 	}
-	:global(html.dark) .tab {
-		color: #DEB96E;
-	}
-	:global(html.dark) .tab.active {
-		border-bottom-color: #DEB96E;
-	}
 	:global(html.dark) .inline-form input,
-	:global(html.dark) .inline-form select,
-	:global(html.dark) .stacked-form input {
+	:global(html.dark) .inline-form select {
 		background: rgba(30, 20, 10, 0.6);
 		color: #F5E4C4;
 		border-color: #6B4710;
 	}
-	:global(html.dark) .inline-form button,
-	:global(html.dark) .stacked-form button {
+	:global(html.dark) .inline-form button {
 		background: #6B4710;
 	}
-	:global(html.dark) .inline-form button:hover,
-	:global(html.dark) .stacked-form button:hover {
+	:global(html.dark) .inline-form button:hover {
 		background: #8B6914;
 	}
 	:global(html.dark) .card {
@@ -321,16 +218,6 @@ const user = Astro.locals.user!;
 </style>
 
 <script>
-	// ----------- Tab switching -----------
-	document.querySelectorAll<HTMLButtonElement>('.tab').forEach((tab) => {
-		tab.addEventListener('click', () => {
-			document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-			document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
-			tab.classList.add('active');
-			document.getElementById(`tab-${tab.dataset.tab}`)?.classList.add('active');
-		});
-	});
-
 	// ----------- Helpers -----------
 	function showResult(id: string, message: string, isError = false) {
 		const el = document.getElementById(id) as HTMLDivElement;
@@ -447,81 +334,6 @@ const user = Astro.locals.user!;
 		}
 	});
 
-	// ----------- Load resources -----------
-	async function loadResources() {
-		const container = document.getElementById('resources-list')!;
-		try {
-			const res = await fetch('/api/library/resources');
-			const data = await res.json();
-			if (!data.resources?.length) {
-				container.innerHTML = '<p class="loading">No resources yet.</p>';
-				return;
-			}
-			container.innerHTML = data.resources
-				.map(
-					(r: { id: string; title: string; url: string; category: string; description: string }) => `
-				<div class="card">
-					<div class="card-info">
-						<strong>${escapeHtml(r.title)}</strong>
-						<small>${escapeHtml(r.category)}${r.description ? ' — ' + escapeHtml(r.description) : ''}</small>
-					</div>
-					<div class="card-actions">
-						<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" class="btn-reset" style="text-decoration:none">Open</a>
-						<button class="btn-delete" data-resource-id="${escapeHtml(r.id)}" data-action="delete-resource">Delete</button>
-					</div>
-				</div>`,
-				)
-				.join('');
-			attachResourceActions();
-		} catch {
-			container.innerHTML = '<p class="loading">Failed to load resources.</p>';
-		}
-	}
-
-	function attachResourceActions() {
-		document.querySelectorAll<HTMLButtonElement>('[data-action="delete-resource"]').forEach((btn) => {
-			btn.addEventListener('click', async () => {
-				if (!confirm('Delete this resource?')) return;
-				btn.disabled = true;
-				try {
-					const res = await fetch('/api/library/resources', {
-						method: 'DELETE',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ id: btn.dataset.resourceId }),
-					});
-					if (res.ok) loadResources();
-				} catch { /* ignore */ }
-			});
-		});
-	}
-
-	// ----------- Add resource -----------
-	(document.getElementById('add-resource-form') as HTMLFormElement).addEventListener('submit', async (e) => {
-		e.preventDefault();
-		const title = (document.getElementById('res-title') as HTMLInputElement).value.trim();
-		const url = (document.getElementById('res-url') as HTMLInputElement).value.trim();
-		const description = (document.getElementById('res-description') as HTMLInputElement).value.trim();
-		const category = (document.getElementById('res-category') as HTMLInputElement).value.trim() || 'General';
-
-		try {
-			const res = await fetch('/api/library/resources', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ title, url, description, category }),
-			});
-			const data = await res.json();
-			if (res.ok) {
-				showResult('resource-result', `Resource "${title}" added`);
-				(document.getElementById('add-resource-form') as HTMLFormElement).reset();
-				loadResources();
-			} else {
-				showResult('resource-result', data.error || 'Failed', true);
-			}
-		} catch {
-			showResult('resource-result', 'Request failed', true);
-		}
-	});
-
 	// ----------- Logout -----------
 	document.getElementById('logout-btn')?.addEventListener('click', async () => {
 		await fetch('/api/auth/logout', { method: 'POST' });
@@ -530,5 +342,4 @@ const user = Astro.locals.user!;
 
 	// ----------- Init -----------
 	loadUsers();
-	loadResources();
 </script>
