@@ -130,6 +130,9 @@ function fileIcon(ext: string): string {
 			:global(html) {
 				scrollbar-gutter: stable;
 			}
+			:global(body) {
+				overflow-x: hidden;
+			}
 			.library-layout {
 				position: relative;
 				width: 100%;
@@ -532,19 +535,21 @@ function fileIcon(ext: string): string {
 			}
 			.preview-body {
 				flex: 1;
-				overflow: auto;
-				display: flex;
-				align-items: center;
-				justify-content: center;
+				overflow: hidden;
+				position: relative;
 			}
 			.preview-body iframe {
+				position: absolute;
+				inset: 0;
 				width: 100%;
 				height: 100%;
 				border: none;
 			}
 			.preview-body img {
-				max-width: 100%;
-				max-height: 100%;
+				position: absolute;
+				inset: 0;
+				width: 100%;
+				height: 100%;
 				object-fit: contain;
 			}
 			/* Responsive */
