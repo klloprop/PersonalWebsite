@@ -26,8 +26,7 @@ interface LibraryFile {
 	name: string;
 	url: string;
 	ext: string;
-	collection: string;   // top-level folder
-	subfolder: string;    // full path beneath Ressources (minus filename)
+	folderPath: string;   // full folder path, e.g. "NimbleV2/Nimble-2.0.3-WITH-EXTRAS/CoreBooks"
 }
 
 const files: LibraryFile[] = [];
@@ -41,31 +40,99 @@ for (const [modulePath, url] of Object.entries(fileModules)) {
 	if (filename.startsWith('.')) continue;
 
 	const ext = filename.split('.').pop()?.toLowerCase() ?? '';
-	const collection = parts.length > 0 ? parts[0] : '';
-	const subfolder = parts.length > 1 ? parts.slice(1).join(' / ') : '';
+	const folderPath = parts.join('/');
 
 	files.push({
 		name: filename.replace(/\.[^.]+$/, ''),
 		url: url as string,
 		ext,
-		collection,
-		subfolder,
+		folderPath,
 	});
 }
 
 // Sort alphabetically
 files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
-// Discover collections from folder names
-const collectionCounts = new Map<string, number>();
-for (const f of files) {
-	if (f.collection) {
-		collectionCounts.set(f.collection, (collectionCounts.get(f.collection) || 0) + 1);
-	}
+// Build nested folder tree for sidebar
+interface TreeNode {
+	name: string;
+	fullPath: string;
+	count: number;       // files directly in this folder + all subfolders
+	children: TreeNode[];
+	depth: number;
 }
-const collections = [...collectionCounts.entries()]
-	.sort((a, b) => a[0].localeCompare(b[0]))
-	.map(([name, count]) => ({ name, count }));
+
+function buildTree(fileList: LibraryFile[]): TreeNode[] {
+	const root = new Map<string, { direct: number; children: Map<string, any> }>();
+
+	// Collect unique folder paths and count files per exact folder
+	const folderFileCounts = new Map<string, number>();
+	for (const f of fileList) {
+		if (f.folderPath) {
+			folderFileCounts.set(f.folderPath, (folderFileCounts.get(f.folderPath) || 0) + 1);
+		}
+	}
+
+	// Build tree structure
+	function getOrCreate(map: Map<string, any>, segments: string[], fullPath: string): void {
+		const key = segments[0];
+		if (!map.has(key)) {
+			map.set(key, { children: new Map() });
+		}
+		if (segments.length > 1) {
+			getOrCreate(map.get(key).children, segments.slice(1), fullPath);
+		}
+	}
+
+	for (const folderPath of folderFileCounts.keys()) {
+		const segs = folderPath.split('/');
+		getOrCreate(root, segs, folderPath);
+	}
+
+	// Convert to TreeNode[] recursively
+	function toNodes(map: Map<string, any>, prefix: string, depth: number): TreeNode[] {
+		const nodes: TreeNode[] = [];
+		for (const [name, val] of [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+			const fullPath = prefix ? `${prefix}/${name}` : name;
+			const children = toNodes(val.children, fullPath, depth + 1);
+			// Count = files in this exact folder + all descendant files
+			const directCount = folderFileCounts.get(fullPath) || 0;
+			const descendantCount = children.reduce((s, c) => s + c.count, 0);
+			nodes.push({ name, fullPath, count: directCount + descendantCount, children, depth });
+		}
+		return nodes;
+	}
+
+	return toNodes(root, '', 0);
+}
+
+const folderTree = buildTree(files);
+
+// Flatten tree for rendering (depth-first)
+interface FlatItem {
+	name: string;
+	path: string;
+	count: number;
+	depth: number;
+	hasChildren: boolean;
+}
+
+function flattenTree(nodes: TreeNode[]): FlatItem[] {
+	const result: FlatItem[] = [];
+	for (const node of nodes) {
+		result.push({
+			name: node.name,
+			path: node.fullPath,
+			count: node.count,
+			depth: node.depth,
+			hasChildren: node.children.length > 0,
+		});
+		result.push(...flattenTree(node.children));
+	}
+	return result;
+}
+
+const sidebarItems = flattenTree(folderTree);
 
 function fileIcon(ext: string): string {
 	switch (ext) {
@@ -196,6 +263,14 @@ function fileIcon(ext: string): string {
 			}
 			:global(html.dark) .sidebar-btn .collection-count {
 				color: #C4A35A;
+			}
+			.sidebar-btn.depth-1 { padding-left: 1.75rem; }
+			.sidebar-btn.depth-2 { padding-left: 2.75rem; }
+			.sidebar-btn.depth-3 { padding-left: 3.75rem; }
+			.sidebar-btn.depth-4 { padding-left: 4.75rem; }
+			.sidebar-btn.depth-5 { padding-left: 5.75rem; }
+			.sidebar-btn.has-children .collection-name {
+				font-weight: 600;
 			}
 			.sidebar-divider {
 				height: 1px;
@@ -342,6 +417,115 @@ function fileIcon(ext: string): string {
 			:global(html.dark) .empty-state {
 				color: #C4A35A;
 			}
+			/* Preview modal */
+			.preview-overlay {
+				display: none;
+				position: fixed;
+				inset: 0;
+				z-index: 1000;
+				background: rgba(0, 0, 0, 0.7);
+				backdrop-filter: blur(4px);
+				justify-content: center;
+				align-items: center;
+				padding: 1.5rem;
+			}
+			.preview-overlay.open {
+				display: flex;
+			}
+			.preview-chrome {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				max-width: 1000px;
+				height: 90vh;
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				overflow: hidden;
+				box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+			}
+			:global(html.dark) .preview-chrome {
+				background: #1e140a;
+				border-color: #7a5c2e;
+			}
+			.preview-toolbar {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 0.75rem 1.25rem;
+				border-bottom: 1px solid #C4A35A;
+				background: rgba(139, 105, 20, 0.08);
+				flex-shrink: 0;
+			}
+			:global(html.dark) .preview-toolbar {
+				border-color: #7a5c2e;
+				background: rgba(222, 185, 110, 0.05);
+			}
+			.preview-title {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-weight: 700;
+				font-size: 1rem;
+				color: #3E2703;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				flex: 1;
+				margin-right: 1rem;
+			}
+			:global(html.dark) .preview-title {
+				color: #DEB96E;
+			}
+			.preview-actions {
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+				flex-shrink: 0;
+			}
+			.preview-download,
+			.preview-close {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 36px;
+				height: 36px;
+				border: 1px solid #C4A35A;
+				border-radius: 8px;
+				background: none;
+				color: #5C3D0E;
+				cursor: pointer;
+				transition: background 0.15s;
+				text-decoration: none;
+			}
+			:global(html.dark) .preview-download,
+			:global(html.dark) .preview-close {
+				border-color: #7a5c2e;
+				color: #DEB96E;
+			}
+			.preview-download:hover,
+			.preview-close:hover {
+				background: rgba(139, 105, 20, 0.15);
+			}
+			:global(html.dark) .preview-download:hover,
+			:global(html.dark) .preview-close:hover {
+				background: rgba(222, 185, 110, 0.15);
+			}
+			.preview-body {
+				flex: 1;
+				overflow: auto;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.preview-body iframe {
+				width: 100%;
+				height: 100%;
+				border: none;
+			}
+			.preview-body img {
+				max-width: 100%;
+				max-height: 100%;
+				object-fit: contain;
+			}
 			/* Responsive */
 			@media (max-width: 900px) {
 				.library-layout {
@@ -407,14 +591,19 @@ function fileIcon(ext: string): string {
 					</span>
 				</button>
 				<div class="sidebar-divider"></div>
-				{collections.map((col) => (
-					<button class="sidebar-btn" data-collection={col.name}>
-						<span class="all-icon">
-							<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
-						</span>
+				{sidebarItems.map((item) => (
+					<button
+						class={`sidebar-btn depth-${item.depth}${item.hasChildren ? ' has-children' : ''}`}
+						data-collection={item.path}
+					>
+						{item.depth === 0 && (
+							<span class="all-icon">
+								<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+							</span>
+						)}
 						<span class="collection-info">
-							<span class="collection-name">{col.name.replace(/-/g, ' ')}</span>
-							<span class="collection-count">{col.count} {col.count === 1 ? 'file' : 'files'}</span>
+							<span class="collection-name">{item.name.replace(/-/g, ' ')}</span>
+							<span class="collection-count">{item.count} {item.count === 1 ? 'file' : 'files'}</span>
 						</span>
 					</button>
 				))}
@@ -435,12 +624,13 @@ function fileIcon(ext: string): string {
 				) : (
 					<ul class="file-grid">
 						{files.map((f) => (
-							<li class="file-card" data-collection={f.collection}>
-								<a class="file-link" href={f.url} target="_blank" rel="noopener noreferrer" download>
-									<span class="file-icon">{fileIcon(f.ext)}</span>
-									<div class="file-info">
-										<span class="file-name">{f.name}</span>
-										{f.subfolder && <span class="file-subfolder">{f.subfolder}</span>}
+						<li class="file-card" data-folder={f.folderPath}>
+						<a class="file-link" href={f.url} target="_blank" rel="noopener noreferrer"
+						   data-ext={f.ext} data-name={f.name}>
+								<span class="file-icon">{fileIcon(f.ext)}</span>
+								<div class="file-info">
+									<span class="file-name">{f.name}</span>
+									{f.folderPath && <span class="file-subfolder">{f.folderPath.split('/').join(' / ')}</span>}
 										<span class="file-badge">{f.ext}</span>
 									</div>
 								</a>
@@ -450,6 +640,25 @@ function fileIcon(ext: string): string {
 				)}
 			</main>
 		</div>
+
+		<!-- Preview modal -->
+		<div class="preview-overlay" id="preview-overlay">
+			<div class="preview-chrome">
+				<div class="preview-toolbar">
+					<span class="preview-title" id="preview-title"></span>
+					<div class="preview-actions">
+						<a class="preview-download" id="preview-download" download title="Download">
+							<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+						</a>
+						<button class="preview-close" id="preview-close" title="Close">
+							<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+						</button>
+					</div>
+				</div>
+				<div class="preview-body" id="preview-body"></div>
+			</div>
+		</div>
+
 		<Footer />
 
 		<script>
@@ -461,8 +670,11 @@ function fileIcon(ext: string): string {
 
 				function filterItems() {
 					allItems.forEach((item) => {
-						const col = item.dataset.collection || '';
-						const show = currentCollection === 'all' || col === currentCollection;
+						const folder = item.dataset.folder || '';
+						const show =
+							currentCollection === 'all' ||
+							folder === currentCollection ||
+							folder.startsWith(currentCollection + '/');
 						item.style.display = show ? '' : 'none';
 					});
 				}
@@ -478,13 +690,72 @@ function fileIcon(ext: string): string {
 				filterItems();
 			}
 
+			// Preview modal
+			const previewableExts = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp']);
+
+			function initPreview() {
+				const overlay = document.getElementById('preview-overlay')!;
+				const body = document.getElementById('preview-body')!;
+				const title = document.getElementById('preview-title')!;
+				const download = document.getElementById('preview-download') as HTMLAnchorElement;
+				const closeBtn = document.getElementById('preview-close')!;
+
+				function openPreview(url: string, name: string, ext: string) {
+					title.textContent = name;
+					download.href = url;
+					download.download = name + '.' + ext;
+					body.innerHTML = '';
+
+					if (ext === 'pdf') {
+						const iframe = document.createElement('iframe');
+						iframe.src = url;
+						iframe.title = name;
+						body.appendChild(iframe);
+					} else {
+						const img = document.createElement('img');
+						img.src = url;
+						img.alt = name;
+						body.appendChild(img);
+					}
+
+					overlay.classList.add('open');
+					document.body.style.overflow = 'hidden';
+				}
+
+				function closePreview() {
+					overlay.classList.remove('open');
+					body.innerHTML = '';
+					document.body.style.overflow = '';
+				}
+
+				// Intercept clicks on previewable file links
+				document.querySelectorAll<HTMLAnchorElement>('.file-link').forEach((link) => {
+					const ext = link.dataset.ext || '';
+					if (previewableExts.has(ext)) {
+						link.addEventListener('click', (e) => {
+							e.preventDefault();
+							openPreview(link.href, link.dataset.name || '', ext);
+						});
+					}
+				});
+
+				closeBtn.addEventListener('click', closePreview);
+				overlay.addEventListener('click', (e) => {
+					if (e.target === overlay) closePreview();
+				});
+				document.addEventListener('keydown', (e) => {
+					if (e.key === 'Escape' && overlay.classList.contains('open')) closePreview();
+				});
+			}
+
 			document.getElementById('logout-btn')?.addEventListener('click', async () => {
 				await fetch('/api/auth/logout', { method: 'POST' });
 				window.location.href = '/tavern/login';
 			});
 
 			initLibrary();
-			document.addEventListener('astro:after-swap', initLibrary);
+			initPreview();
+			document.addEventListener('astro:after-swap', () => { initLibrary(); initPreview(); });
 		</script>
 	</body>
 </html>

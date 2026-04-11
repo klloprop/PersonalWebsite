@@ -57,7 +57,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 						<HeaderLink href="/tavern/wiki">Wiki</HeaderLink>
 						<HeaderLink href="/tavern/library">Library</HeaderLink>
 						<HeaderLink href="/tavern/about">About</HeaderLink>
-						<a href="/tavern/admin" class="admin-link" id="admin-link" hidden>Admin</a>
+						<a href="/tavern/admin" class="admin-link admin-link--hidden" id="admin-link">Admin</a>
 					</>
 				)}
 			</div>
@@ -140,7 +140,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		fetch('/api/auth/me')
 			.then(r => r.ok ? r.json() : null)
 			.then(data => {
-				if (data?.role === 'admin') link.hidden = false;
+				if (data?.role === 'admin') link.classList.remove('admin-link--hidden');
 			})
 			.catch(() => {});
 	}
@@ -382,6 +382,10 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		border-radius: 4px;
 		font-size: 0.85em;
 		padding: 0.5em 0.8em;
+	}
+	.admin-link--hidden {
+		visibility: hidden;
+		pointer-events: none;
 	}
 	.admin-link:hover {
 		background: rgba(255, 215, 0, 0.35);
