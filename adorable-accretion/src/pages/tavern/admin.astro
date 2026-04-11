@@ -1,0 +1,534 @@
+---
+export const prerender = false;
+
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+const user = Astro.locals.user!;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Admin`} description="Admin panel" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="admin-header">
+				<h1>Admin Panel</h1>
+				<div class="admin-meta">
+					<span>Logged in as <strong>{user.username}</strong></span>
+					<a href="/tavern/library" class="btn-secondary">Library</a>
+					<button id="logout-btn" class="btn-secondary">Log Out</button>
+				</div>
+			</div>
+
+			<!-- Tabs -->
+			<div class="tabs">
+				<button class="tab active" data-tab="users">User Management</button>
+				<button class="tab" data-tab="library">Library Resources</button>
+			</div>
+
+			<!-- ============ USER MANAGEMENT ============ -->
+			<section id="tab-users" class="tab-content active">
+				<h2>Create User</h2>
+				<form id="create-user-form" class="inline-form">
+					<input type="text" id="new-username" placeholder="Username" required
+						pattern="[a-zA-Z0-9_\-]{2,30}" title="2-30 chars: letters, numbers, _ or -" />
+					<select id="new-role">
+						<option value="user">User</option>
+						<option value="admin">Admin</option>
+					</select>
+					<button type="submit">Create</button>
+				</form>
+				<div id="create-result" class="result-box" hidden></div>
+
+				<h2>Existing Users</h2>
+				<div id="users-list" class="card-list">
+					<p class="loading">Loading…</p>
+				</div>
+			</section>
+
+			<!-- ============ LIBRARY RESOURCES ============ -->
+			<section id="tab-library" class="tab-content">
+				<h2>Add Resource</h2>
+				<form id="add-resource-form" class="stacked-form">
+					<label for="res-title">Title *</label>
+					<input type="text" id="res-title" required />
+
+					<label for="res-url">URL *</label>
+					<input type="url" id="res-url" required placeholder="https://..." />
+
+					<label for="res-description">Description</label>
+					<input type="text" id="res-description" />
+
+					<label for="res-category">Category</label>
+					<input type="text" id="res-category" placeholder="General" />
+
+					<button type="submit">Add Resource</button>
+				</form>
+				<div id="resource-result" class="result-box" hidden></div>
+
+				<h2>Existing Resources</h2>
+				<div id="resources-list" class="card-list">
+					<p class="loading">Loading…</p>
+				</div>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.admin-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+	.admin-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.9rem;
+	}
+	.btn-secondary {
+		padding: 0.4rem 0.8rem;
+		border: 1px solid #c99026;
+		border-radius: 4px;
+		background: transparent;
+		color: #744908;
+		text-decoration: none;
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+	.btn-secondary:hover {
+		background: rgba(201, 144, 38, 0.15);
+	}
+
+	/* Tabs */
+	.tabs {
+		display: flex;
+		gap: 0;
+		border-bottom: 2px solid #c99026;
+		margin-bottom: 1.5rem;
+	}
+	.tab {
+		padding: 0.6rem 1.2rem;
+		border: none;
+		background: transparent;
+		color: #744908;
+		cursor: pointer;
+		font-size: 1rem;
+		font-weight: bold;
+		border-bottom: 3px solid transparent;
+		margin-bottom: -2px;
+	}
+	.tab:hover {
+		background: rgba(201, 144, 38, 0.1);
+	}
+	.tab.active {
+		border-bottom-color: #744908;
+	}
+	.tab-content {
+		display: none;
+	}
+	.tab-content.active {
+		display: block;
+	}
+
+	/* Forms */
+	.inline-form {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+	.inline-form input,
+	.inline-form select {
+		padding: 0.5rem;
+		border: 1px solid #c99026;
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.8);
+	}
+	.inline-form button {
+		padding: 0.5rem 1rem;
+		background: #744908;
+		color: #F5E4C4;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		font-weight: bold;
+	}
+	.inline-form button:hover {
+		background: #c99026;
+	}
+	.stacked-form {
+		max-width: 500px;
+		margin-bottom: 1rem;
+	}
+	.stacked-form label {
+		display: block;
+		margin-bottom: 0.2rem;
+		font-weight: bold;
+		margin-top: 0.5rem;
+	}
+	.stacked-form input {
+		width: 100%;
+		padding: 0.5rem;
+		border: 1px solid #c99026;
+		border-radius: 4px;
+		box-sizing: border-box;
+		background: rgba(255, 255, 255, 0.8);
+	}
+	.stacked-form button {
+		margin-top: 1rem;
+		padding: 0.6rem 1.2rem;
+		background: #744908;
+		color: #F5E4C4;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		font-weight: bold;
+	}
+	.stacked-form button:hover {
+		background: #c99026;
+	}
+
+	/* Results & cards */
+	.result-box {
+		padding: 0.75rem 1rem;
+		border-radius: 4px;
+		margin-bottom: 1.5rem;
+		word-break: break-all;
+	}
+	.result-box.success {
+		background: rgba(34, 139, 34, 0.1);
+		border: 1px solid #2a7a2a;
+		color: #2a7a2a;
+	}
+	.result-box.error {
+		background: rgba(170, 0, 0, 0.1);
+		border: 1px solid #a00;
+		color: #a00;
+	}
+	.card-list {
+		display: grid;
+		gap: 0.5rem;
+	}
+	.card {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.75rem 1rem;
+		border: 1px solid rgba(201, 144, 38, 0.3);
+		border-radius: 6px;
+	}
+	.card-info {
+		flex: 1;
+	}
+	.card-info strong {
+		display: block;
+	}
+	.card-info small {
+		opacity: 0.7;
+	}
+	.card-actions {
+		display: flex;
+		gap: 0.4rem;
+		flex-shrink: 0;
+	}
+	.card-actions button {
+		padding: 0.3rem 0.6rem;
+		border: 1px solid;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.8rem;
+		background: transparent;
+	}
+	.btn-reset {
+		color: #744908;
+		border-color: #c99026;
+	}
+	.btn-reset:hover {
+		background: rgba(201, 144, 38, 0.15);
+	}
+	.btn-delete {
+		color: #a00;
+		border-color: #a00;
+	}
+	.btn-delete:hover {
+		background: rgba(170, 0, 0, 0.1);
+	}
+	.loading {
+		color: #888;
+		font-style: italic;
+	}
+
+	/* Dark mode */
+	:global(html.dark) .btn-secondary {
+		color: #DEB96E;
+		border-color: #6B4710;
+	}
+	:global(html.dark) .tab {
+		color: #DEB96E;
+	}
+	:global(html.dark) .tab.active {
+		border-bottom-color: #DEB96E;
+	}
+	:global(html.dark) .inline-form input,
+	:global(html.dark) .inline-form select,
+	:global(html.dark) .stacked-form input {
+		background: rgba(30, 20, 10, 0.6);
+		color: #F5E4C4;
+		border-color: #6B4710;
+	}
+	:global(html.dark) .inline-form button,
+	:global(html.dark) .stacked-form button {
+		background: #6B4710;
+	}
+	:global(html.dark) .inline-form button:hover,
+	:global(html.dark) .stacked-form button:hover {
+		background: #8B6914;
+	}
+	:global(html.dark) .card {
+		border-color: rgba(107, 71, 16, 0.4);
+	}
+	:global(html.dark) .btn-reset {
+		color: #DEB96E;
+		border-color: #6B4710;
+	}
+	:global(html.dark) .btn-delete {
+		color: #ff8080;
+		border-color: #ff8080;
+	}
+	:global(html.dark) .result-box.success {
+		color: #6bdf6b;
+		border-color: #3a9a3a;
+		background: rgba(34, 139, 34, 0.15);
+	}
+	:global(html.dark) .result-box.error {
+		color: #ff8080;
+		border-color: #cc4444;
+		background: rgba(170, 0, 0, 0.15);
+	}
+</style>
+
+<script>
+	// ----------- Tab switching -----------
+	document.querySelectorAll<HTMLButtonElement>('.tab').forEach((tab) => {
+		tab.addEventListener('click', () => {
+			document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+			document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+			tab.classList.add('active');
+			document.getElementById(`tab-${tab.dataset.tab}`)?.classList.add('active');
+		});
+	});
+
+	// ----------- Helpers -----------
+	function showResult(id: string, message: string, isError = false) {
+		const el = document.getElementById(id) as HTMLDivElement;
+		el.textContent = message;
+		el.className = `result-box ${isError ? 'error' : 'success'}`;
+		el.hidden = false;
+	}
+
+	// ----------- Load users -----------
+	async function loadUsers() {
+		const container = document.getElementById('users-list')!;
+		try {
+			const res = await fetch('/api/admin/users');
+			const data = await res.json();
+			if (!data.users?.length) {
+				container.innerHTML = '<p class="loading">No users found.</p>';
+				return;
+			}
+			container.innerHTML = data.users
+				.map(
+					(u: string) => `
+				<div class="card">
+					<div class="card-info"><strong>${escapeHtml(u)}</strong></div>
+					<div class="card-actions">
+						<button class="btn-reset" data-user="${escapeHtml(u)}" data-action="reset">Reset Password</button>
+						<button class="btn-delete" data-user="${escapeHtml(u)}" data-action="delete">Delete</button>
+					</div>
+				</div>`,
+				)
+				.join('');
+			attachUserActions();
+		} catch {
+			container.innerHTML = '<p class="loading">Failed to load users.</p>';
+		}
+	}
+
+	function escapeHtml(s: string) {
+		return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+	}
+
+	function attachUserActions() {
+		document.querySelectorAll<HTMLButtonElement>('[data-action="reset"]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const username = btn.dataset.user!;
+				btn.disabled = true;
+				try {
+					const res = await fetch('/api/admin/reset-link', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ username }),
+					});
+					const data = await res.json();
+					if (res.ok) {
+						showResult('create-result', `Reset link for ${username}: ${data.resetUrl}`);
+					} else {
+						showResult('create-result', data.error || 'Failed', true);
+					}
+				} catch {
+					showResult('create-result', 'Request failed', true);
+				} finally {
+					btn.disabled = false;
+				}
+			});
+		});
+
+		document.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const username = btn.dataset.user!;
+				if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+				btn.disabled = true;
+				try {
+					const res = await fetch('/api/admin/users', {
+						method: 'DELETE',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ username }),
+					});
+					if (res.ok) {
+						loadUsers();
+					} else {
+						const data = await res.json();
+						showResult('create-result', data.error || 'Failed', true);
+					}
+				} catch {
+					showResult('create-result', 'Request failed', true);
+				}
+			});
+		});
+	}
+
+	// ----------- Create user -----------
+	(document.getElementById('create-user-form') as HTMLFormElement).addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const usernameEl = document.getElementById('new-username') as HTMLInputElement;
+		const roleEl = document.getElementById('new-role') as HTMLSelectElement;
+		const username = usernameEl.value.trim();
+		const role = roleEl.value;
+
+		try {
+			const res = await fetch('/api/admin/users', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ username, role }),
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showResult('create-result', `User "${username}" created. Setup link: ${data.setupUrl}`);
+				usernameEl.value = '';
+				loadUsers();
+			} else {
+				showResult('create-result', data.error || 'Failed', true);
+			}
+		} catch {
+			showResult('create-result', 'Request failed', true);
+		}
+	});
+
+	// ----------- Load resources -----------
+	async function loadResources() {
+		const container = document.getElementById('resources-list')!;
+		try {
+			const res = await fetch('/api/library/resources');
+			const data = await res.json();
+			if (!data.resources?.length) {
+				container.innerHTML = '<p class="loading">No resources yet.</p>';
+				return;
+			}
+			container.innerHTML = data.resources
+				.map(
+					(r: { id: string; title: string; url: string; category: string; description: string }) => `
+				<div class="card">
+					<div class="card-info">
+						<strong>${escapeHtml(r.title)}</strong>
+						<small>${escapeHtml(r.category)}${r.description ? ' — ' + escapeHtml(r.description) : ''}</small>
+					</div>
+					<div class="card-actions">
+						<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" class="btn-reset" style="text-decoration:none">Open</a>
+						<button class="btn-delete" data-resource-id="${escapeHtml(r.id)}" data-action="delete-resource">Delete</button>
+					</div>
+				</div>`,
+				)
+				.join('');
+			attachResourceActions();
+		} catch {
+			container.innerHTML = '<p class="loading">Failed to load resources.</p>';
+		}
+	}
+
+	function attachResourceActions() {
+		document.querySelectorAll<HTMLButtonElement>('[data-action="delete-resource"]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				if (!confirm('Delete this resource?')) return;
+				btn.disabled = true;
+				try {
+					const res = await fetch('/api/library/resources', {
+						method: 'DELETE',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ id: btn.dataset.resourceId }),
+					});
+					if (res.ok) loadResources();
+				} catch { /* ignore */ }
+			});
+		});
+	}
+
+	// ----------- Add resource -----------
+	(document.getElementById('add-resource-form') as HTMLFormElement).addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const title = (document.getElementById('res-title') as HTMLInputElement).value.trim();
+		const url = (document.getElementById('res-url') as HTMLInputElement).value.trim();
+		const description = (document.getElementById('res-description') as HTMLInputElement).value.trim();
+		const category = (document.getElementById('res-category') as HTMLInputElement).value.trim() || 'General';
+
+		try {
+			const res = await fetch('/api/library/resources', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ title, url, description, category }),
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showResult('resource-result', `Resource "${title}" added`);
+				(document.getElementById('add-resource-form') as HTMLFormElement).reset();
+				loadResources();
+			} else {
+				showResult('resource-result', data.error || 'Failed', true);
+			}
+		} catch {
+			showResult('resource-result', 'Request failed', true);
+		}
+	});
+
+	// ----------- Logout -----------
+	document.getElementById('logout-btn')?.addEventListener('click', async () => {
+		await fetch('/api/auth/logout', { method: 'POST' });
+		window.location.href = '/tavern/login';
+	});
+
+	// ----------- Init -----------
+	loadUsers();
+	loadResources();
+</script>

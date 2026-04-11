@@ -1,0 +1,172 @@
+---
+export const prerender = false;
+
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import { listResources } from '../../lib/auth';
+
+const user = Astro.locals.user!;
+const resources = await listResources();
+
+// Group resources by category
+const grouped = new Map<string, typeof resources>();
+for (const r of resources) {
+	const cat = r.category || 'General';
+	if (!grouped.has(cat)) grouped.set(cat, []);
+	grouped.get(cat)!.push(r);
+}
+const categories = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Library`} description="Private resource library" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="library-header">
+				<h1>Library</h1>
+				<div class="library-meta">
+					<span>Logged in as <strong>{user.username}</strong></span>
+					<button id="logout-btn" class="btn-secondary">Log Out</button>
+					{user.role === 'admin' && (
+						<a href="/tavern/admin" class="btn-secondary">Admin Panel</a>
+					)}
+				</div>
+			</div>
+
+			{resources.length === 0 ? (
+				<div class="empty-state">
+					<p>No resources have been added yet.</p>
+					{user.role === 'admin' && (
+						<p><a href="/tavern/admin">Add resources from the admin panel.</a></p>
+					)}
+				</div>
+			) : (
+				categories.map(([category, items]) => (
+					<section class="resource-category">
+						<h2>{category}</h2>
+						<ul class="resource-list">
+							{items.map((r) => (
+								<li class="resource-item">
+									<a href={r.url} target="_blank" rel="noopener noreferrer">
+										<span class="resource-icon">📄</span>
+										<div>
+											<strong>{r.title}</strong>
+											{r.description && <p>{r.description}</p>}
+										</div>
+									</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			)}
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.library-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+	.library-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.9rem;
+	}
+	.btn-secondary {
+		padding: 0.4rem 0.8rem;
+		border: 1px solid #c99026;
+		border-radius: 4px;
+		background: transparent;
+		color: #744908;
+		text-decoration: none;
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+	.btn-secondary:hover {
+		background: rgba(201, 144, 38, 0.15);
+	}
+	.empty-state {
+		text-align: center;
+		padding: 3rem 1rem;
+		color: #888;
+	}
+	.resource-category {
+		margin-bottom: 2rem;
+	}
+	.resource-category h2 {
+		border-bottom: 2px solid #c99026;
+		padding-bottom: 0.3rem;
+		margin-bottom: 1rem;
+	}
+	.resource-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+	.resource-item a {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 1rem;
+		border: 1px solid rgba(201, 144, 38, 0.3);
+		border-radius: 8px;
+		text-decoration: none;
+		color: inherit;
+		transition: background 0.15s, border-color 0.15s;
+	}
+	.resource-item a:hover {
+		background: rgba(201, 144, 38, 0.1);
+		border-color: #c99026;
+	}
+	.resource-icon {
+		font-size: 1.5rem;
+		flex-shrink: 0;
+		margin-top: 0.1rem;
+	}
+	.resource-item strong {
+		display: block;
+	}
+	.resource-item p {
+		margin: 0.25rem 0 0;
+		font-size: 0.9rem;
+		opacity: 0.8;
+	}
+
+	:global(html.dark) .btn-secondary {
+		color: #DEB96E;
+		border-color: #6B4710;
+	}
+	:global(html.dark) .btn-secondary:hover {
+		background: rgba(107, 71, 16, 0.3);
+	}
+	:global(html.dark) .resource-item a {
+		border-color: rgba(107, 71, 16, 0.4);
+	}
+	:global(html.dark) .resource-item a:hover {
+		background: rgba(107, 71, 16, 0.2);
+		border-color: #6B4710;
+	}
+</style>
+
+<script>
+	document.getElementById('logout-btn')?.addEventListener('click', async () => {
+		await fetch('/api/auth/logout', { method: 'POST' });
+		window.location.href = '/tavern/login';
+	});
+</script>
