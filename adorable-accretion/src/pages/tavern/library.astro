@@ -108,31 +108,9 @@ function buildTree(fileList: LibraryFile[]): TreeNode[] {
 
 const folderTree = buildTree(files);
 
-// Flatten tree for rendering (depth-first)
-interface FlatItem {
-	name: string;
-	path: string;
-	count: number;
-	depth: number;
-	hasChildren: boolean;
-}
-
-function flattenTree(nodes: TreeNode[]): FlatItem[] {
-	const result: FlatItem[] = [];
-	for (const node of nodes) {
-		result.push({
-			name: node.name,
-			path: node.fullPath,
-			count: node.count,
-			depth: node.depth,
-			hasChildren: node.children.length > 0,
-		});
-		result.push(...flattenTree(node.children));
-	}
-	return result;
-}
-
-const sidebarItems = flattenTree(folderTree);
+// Chevron SVG for toggle buttons
+const chevronSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>';
+const folderSvg = '<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>';
 
 function fileIcon(ext: string): string {
 	switch (ext) {
@@ -264,13 +242,53 @@ function fileIcon(ext: string): string {
 			:global(html.dark) .sidebar-btn .collection-count {
 				color: #C4A35A;
 			}
-			.sidebar-btn.depth-1 { padding-left: 1.75rem; }
-			.sidebar-btn.depth-2 { padding-left: 2.75rem; }
-			.sidebar-btn.depth-3 { padding-left: 3.75rem; }
-			.sidebar-btn.depth-4 { padding-left: 4.75rem; }
-			.sidebar-btn.depth-5 { padding-left: 5.75rem; }
-			.sidebar-btn.has-children .collection-name {
-				font-weight: 600;
+			/* Tree nesting */
+			.sidebar-group {
+				display: flex;
+				flex-direction: column;
+			}
+			.sidebar-group-header {
+				display: flex;
+				align-items: center;
+				width: 100%;
+			}
+			.sidebar-toggle {
+				width: 22px;
+				height: 22px;
+				border: none;
+				background: none;
+				cursor: pointer;
+				padding: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+				color: #8B6914;
+				transition: transform 0.2s;
+				border-radius: 4px;
+			}
+			.sidebar-toggle:hover {
+				background: rgba(139, 105, 20, 0.1);
+			}
+			:global(html.dark) .sidebar-toggle {
+				color: #C4A35A;
+			}
+			.sidebar-toggle.expanded {
+				transform: rotate(90deg);
+			}
+			.sidebar-children {
+				display: none;
+				flex-direction: column;
+				padding-left: 0.75rem;
+				margin-left: 0.65rem;
+				border-left: 1.5px solid rgba(196, 163, 90, 0.3);
+			}
+			.sidebar-children.open {
+				display: flex;
+			}
+			.sidebar-children .sidebar-btn {
+				font-size: 0.88rem;
+				padding: 0.45rem 0.6rem;
 			}
 			.sidebar-divider {
 				height: 1px;
@@ -432,12 +450,15 @@ function fileIcon(ext: string): string {
 			.preview-overlay.open {
 				display: flex;
 			}
+			.preview-overlay {
+				padding: 1rem;
+			}
 			.preview-chrome {
 				display: flex;
 				flex-direction: column;
-				width: 100%;
-				max-width: 1000px;
-				height: 90vh;
+				width: 95vw;
+				max-width: 1400px;
+				height: 92vh;
 				background: #FDF6EC;
 				border: 2px solid #C4A35A;
 				border-radius: 16px;
@@ -537,12 +558,8 @@ function fileIcon(ext: string): string {
 					max-width: 100%;
 					box-sizing: border-box;
 					position: static;
-					max-height: 40vh;
-					overflow-y: auto;
-					display: flex;
-					gap: 0.5rem;
-					overflow-x: auto;
-					flex-wrap: wrap;
+					max-height: none;
+					overflow-y: visible;
 					border-radius: 12px;
 					padding: 0.75rem;
 					margin-bottom: 1.5rem;
@@ -553,15 +570,13 @@ function fileIcon(ext: string): string {
 				.sidebar-divider {
 					display: none;
 				}
+				.sidebar-toggle {
+					width: 18px;
+					height: 18px;
+				}
 				.sidebar-btn {
-					white-space: nowrap;
-					flex-shrink: 1;
-					padding: 0.5rem 0.75rem;
-					border-radius: 999px;
-					border: 1px solid #C4A35A;
-					min-width: 0;
-					overflow: hidden;
-					text-overflow: ellipsis;
+					font-size: 0.85rem;
+					padding: 0.4rem 0.6rem;
 				}
 				.sidebar-btn .all-icon {
 					width: 24px;
@@ -572,6 +587,15 @@ function fileIcon(ext: string): string {
 				}
 				.file-grid {
 					grid-template-columns: 1fr;
+				}
+				.preview-chrome {
+					width: 100vw;
+					height: 100vh;
+					border-radius: 0;
+					border: none;
+				}
+				.preview-overlay {
+					padding: 0;
 				}
 			}
 		</style>
@@ -591,22 +615,94 @@ function fileIcon(ext: string): string {
 					</span>
 				</button>
 				<div class="sidebar-divider"></div>
-				{sidebarItems.map((item) => (
-					<button
-						class={`sidebar-btn depth-${item.depth}${item.hasChildren ? ' has-children' : ''}`}
-						data-collection={item.path}
-					>
-						{item.depth === 0 && (
-							<span class="all-icon">
-								<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+				{folderTree.map((node) =>
+					node.children.length > 0 ? (
+						<div class="sidebar-group">
+							<div class="sidebar-group-header">
+								<button class="sidebar-toggle" aria-label={`Expand ${node.name}`}>
+									<Fragment set:html={chevronSvg} />
+								</button>
+								<button class="sidebar-btn" data-collection={node.fullPath}>
+									<span class="all-icon"><Fragment set:html={folderSvg} /></span>
+									<span class="collection-info">
+										<span class="collection-name">{node.name.replace(/-/g, ' ')}</span>
+										<span class="collection-count">{node.count} {node.count === 1 ? 'file' : 'files'}</span>
+									</span>
+								</button>
+							</div>
+							<div class="sidebar-children">
+								{node.children.map((child) =>
+									child.children.length > 0 ? (
+										<div class="sidebar-group">
+											<div class="sidebar-group-header">
+												<button class="sidebar-toggle" aria-label={`Expand ${child.name}`}>
+													<Fragment set:html={chevronSvg} />
+												</button>
+												<button class="sidebar-btn" data-collection={child.fullPath}>
+													<span class="collection-info">
+														<span class="collection-name">{child.name.replace(/-/g, ' ')}</span>
+														<span class="collection-count">{child.count} {child.count === 1 ? 'file' : 'files'}</span>
+													</span>
+												</button>
+											</div>
+											<div class="sidebar-children">
+												{child.children.map((gc) =>
+													gc.children.length > 0 ? (
+														<div class="sidebar-group">
+															<div class="sidebar-group-header">
+																<button class="sidebar-toggle" aria-label={`Expand ${gc.name}`}>
+																	<Fragment set:html={chevronSvg} />
+																</button>
+																<button class="sidebar-btn" data-collection={gc.fullPath}>
+																	<span class="collection-info">
+																		<span class="collection-name">{gc.name.replace(/-/g, ' ')}</span>
+																		<span class="collection-count">{gc.count} {gc.count === 1 ? 'file' : 'files'}</span>
+																	</span>
+																</button>
+															</div>
+															<div class="sidebar-children">
+																{gc.children.map((ggc) => (
+																	<button class="sidebar-btn" data-collection={ggc.fullPath}>
+																		<span class="collection-info">
+																			<span class="collection-name">{ggc.name.replace(/-/g, ' ')}</span>
+																			<span class="collection-count">{ggc.count} {ggc.count === 1 ? 'file' : 'files'}</span>
+																		</span>
+																	</button>
+																))}
+															</div>
+														</div>
+													) : (
+														<button class="sidebar-btn" data-collection={gc.fullPath}>
+															<span class="collection-info">
+																<span class="collection-name">{gc.name.replace(/-/g, ' ')}</span>
+																<span class="collection-count">{gc.count} {gc.count === 1 ? 'file' : 'files'}</span>
+															</span>
+														</button>
+													)
+												)}
+											</div>
+										</div>
+									) : (
+										<button class="sidebar-btn" data-collection={child.fullPath}>
+											<span class="collection-info">
+												<span class="collection-name">{child.name.replace(/-/g, ' ')}</span>
+												<span class="collection-count">{child.count} {child.count === 1 ? 'file' : 'files'}</span>
+											</span>
+										</button>
+									)
+								)}
+							</div>
+						</div>
+					) : (
+						<button class="sidebar-btn" data-collection={node.fullPath}>
+							<span class="all-icon"><Fragment set:html={folderSvg} /></span>
+							<span class="collection-info">
+								<span class="collection-name">{node.name.replace(/-/g, ' ')}</span>
+								<span class="collection-count">{node.count} {node.count === 1 ? 'file' : 'files'}</span>
 							</span>
-						)}
-						<span class="collection-info">
-							<span class="collection-name">{item.name.replace(/-/g, ' ')}</span>
-							<span class="collection-count">{item.count} {item.count === 1 ? 'file' : 'files'}</span>
-						</span>
-					</button>
-				))}
+						</button>
+					)
+				)}
 			</aside>
 			<main>
 				<div class="library-header">
@@ -664,6 +760,7 @@ function fileIcon(ext: string): string {
 		<script>
 			function initLibrary() {
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
+				const toggles = document.querySelectorAll<HTMLButtonElement>('.sidebar-toggle');
 				const allItems = Array.from(document.querySelectorAll<HTMLElement>('.file-card'));
 
 				let currentCollection = 'all';
@@ -678,6 +775,19 @@ function fileIcon(ext: string): string {
 						item.style.display = show ? '' : 'none';
 					});
 				}
+
+				// Expand/collapse toggles
+				toggles.forEach((toggle) => {
+					toggle.addEventListener('click', (e) => {
+						e.stopPropagation();
+						const group = toggle.closest('.sidebar-group');
+						if (!group) return;
+						const children = group.querySelector('.sidebar-children');
+						if (!children) return;
+						const isOpen = children.classList.toggle('open');
+						toggle.classList.toggle('expanded', isOpen);
+					});
+				});
 
 				buttons.forEach((btn) => {
 					btn.addEventListener('click', () => {
