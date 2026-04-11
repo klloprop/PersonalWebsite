@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import { createUser, getUser } from '../../../lib/auth';
 
 export const GET: APIRoute = async ({ url }) => {
-	const secret = import.meta.env.ADMIN_SETUP_SECRET;
+	const secret = (import.meta.env.ADMIN_SETUP_SECRET ?? '').trim();
 
 	if (!secret) {
 		return new Response('Setup is disabled. No ADMIN_SETUP_SECRET configured.', {
@@ -21,9 +21,12 @@ export const GET: APIRoute = async ({ url }) => {
 		});
 	}
 
-	const providedSecret = url.searchParams.get('secret');
+	const providedSecret = (url.searchParams.get('secret') ?? '').trim();
 	if (!providedSecret || providedSecret !== secret) {
-		return new Response('Forbidden', { status: 403 });
+		return new Response(
+			`Forbidden. Secret length expected: ${secret.length}, got: ${providedSecret.length}`,
+			{ status: 403 },
+		);
 	}
 
 	const username = url.searchParams.get('username');
