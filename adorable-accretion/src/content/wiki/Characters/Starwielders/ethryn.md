@@ -1,6 +1,6 @@
 ---
 title: "Ethryn, Dean of Illusions"
-description: "Dean of Illusions of the Starwielders"
+description: "Dean of Illusions"
 pubDate: 2026-04-12
 heroImage: "../../../../assets/WikiImages/Ethryn.png"
 heroImagePosition: "00% 10%"    

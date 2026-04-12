@@ -1,6 +1,6 @@
 ---
 title: "Astehsus, Dean of Divination"
-description: "Dean of Divination of the Starwielders"
+description: "Dean of Divination"
 pubDate: 2026-04-12
 heroImage: "../../../../assets/WikiImages/Astheseus.png"
 heroImagePosition: "00% 5%"    

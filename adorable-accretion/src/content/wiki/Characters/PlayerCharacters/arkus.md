@@ -1,6 +1,11 @@
 ---
 title: "Arkus"
-description: ""
-pubDate: 2026-04-07
+description: "The unseen dark knight."
+pubDate: 2026-04-12
+heroImage: "../../../../assets/WikiImages/Arkus.png"
 collection: "Player Characters"
+tags: ["Arkus"]
 ---
+Arkus is a little guy with big warcrimes. 
+
+![arkus](../../../../assets/WikiImages/Arkus.png)

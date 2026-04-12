@@ -3,7 +3,6 @@ title: "Pera, Prodigy of Illusions"
 description: "Prodigy of Illusions"
 pubDate: 2026-04-12
 heroImage: "../../../../assets/WikiImages/Pera.png"
-heroImagePosition: "00% 20%"    
 collection: "Starwielders"
 tags: ["Pera"]
 ---
