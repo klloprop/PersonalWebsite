@@ -2,7 +2,7 @@
 title: "Hexapod"
 description: "The classic artillery implementation of the ivory legions."
 pubDate: 2026-04-12
-heroImage: "../../assets/WikiImages/Hexapod.png"
+heroImage: "../../../assets/WikiImages/Hexapod.png"
 collection: "Automatons"
 ---
 

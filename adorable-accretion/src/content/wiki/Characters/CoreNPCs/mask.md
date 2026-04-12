@@ -2,7 +2,7 @@
 title: "Mask"
 description: "Former Starwielder, whistleblower and Bard"
 pubDate: 2026-04-12
-heroImage: "../../assets/WikiImages/Mask.png"
+heroImage: "../../../../assets/WikiImages/Mask.png"
 collection: "Core NPCs"
 ---
 
