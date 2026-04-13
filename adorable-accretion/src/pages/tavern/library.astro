@@ -12,6 +12,8 @@ export const prerender = false;
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
+import SearchBar from '../../components/SearchBar.astro';
+import type { SearchItem } from '../../components/SearchBar.astro';
 import { SITE_TITLE } from '../../consts';
 
 const user = Astro.locals.user!;
@@ -107,6 +109,12 @@ function buildTree(fileList: LibraryFile[]): TreeNode[] {
 }
 
 const folderTree = buildTree(files);
+
+const librarySearchItems: SearchItem[] = files.map((f, i) => ({
+	name: f.name,
+	url: `#file-${i}`,
+	extra: f.folderPath,
+}));
 
 // Chevron SVG for toggle buttons
 const chevronSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>';
@@ -367,6 +375,13 @@ function fileIcon(ext: string): string {
 			.file-card:hover {
 				transform: translateY(-2px);
 				box-shadow: 0 4px 20px rgba(62, 39, 3, 0.15);
+			}
+			.file-card.search-highlight {
+				animation: search-pulse 2s ease-out;
+			}
+			@keyframes search-pulse {
+				0%, 20% { box-shadow: 0 0 0 4px rgba(139, 105, 20, 0.4); }
+				100% { box-shadow: 0 2px 12px rgba(62, 39, 3, 0.08); }
 			}
 			.file-link {
 				display: flex;
@@ -710,6 +725,7 @@ function fileIcon(ext: string): string {
 				)}
 			</aside>
 			<main>
+				<SearchBar placeholder="Search files…" items={librarySearchItems} />
 				<div class="library-header">
 					<h1>Library</h1>
 					<div class="library-meta">
@@ -724,8 +740,8 @@ function fileIcon(ext: string): string {
 					</div>
 				) : (
 					<ul class="file-grid">
-						{files.map((f) => (
-						<li class="file-card" data-folder={f.folderPath}>
+						{files.map((f, i) => (
+						<li class="file-card" id={`file-${i}`} data-folder={f.folderPath}>
 						<a class="file-link" href={f.url} target="_blank" rel="noopener noreferrer"
 						   data-ext={f.ext} data-name={f.name}>
 								<span class="file-icon">{fileIcon(f.ext)}</span>
@@ -874,6 +890,42 @@ function fileIcon(ext: string): string {
 
 			initLibrary();
 			initPreview();
+
+			// Handle search-result hash links: show all, scroll to card, highlight
+			function handleSearchHash() {
+				const hash = window.location.hash;
+				if (!hash || !hash.startsWith('#file-')) return;
+				const card = document.getElementById(hash.slice(1));
+				if (!card) return;
+
+				// Reset sidebar to "All"
+				const allBtn = document.querySelector<HTMLButtonElement>('.sidebar-btn[data-collection="all"]');
+				if (allBtn) allBtn.click();
+
+				// Scroll into view
+				card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+				// Highlight briefly
+				card.classList.add('search-highlight');
+				setTimeout(() => card.classList.remove('search-highlight'), 2000);
+
+				// Clear hash so it can be re-triggered
+				history.replaceState(null, '', window.location.pathname + window.location.search);
+			}
+
+			// Intercept search-result clicks that point to #file-N
+			document.addEventListener('click', (e) => {
+				const a = (e.target as HTMLElement).closest('a[href^="#file-"]');
+				if (!a) return;
+				e.preventDefault();
+				const id = a.getAttribute('href')!.slice(1);
+				window.location.hash = id;
+				handleSearchHash();
+			});
+
+			window.addEventListener('hashchange', handleSearchHash);
+			handleSearchHash();
+
 			document.addEventListener('astro:after-swap', () => { initLibrary(); initPreview(); });
 		</script>
 	</body>

@@ -1,0 +1,326 @@
+---
+/**
+ * SearchBar.astro — Reusable fuzzy-search dropdown.
+ *
+ * Props:
+ *  - placeholder: Input placeholder text.
+ *  - items: Array of searchable items (serialised to a data-attribute).
+ *
+ * Each item: { name, tags?, url, extra? }
+ *   • Wiki items link to a wiki page (url = "/tavern/wiki/slug/").
+ *   • Library items target a card on the same page (url = "#file-N").
+ */
+export interface SearchItem {
+	name: string;
+	tags?: string[];
+	url: string;
+	extra?: string;
+}
+
+interface Props {
+	placeholder?: string;
+	items: SearchItem[];
+}
+
+const { placeholder = 'Search…', items } = Astro.props;
+---
+
+<div class="search-container" data-items={JSON.stringify(items)}>
+	<div class="search-bar">
+		<svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+		</svg>
+		<input type="text" class="search-input" placeholder={placeholder} autocomplete="off" />
+		<button class="search-clear" aria-label="Clear search" type="button">&times;</button>
+	</div>
+	<ul class="search-results"></ul>
+</div>
+
+<style>
+	.search-container {
+		position: relative;
+		width: 100%;
+		padding: 0 0 1rem 0;
+		z-index: 20;
+		box-sizing: border-box;
+	}
+	.search-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #FDF6EC;
+		border: 2px solid #C4A35A;
+		border-radius: 12px;
+		padding: 0.6rem 1rem;
+		box-shadow: 0 2px 8px rgba(62, 39, 3, 0.08);
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+	.search-bar:focus-within {
+		border-color: #8B6914;
+		box-shadow: 0 2px 12px rgba(139, 105, 20, 0.15);
+	}
+	:global(html.dark) .search-bar {
+		background: #2a1c0a;
+		border-color: #7a5c2e;
+	}
+	:global(html.dark) .search-bar:focus-within {
+		border-color: #DEB96E;
+		box-shadow: 0 2px 12px rgba(222, 185, 110, 0.15);
+	}
+	.search-icon {
+		flex-shrink: 0;
+		color: #8B6914;
+	}
+	:global(html.dark) .search-icon {
+		color: #C4A35A;
+	}
+	.search-input {
+		flex: 1;
+		border: none;
+		background: transparent;
+		outline: none;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 1rem;
+		color: #3E2703;
+	}
+	:global(html.dark) .search-input {
+		color: #F5E4C4;
+	}
+	.search-input::placeholder {
+		color: #b8a070;
+	}
+	:global(html.dark) .search-input::placeholder {
+		color: #8a7050;
+	}
+	.search-clear {
+		display: none;
+		border: none;
+		background: none;
+		font-size: 1.25rem;
+		cursor: pointer;
+		color: #8B6914;
+		padding: 0 0.25rem;
+		line-height: 1;
+	}
+	:global(html.dark) .search-clear {
+		color: #C4A35A;
+	}
+	.search-clear.visible {
+		display: block;
+	}
+	.search-results {
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		background: #FDF6EC;
+		border: 2px solid #C4A35A;
+		border-top: none;
+		border-radius: 0 0 12px 12px;
+		list-style: none;
+		margin: -2px 0 0;
+		padding: 0.5rem 0;
+		max-height: 320px;
+		overflow-y: auto;
+		box-shadow: 0 4px 16px rgba(62, 39, 3, 0.12);
+	}
+	:global(html.dark) .search-results {
+		background: #2a1c0a;
+		border-color: #7a5c2e;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+	}
+	.search-results.open {
+		display: block;
+	}
+	.search-results li {
+		padding: 0;
+	}
+	.search-results :global(a) {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding: 0.5rem 1rem;
+		text-decoration: none;
+		color: #3E2703;
+		cursor: pointer;
+		font-family: Georgia, 'Times New Roman', serif;
+	}
+	:global(html.dark) .search-results :global(a) {
+		color: #F5E4C4;
+	}
+	.search-results :global(a:hover),
+	.search-results :global(a.active) {
+		background: rgba(139, 105, 20, 0.1);
+	}
+	:global(html.dark) .search-results :global(a:hover),
+	:global(html.dark) .search-results :global(a.active) {
+		background: rgba(222, 185, 110, 0.1);
+	}
+	.search-results :global(.result-name) {
+		font-weight: 700;
+		font-size: 0.95rem;
+	}
+	.search-results :global(.result-extra) {
+		font-size: 0.8rem;
+		color: #8B6914;
+	}
+	:global(html.dark) .search-results :global(.result-extra) {
+		color: #C4A35A;
+	}
+	.search-results :global(.result-tags) {
+		font-size: 0.75rem;
+		color: #b8a070;
+	}
+	:global(html.dark) .search-results :global(.result-tags) {
+		color: #8a7050;
+	}
+	.no-results {
+		padding: 0.75rem 1rem;
+		color: #8B6914;
+		font-style: italic;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 0.9rem;
+	}
+	:global(html.dark) .no-results {
+		color: #C4A35A;
+	}
+</style>
+
+<script>
+	function initSearchBar() {
+		const container = document.querySelector<HTMLElement>('.search-container');
+		if (!container) return;
+
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+		const clearBtn = container.querySelector('.search-clear') as HTMLButtonElement;
+		const resultsList = container.querySelector('.search-results') as HTMLUListElement;
+		if (!input || !clearBtn || !resultsList) return;
+
+		interface Item { name: string; tags?: string[]; url: string; extra?: string }
+		const items: Item[] = JSON.parse(container.dataset.items || '[]');
+
+		let activeIdx = -1;
+
+		function score(item: Item, query: string): number {
+			const q = query.toLowerCase();
+			const name = item.name.toLowerCase();
+			let s = 0;
+
+			if (name === q) s += 100;
+			else if (name.startsWith(q)) s += 80;
+			else {
+				const words = name.split(/[\s\-_]+/);
+				for (const w of words) {
+					if (w.startsWith(q)) { s += 40; break; }
+				}
+				if (s === 0 && name.includes(q)) s += 30;
+			}
+
+			if (item.tags) {
+				for (const tag of item.tags) {
+					const t = tag.toLowerCase();
+					if (t === q) s += 60;
+					else if (t.startsWith(q)) s += 45;
+					else if (t.includes(q)) s += 20;
+				}
+			}
+
+			if (item.extra) {
+				const e = item.extra.toLowerCase();
+				if (e.includes(q)) s += 10;
+			}
+			return s;
+		}
+
+		function esc(text: string): string {
+			const d = document.createElement('span');
+			d.textContent = text;
+			return d.innerHTML;
+		}
+
+		function render(query: string) {
+			if (!query.trim()) {
+				resultsList.classList.remove('open');
+				resultsList.innerHTML = '';
+				activeIdx = -1;
+				return;
+			}
+			const scored = items
+				.map((item) => ({ item, s: score(item, query) }))
+				.filter((x) => x.s > 0)
+				.sort((a, b) => b.s - a.s)
+				.slice(0, 8);
+
+			activeIdx = -1;
+			resultsList.innerHTML = '';
+
+			if (scored.length === 0) {
+				resultsList.innerHTML = '<li class="no-results">No matches found</li>';
+				resultsList.classList.add('open');
+				return;
+			}
+
+			for (const { item } of scored) {
+				const li = document.createElement('li');
+				const a = document.createElement('a');
+				a.href = item.url;
+				let html = `<span class="result-name">${esc(item.name)}</span>`;
+				if (item.extra) html += `<span class="result-extra">${esc(item.extra)}</span>`;
+				if (item.tags?.length) html += `<span class="result-tags">${item.tags.map(t => esc(t)).join(', ')}</span>`;
+				a.innerHTML = html;
+				li.appendChild(a);
+				resultsList.appendChild(li);
+			}
+			resultsList.classList.add('open');
+		}
+
+		function highlightActive() {
+			const links = resultsList.querySelectorAll('a');
+			links.forEach((a, i) => a.classList.toggle('active', i === activeIdx));
+		}
+
+		input.addEventListener('input', () => {
+			clearBtn.classList.toggle('visible', input.value.length > 0);
+			render(input.value);
+		});
+
+		clearBtn.addEventListener('click', () => {
+			input.value = '';
+			clearBtn.classList.remove('visible');
+			resultsList.classList.remove('open');
+			resultsList.innerHTML = '';
+			input.focus();
+		});
+
+		input.addEventListener('keydown', (e) => {
+			const links = resultsList.querySelectorAll('a');
+			if (!links.length) return;
+
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				activeIdx = Math.min(activeIdx + 1, links.length - 1);
+				highlightActive();
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				activeIdx = Math.max(activeIdx - 1, -1);
+				highlightActive();
+			} else if (e.key === 'Enter' && activeIdx >= 0) {
+				e.preventDefault();
+				links[activeIdx].click();
+			} else if (e.key === 'Escape') {
+				resultsList.classList.remove('open');
+				input.blur();
+			}
+		});
+
+		document.addEventListener('click', (e) => {
+			if (!container.contains(e.target as Node)) {
+				resultsList.classList.remove('open');
+			}
+		});
+	}
+
+	initSearchBar();
+	document.addEventListener('astro:after-swap', initSearchBar);
+</script>

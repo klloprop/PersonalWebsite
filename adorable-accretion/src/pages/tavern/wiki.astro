@@ -15,6 +15,8 @@ import D20Icon from '../../assets/D20_Icon.png';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
+import SearchBar from '../../components/SearchBar.astro';
+import type { SearchItem } from '../../components/SearchBar.astro';
 import { SITE_TITLE } from '../../consts';
 
 const entries = (await getCollection('wiki')).sort(
@@ -93,6 +95,14 @@ const collectionDescendants: Record<string, string[]> = {};
 for (const node of colMap.values()) {
 	collectionDescendants[node.name] = getDescendantNames(node);
 }
+
+// Build search items for the search bar
+const wikiSearchItems: SearchItem[] = entries.map((entry) => ({
+	name: entry.data.title,
+	tags: entry.data.tags || [],
+	url: `/tavern/wiki/${flatSlug(entry)}/`,
+	extra: entry.data.collection || '',
+}));
 
 // Build ancestor chain: collection name → [topmost, ..., parent, self]
 function getAncestors(name: string): string[] {
@@ -299,6 +309,105 @@ function getAncestors(name: string): string[] {
 			.wiki-content {
 				min-width: 0;
 				min-height: 400px;
+			}
+			.search-sort-row {
+				display: flex;
+				align-items: flex-start;
+				gap: 0.5rem;
+				width: 100%;
+			}
+			.search-sort-row :global(.search-container) {
+				flex: 1;
+				min-width: 0;
+			}
+			.sort-wrapper {
+				position: relative;
+				flex-shrink: 0;
+			}
+			.sort-btn {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				height: 42px;
+				padding: 0 0.75rem;
+				border: 2px solid #C4A35A;
+				border-radius: 12px;
+				background: #FDF6EC;
+				color: #3E2703;
+				cursor: pointer;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.85rem;
+				box-shadow: 0 2px 8px rgba(62, 39, 3, 0.08);
+				transition: background 0.2s, border-color 0.2s;
+				white-space: nowrap;
+			}
+			.sort-btn:hover {
+				background: rgba(139, 105, 20, 0.1);
+				border-color: #8B6914;
+			}
+			:global(html.dark) .sort-btn {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+				color: #F5E4C4;
+			}
+			:global(html.dark) .sort-btn:hover {
+				background: rgba(222, 185, 110, 0.1);
+				border-color: #DEB96E;
+			}
+			.sort-btn svg {
+				flex-shrink: 0;
+			}
+			.sort-menu {
+				display: none;
+				position: absolute;
+				top: calc(100% + 4px);
+				right: 0;
+				min-width: 100%;
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 12px;
+				list-style: none;
+				margin: 0;
+				padding: 0.4rem 0;
+				box-shadow: 0 4px 16px rgba(62, 39, 3, 0.12);
+				z-index: 25;
+			}
+			.sort-menu.open {
+				display: block;
+			}
+			:global(html.dark) .sort-menu {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+			}
+			.sort-option {
+				display: block;
+				width: 100%;
+				padding: 0.5rem 1rem;
+				border: none;
+				background: none;
+				text-align: left;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.85rem;
+				color: #3E2703;
+				cursor: pointer;
+				white-space: nowrap;
+			}
+			.sort-option:hover {
+				background: rgba(139, 105, 20, 0.1);
+			}
+			.sort-option.active {
+				font-weight: 700;
+				color: #5C3D0E;
+			}
+			:global(html.dark) .sort-option {
+				color: #F5E4C4;
+			}
+			:global(html.dark) .sort-option:hover {
+				background: rgba(222, 185, 110, 0.1);
+			}
+			:global(html.dark) .sort-option.active {
+				color: #DEB96E;
 			}
 			.empty-state {
 				display: none;
@@ -607,12 +716,30 @@ function getAncestors(name: string): string[] {
 				))}
 			</aside>
 			<main class="wiki-content">
+				<div class="search-sort-row">
+					<SearchBar placeholder="Search wiki entries…" items={wikiSearchItems} />
+					<div class="sort-wrapper" id="sort-wrapper">
+						<button class="sort-btn" id="sort-btn" aria-label="Sort entries" aria-haspopup="true" aria-expanded="false">
+							<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="12" x2="13" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/>
+								<polyline points="18 15 21 18 18 21"/><line x1="21" y1="18" x2="21" y2="8"/>
+							</svg>
+							<span class="sort-label">Newest</span>
+						</button>
+						<ul class="sort-menu" id="sort-menu">
+							<li><button class="sort-option active" data-sort="newest">Newest</button></li>
+							<li><button class="sort-option" data-sort="oldest">Oldest</button></li>
+							<li><button class="sort-option" data-sort="a-z">A → Z</button></li>
+							<li><button class="sort-option" data-sort="z-a">Z → A</button></li>
+						</ul>
+					</div>
+				</div>
 				<section>
 					<h2 class="section-heading">Most Recent Entry</h2>
 					<p class="empty-state">No entries in this collection yet.</p>
 					<ul class="entry-grid">
 						{entries.map((entry, i) => (
-							<li class={`entry-card${i === 0 ? ' featured' : ''}`} data-collection={entry.data.collection || ''}>
+							<li class={`entry-card${i === 0 ? ' featured' : ''}`} data-collection={entry.data.collection || ''} data-title={entry.data.title} data-date={entry.data.pubDate.toISOString()}>
 								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
 									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
 									<div class="card-content">
@@ -644,6 +771,65 @@ function getAncestors(name: string): string[] {
 				const heading = document.querySelector<HTMLElement>('.section-heading');
 				const emptyState = document.querySelector<HTMLElement>('.empty-state');
 				const grid = document.querySelector<HTMLElement>('.entry-grid');
+				const sortBtn = document.getElementById('sort-btn');
+				const sortLabel = sortBtn?.querySelector('.sort-label');
+				const sortMenu = document.getElementById('sort-menu');
+				const sortOptions = document.querySelectorAll<HTMLButtonElement>('.sort-option');
+
+				// Sort modes
+				type SortMode = 'newest' | 'oldest' | 'a-z' | 'z-a';
+				let currentSort: SortMode = 'newest';
+
+				function sortCards() {
+					if (!grid) return;
+					const cardArray = Array.from(grid.querySelectorAll<HTMLElement>('.entry-card'));
+					cardArray.sort((a, b) => {
+						switch (currentSort) {
+							case 'newest':
+								return new Date(b.dataset.date || '').getTime() - new Date(a.dataset.date || '').getTime();
+							case 'oldest':
+								return new Date(a.dataset.date || '').getTime() - new Date(b.dataset.date || '').getTime();
+							case 'a-z':
+								return (a.dataset.title || '').localeCompare(b.dataset.title || '', undefined, { numeric: true });
+							case 'z-a':
+								return (b.dataset.title || '').localeCompare(a.dataset.title || '', undefined, { numeric: true });
+						}
+					});
+					for (const card of cardArray) grid.appendChild(card);
+					let first = true;
+					cardArray.forEach((card) => {
+						card.classList.remove('featured');
+						if (card.style.display !== 'none' && first) {
+							card.classList.add('featured');
+							first = false;
+						}
+					});
+				}
+
+				sortBtn?.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const open = sortMenu?.classList.toggle('open');
+					sortBtn.setAttribute('aria-expanded', String(!!open));
+				});
+
+				sortOptions.forEach((opt) => {
+					opt.addEventListener('click', () => {
+						currentSort = opt.dataset.sort as SortMode;
+						if (sortLabel) sortLabel.textContent = opt.textContent || '';
+						sortOptions.forEach((o) => o.classList.toggle('active', o === opt));
+						sortMenu?.classList.remove('open');
+						sortBtn?.setAttribute('aria-expanded', 'false');
+						sortCards();
+					});
+				});
+
+				document.addEventListener('click', (e) => {
+					const wrapper = document.getElementById('sort-wrapper');
+					if (wrapper && !wrapper.contains(e.target as Node)) {
+						sortMenu?.classList.remove('open');
+						sortBtn?.setAttribute('aria-expanded', 'false');
+					}
+				});
 
 				// Parse the descendants map from the sidebar data attribute
 				const descendants: Record<string, string[]> = JSON.parse(
