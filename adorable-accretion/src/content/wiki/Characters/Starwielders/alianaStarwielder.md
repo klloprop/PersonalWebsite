@@ -12,8 +12,7 @@ Founder of the Starwielder Dominion, and still part of the Starwielders.
 Alianas life is further detailed in Nature vs Nurture.
 
 Harbinger the golden age of humanity and the golden age of magic. <br>
-During her life she was a controversial figure, as many humans shared the believes of the fey, seeing her reaching for immortality as something bad. However after the hardships that eventually lead to the burning of the Emerald grove and and the Nameless Kings revenge, opinions shifted. Shortly after Aliana died she was praised as a martyr and soon as a god.  
-Eventually got killed by the Nameless King. 
+During her life she was a controversial figure. Especially as Aliana achieved immortality, she was viewed as a undesirable person, as many mortals shared the fey views at the time. However after the hardships that eventually lead to the burning of the Emerald grove and and the Nameless Kings revenge, opinions shifted. Shortly after Aliana died she was praised as a martyr and soon as a god.  
 
 Aliana has in her previous life attained immortality, by yet unknown means.  
 Her soul was split into seven pieces, all of them brought back into this world.. one way or another.
