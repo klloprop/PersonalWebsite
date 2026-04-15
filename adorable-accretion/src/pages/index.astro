@@ -2,13 +2,12 @@
 /**
  * index.astro — Landing page.
  *
- * Presents two choices: "To the Studio!" and "To the Tavern!".
- * Features mouse-proximity background opacity effects and responsive layout.
- * Studio links to /studio/blog, Tavern links to /tavern/scheduling.
+ * Full-width split layout: Studio (left) and Tavern (right).
+ * Studio: PolaroidGroup.png background + TopPolaroid.png as clickable button.
+ * Tavern: BigSignWChains.png + chains.png with top sign as clickable button.
+ * Mobile: stacked vertically, Tavern on top.
  */
 import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 ---
 
@@ -16,238 +15,486 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<link rel="preload" href="/images/landing/PolaroidGroup.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/landing/TopPolaroid.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/landing/BigSignWChains.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/landing/chains.webp" as="image" type="image/webp" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Trade+Winds&display=swap" rel="stylesheet" />
 		<style>
+			/* ===== LAYOUT ===== */
 			html, body {
 				height: 100%;
 				overflow-x: hidden;
+				margin: 0;
+				padding: 0;
 			}
 			body {
 				min-height: 100vh;
 				display: flex;
 				flex-direction: column;
 			}
-			main {
+			.landing {
 				flex: 1;
 				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
-				max-width: 800px;
-				width: 100%;
-				padding: 2rem;
-				text-align: center;
-				position: relative;
-				z-index: 2;
-				box-sizing: border-box;
-			}
-			h1 {
-				font-size: 3rem;
-				margin-bottom: 2rem;
-				border-radius: 10px;
-				padding: 1rem;
-				background: rgba(255, 255, 255, 0.9);
-				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-			}
-			.choices {
-				display: flex;
 				flex-direction: row;
-				gap: 2rem;
-				align-items: center;
-				justify-content: center;
-			}
-			.choice {
-				max-width: 400px;
+				min-height: calc(100vh - 4rem);
 				width: 100%;
-				border-radius: 10px;
-				padding: 1.5rem;
-				background: rgba(255, 255, 255, 0.9);
-				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-				text-align: center;
-				box-sizing: border-box;
-				overflow-wrap: break-word;
-				word-break: break-word;
-			}
-			.button {
-				display: inline-block;
-				padding: 1.5rem 3rem;
-				font-size: 1.5rem;
-				font-weight: bold;
-				color: white;
-				border-radius: 8px;
-				text-decoration: none;
-				transition: background 0.2s;
-				max-width: 250px;
-				width: 100%;
-				box-sizing: border-box;
-			}
-			.button-studio {
-				background: linear-gradient(180deg, #9b1088, #6b1d5e);
-				border: 2px solid #4a1942;
-				text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-			}
-			.button-studio:hover {
-				background: linear-gradient(180deg, #b428a2, #7a2070);
-			}
-			.button-tavern {
-				background: linear-gradient(180deg, #8B6914, #5C3D0E);
-				border: 2px solid #3E2703;
-				text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-				font-family: Georgia, 'Times New Roman', serif;
-			}
-			.button-tavern:hover {
-				background: linear-gradient(180deg, #A07818, #6B4710);
-			}
-			.choice p {
-				margin-top: 1rem;
-				font-size: 1.1rem;
-				color: var(--gray);
+				max-width: 100%;
+				margin: 0;
+				padding: 0;
 			}
 
-			:global(html.dark) body {
-				background: var(--bg);
+			/* ===== DIVIDER ===== */
+			.landing-divider {
+				width: 7px;
+				background: #000;
+				flex-shrink: 0;
+				z-index: 10;
 			}
-			:global(html.dark) h1 {
-				color: rgb(var(--black));
-				background: rgba(34, 34, 58, 0.9);
-				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+			/* ===== PANEL BASE ===== */
+			.panel {
+				flex: 1;
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				overflow: hidden;
 			}
-			:global(html.dark) .choice {
-				background: rgba(34, 34, 58, 0.9);
-				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+			/* ===== STUDIO PANEL (LEFT) ===== */
+			.panel-studio {
+				background: linear-gradient(
+					180deg,
+					#13050a 0%,
+					#a75e86 100%
+				);
 			}
-			:global(html.dark) .choice p {
-				color: rgb(var(--gray));
-			}
-			.choice-studio {
-				background: linear-gradient(180deg, rgba(253, 242, 248, 0.95), rgba(245, 218, 240, 0.95));
-				border: 2px solid #9b1088;
-				box-shadow: inset 0 1px 3px rgba(155, 16, 136, 0.2), 0 4px 6px rgba(0, 0, 0, 0.15);
-			}
-			:global(html.dark) .choice-studio {
-				background: linear-gradient(180deg, rgba(42, 20, 40, 0.95), rgba(26, 10, 24, 0.95));
-				border-color: #7a2070;
-				box-shadow: inset 0 1px 3px rgba(155, 16, 136, 0.3), 0 4px 6px rgba(0, 0, 0, 0.4);
-			}
-			.choice-tavern {
-				background: linear-gradient(180deg, rgba(245, 228, 196, 0.95), rgba(222, 196, 154, 0.95));
-				border: 2px solid #8B6914;
-				box-shadow: inset 0 1px 3px rgba(139, 105, 20, 0.2), 0 4px 6px rgba(0, 0, 0, 0.15);
-			}
-			:global(html.dark) .choice-tavern {
-				background: linear-gradient(180deg, rgba(62, 39, 3, 0.95), rgba(40, 25, 2, 0.95));
-				border-color: #8B6914;
-				box-shadow: inset 0 1px 3px rgba(139, 105, 20, 0.3), 0 4px 6px rgba(0, 0, 0, 0.4);
-			}
-			:global(html.dark) .background-left {
-				background: linear-gradient(180deg, rgba(155, 16, 136, 0.3), rgba(26, 10, 24, 0.2));
-			}
-			@media (max-width: 600px) {
-				.choices {
-					flex-direction: column;
-					gap: 1.5rem;
-				}
-				h1 {
-					font-size: 1.8rem;
-					padding: 0.75rem;
-					max-width: 100%;
-					box-sizing: border-box;
-				}
-				.button {
-					padding: 1rem 2rem;
-					font-size: 1.1rem;
-				}
-				.choice p {
-					font-size: 0.95rem;
-				}
-				main {
-					padding: 1rem;
-				}
-				.background-left,
-				.background-right {
-					display: none;
-				}
-			}
-			.background-left,
-			.background-right {
-				position: fixed;
-				top: 0;
-				bottom: 0;
-				width: 50%;
-				background-size: cover;
-				background-position: center;
+			.panel-studio::before {
+				content: '';
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+					180deg,
+					#200912 0%,
+					#F28EC5 100%
+				);
 				opacity: 0;
-				transition: opacity 0.3s ease;
+				transition: opacity 0.4s ease;
+				z-index: 0;
+			}
+			.panel-studio:has(.studio-button:hover)::before {
+				opacity: 1;
+			}
+
+			/* Polaroid group (without top polaroid) as background */
+			.studio-bg {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: none;
+				/* Use transform to shift without shrinking */
+				transform: translate(3%, 5%);
+			}
+			.studio-bg img {
+				width: 900px;          /* ← fixed size, adjust as needed */
+				height: auto;
+				max-width: none;       /* prevent shrinking */
+			}
+
+			/* Top polaroid as the clickable button */
+			.studio-button {
+				position: relative;
+				z-index: 2;
+				display: block;
+				text-decoration: none;
+				color: inherit;
+				/* Match the original rotation from the design */
+				transform: rotate(-2deg);
+				transition: transform 0.3s ease, box-shadow 0.3s ease;
+				margin-top: 120px;
+				margin-left: 60px;
+			}
+			.studio-button:hover {
+				transform: rotate(0deg) scale(1.05);
+				z-index: 10;
+			}
+			.studio-button img {
+				width: 450px;
+				height: auto;
+				display: block;
+			}
+			.studio-title {
+				position: absolute;
+				top: 34%;              /* ← vertical position on the polaroid */
+				left: 45%;             /* ← horizontal position on the polaroid */
+				transform: translate(-50%, -50%);
+				font-family: 'Indie Flower', regular;
+				font-size: 5rem;     /* ← title font size */
+				color: white;
+				text-shadow: 2px 3px 6px rgba(0, 0, 0, 0.5);
+				text-align: center;
+				line-height: 1.2;
+				margin: 0;
+				pointer-events: none;
+			}
+
+			/* Studio description text */
+			.studio-desc {
+				position: absolute;
+				z-index: 2;
+				font-family: 'Indie Flower', cursive;
+				font-size: 1.4rem;
+				color: #333;
+				text-align: center;
+				line-height: 1.5;
+				max-width: 280px;
+				top: 60%;              /* ← vertical position on the polaroid */
+				left: 12%;  
+				pointer-events: none;
+			}
+
+			/* ===== TAVERN PANEL (RIGHT) ===== */
+			.panel-tavern {
+				overflow: hidden;
+				background: linear-gradient(
+					180deg,
+					#0c0804 0%,
+					#422902 100%
+				);
+			}
+			.panel-tavern::before {
+				content: '';
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+					180deg,
+					#160e07 0%,
+					#774904 100%
+				);
+				opacity: 0;
+				transition: opacity 0.4s ease;
+				z-index: 0;
+			}
+			.panel-tavern:has(.tavern-button:hover)::before {
+				opacity: 1;
+			}
+
+			/* Chains background layer */
+			.tavern-chains {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: none;
 				z-index: 1;
+				transition: transform 0.4s ease;
 			}
-			.background-left {
-				left: 0;
-				background: linear-gradient(180deg, rgba(155, 16, 136, 0.22), rgba(253, 242, 248, 0.1));
+			.panel-tavern:has(.tavern-button:hover) .tavern-chains {
+				transform: translateY(-30px);
 			}
-			.background-right {
-				right: 0;
-				background-image: url('https://www.dieharddice.com/cdn/shop/files/M0510020_SkyforgeHexbreaker.jpg?v=1750180662');
+			.tavern-chains img {
+				width: 900px;          /* ← fixed size, adjust as needed */
+				height: auto;
+				max-width: none;
+				opacity: 1;
 			}
-			.background-left:hover,
-			.background-right:hover {
-				opacity: 0;
+
+			/* Sign image */
+			.tavern-bg {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: none;
+				z-index: 2;
+				transform: translate(0%, -44%);  /* ← adjust X and Y to shift */
+
+			}
+			.tavern-bg img {
+				width: 600px;          /* ← adjust size as needed */
+				height: auto;
+				max-width: none;
+			}
+			.tavern-bg picture {
+				display: contents;
+			}
+
+			/* Top sign as clickable button */
+			.tavern-button {
+				position: relative;
+				z-index: 3;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				text-decoration: none;
+				color: inherit;
+				/* Sized to overlay the upper sign panel */
+				width: 100%;
+				max-width: 500px;
+				padding: 1.5rem 1rem;
+				top: 24%;
+				left: 00%;
+				transition: transform 0.3s ease;
+			}
+			.tavern-button:hover {
+				transform: scale(1.00);
+			}
+			.tavern-title {
+				font-family: 'Trade Winds', serif;
+				font-size: 5rem;
+				color: white;
+				text-shadow: 2px 3px 6px rgba(0, 0, 0, 0.7);
+				margin: 0;
+				line-height: 1.15;
+				text-align: center;
+			}
+
+			/* Tavern description (non-clickable) */
+			.tavern-desc {
+				position: relative;
+				z-index: 3;
+				font-family: 'Trade Winds', serif;
+				font-size: 1.3rem;
+				color: white;
+				text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.6);
+				max-width: 330px;
+				line-height: 1.5;
+				margin-top: 33rem;
+				text-align: center;
+				pointer-events: none;
+			}
+			.tavern-desc p {
+				margin: 0.3rem 0;
+			}
+
+			/* ===== MOBILE RESPONSIVE ===== */
+
+			/* Tablet landscape / small desktop */
+			@media (max-width: 1200px) {
+				.landing {
+					flex-direction: column;
+				}
+				.landing-divider {
+					width: auto;
+					height: 7px;
+					order: 2;
+				}
+				.panel-studio {
+					order: 3;
+				}
+				.panel-tavern {
+					order: 1;
+				}
+				.panel {
+					flex: 1 1 0;
+					min-height: 0;
+				}
+
+				.studio-button {
+					margin-top: 60px;
+					margin-left: 40px;
+				}
+				.studio-button img {
+					width: 350px;
+				}
+				.studio-title {
+					font-size: 3.5rem;
+				}
+				.studio-desc {
+					font-size: 1.2rem;
+					max-width: 260px;
+					margin-right:20%;
+				}
+				.studio-bg {
+					/* Use transform to shift without shrinking */
+					transform: translate(3%, 5%);
+				}
+				.studio-bg img {
+					width: 650px;          /* ← fixed size, adjust as needed */
+					height: auto;
+					max-width: none;       /* prevent shrinking */
+				}
+				.tavern-button {
+					top: -8%;
+					left: 00%;
+				}
+				.tavern-title {
+					font-size: 3.5rem;
+				}
+				.tavern-desc {
+					font-size: 1rem;
+					max-width: 280px;
+					margin-top: 5rem;
+				}
+							/* Sign image */
+				.tavern-bg {
+					transform: translate(0%, -78%);  /* ← adjust X and Y to shift */
+
+				}
+				.tavern-bg img {
+					width: 400px;          /* ← adjust size as needed */
+					height: auto;
+					
+				}
+				.tavern-chains {
+					left: 4%;
+				}
+
+				.tavern-chains img {
+					width: 700px;
+				}
+			}
+
+			/* Large phone */
+			@media (max-width: 600px) {
+				.studio-button {
+					margin-top: 60px;
+					margin-left: 40px;
+				}
+				.studio-button img {
+					width: 300px;
+				}
+				.studio-title {
+					font-size: 3rem;
+				}
+				.studio-desc {
+					font-size: 1rem;
+					max-width: 260px;
+					margin-right:20%;
+				}
+				.studio-bg img {
+					width: 550px;          /* ← fixed size, adjust as needed */
+					height: auto;
+					max-width: none;       /* prevent shrinking */
+				}
+				.tavern-button {
+					top: -1%;
+					left: 00%;
+				}
+				.tavern-title {
+					font-size: 3rem;
+				}
+				.tavern-bg {
+					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
+				}
+				.tavern-bg img {
+					width: 350px;          /* ← adjust size as needed */
+					height: auto;
+					
+				}
+				.tavern-chains img {
+					width: 600px;
+				}
+
+			}
+
+			/* Small phone */
+			@media (max-width: 400px) {
+				.studio-button {
+					margin-top: 60px;
+					margin-left: 40px;
+				}
+				.studio-button img {
+					width: 300px;
+				}
+				.studio-title {
+					font-size: 3rem;
+				}
+				.studio-desc {
+					font-size: 1rem;
+					max-width: 260px;
+					margin-right:20%;
+				}
+				.studio-bg img {
+					width: 550px;          /* ← fixed size, adjust as needed */
+					height: auto;
+					max-width: none;       /* prevent shrinking */
+				}
+				.tavern-button {
+					top: -1%;
+					left: 00%;
+				}
+				.tavern-title {
+					font-size: 3rem;
+				}
+				.tavern-bg {
+					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
+				}
+				.tavern-bg img {
+					width: 350px;          /* ← adjust size as needed */
+					height: auto;
+					
+				}
+				.tavern-chains img {
+					width: 600px;
+				}
+
 			}
 		</style>
 	</head>
 	<body>
-		<Header />
-		<div class="background-left"></div>
-		<div class="background-right"></div>
-		<main>
-			<h1>Welcome to Lucy's Blog</h1>
-			<div class="choices">
-				<div class="choice choice-studio">
-					<a href="/studio/blog" class="button button-studio">To the Studio!</a>
-					<p>A personal diary-style blog and a small digital studio for you to explore! Just generally stuff I want to share with the world.</p>
+		<main class="landing">
+			<!-- ===== STUDIO PANEL ===== -->
+			<section class="panel panel-studio">
+				<!-- Polaroid group background (without top polaroid) -->
+				<div class="studio-bg">
+					<picture>
+						<source srcset="/images/landing/PolaroidGroup.webp" type="image/webp" />
+						<img src="/images/landing/PolaroidGroup.png" alt="Studio polaroid collage" width="2093" height="2581" loading="lazy" />
+					</picture>
 				</div>
-				<div class="choice choice-tavern">
-					<a href="/tavern/scheduling" class="button button-tavern">&#9876; To the Tavern!</a>
-					<p>Come into my Tavern, there is always a seat reserved for you! <br>
-						Explore Pen and Paper content and recent developments in the latest Campaign.
+				<!-- Top polaroid as clickable button -->
+				<a href="/studio/blog" class="studio-button">
+					<picture>
+						<source srcset="/images/landing/TopPolaroid.webp" type="image/webp" />
+						<img src="/images/landing/TopPolaroid.png" alt="To the Studio!" width="1133" height="1548" fetchpriority="high" />
+					</picture>
+					<h2 class="studio-title">To the<br>Studio!</h2>
+					<p class="studio-desc">
+						A personal blog and a small photo studio for you to explore!
+						Just generally stuff I want to share with the world.
 					</p>
+				</a>
+			</section>
+
+			<!-- ===== DIVIDER ===== -->
+			<div class="landing-divider"></div>
+
+			<!-- ===== TAVERN PANEL ===== -->
+			<section class="panel panel-tavern">
+				<!-- Chains background -->
+				<div class="tavern-chains">
+					<picture>
+						<source srcset="/images/landing/chains.webp" type="image/webp" />
+						<img src="/images/landing/chains.png" alt="" width="1606" height="2461" loading="lazy" />
+					</picture>
 				</div>
-			</div>
+				<!-- Sign image -->
+				<div class="tavern-bg">
+					<picture>
+						<source srcset="/images/landing/BigSignWChains.webp" type="image/webp" />
+						<img src="/images/landing/BigSignWChains.png" alt="Tavern sign" width="1235" height="4569" loading="lazy" />
+					</picture>
+				</div>
+				<!-- Top sign as clickable button -->
+				<a href="/tavern/scheduling" class="tavern-button">
+					<h2 class="tavern-title">To The<br>Tavern!</h2>
+				</a>
+				<!-- Description text -->
+				<div class="tavern-desc">
+					<p>Come in! There is always a seat for you.</p>
+					<p>Vote on scheduling and explore Pen and Paper content here.</p>
+				</div>
+			</section>
 		</main>
-		<Footer />
-		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const leftBg = document.querySelector('.background-left');
-				const rightBg = document.querySelector('.background-right');
-				const leftButton = document.querySelector('.choice:first-child .button');
-				const rightButton = document.querySelector('.choice:last-child .button');
-
-				document.addEventListener('mousemove', (e) => {
-					const mouseX = e.clientX;
-					const mouseY = e.clientY;
-
-					// Get button positions
-					const leftRect = leftButton.getBoundingClientRect();
-					const rightRect = rightButton.getBoundingClientRect();
-
-					// Calculate distance from mouse to button centers
-					const leftCenterX = leftRect.left + leftRect.width / 2;
-					const leftCenterY = leftRect.top + leftRect.height / 2;
-					const rightCenterX = rightRect.left + rightRect.width / 2;
-					const rightCenterY = rightRect.top + rightRect.height / 2;
-
-					const leftDistance = Math.sqrt((mouseX - leftCenterX) ** 2 + (mouseY - leftCenterY) ** 2);
-					const rightDistance = Math.sqrt((mouseX - rightCenterX) ** 2 + (mouseY - rightCenterY) ** 2);
-
-					// Max distance for full opacity (adjust as needed)
-					const maxDistance = 300;
-
-					// Calculate opacity (closer = more opaque, from 20% to 80%)
-					const leftOpacity = 0.2 + (0.6 * Math.max(0, 1 - leftDistance / maxDistance));
-					const rightOpacity = 0.2 + (0.6 * Math.max(0, 1 - rightDistance / maxDistance));
-
-					leftBg.style.opacity = leftOpacity;
-					rightBg.style.opacity = rightOpacity;
-				});
-			});
-		</script>
 	</body>
 </html>
