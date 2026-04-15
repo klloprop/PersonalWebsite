@@ -216,8 +216,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				justify-content: center;
 				pointer-events: none;
 				z-index: 2;
-				transform: translate(0%, -44%);  /* ← adjust X and Y to shift */
-
+				transform: translateY(-600px);
 			}
 			.tavern-bg img {
 				width: 600px;          /* ← adjust size as needed */
@@ -242,8 +241,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				width: 100%;
 				max-width: 500px;
 				padding: 1.5rem 1rem;
-				top: 24%;
-				left: 00%;
+				top: 230px;
+				left: 0;
 				transition: transform 0.3s ease;
 			}
 			.tavern-button:hover {
@@ -269,7 +268,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.6);
 				max-width: 330px;
 				line-height: 1.5;
-				margin-top: 33rem;
+				margin-top: 450px;
 				text-align: center;
 				pointer-events: none;
 			}
@@ -325,8 +324,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					max-width: none;       /* prevent shrinking */
 				}
 				.tavern-button {
-					top: -8%;
-					left: 00%;
+					top: 55px;
+					left: 0;
 				}
 				.tavern-title {
 					font-size: 3.5rem;
@@ -334,12 +333,11 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				.tavern-desc {
 					font-size: 1rem;
 					max-width: 280px;
-					margin-top: 5rem;
+					margin-top: 180px;
 				}
 							/* Sign image */
 				.tavern-bg {
-					transform: translate(0%, -78%);  /* ← adjust X and Y to shift */
-
+					transform: translateY(-450px);
 				}
 				.tavern-bg img {
 					width: 400px;          /* ← adjust size as needed */
@@ -378,8 +376,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					max-width: none;       /* prevent shrinking */
 				}
 				.tavern-button {
-					top: 3%;
-					left: 00%;
+					top: 45px;
+					left: 0;
 				}
 				.tavern-title {
 					font-size: 3rem;
@@ -387,15 +385,14 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				.tavern-desc {
 					font-size: 0.9rem;
 					max-width: 220px;
-					margin-top: 7rem;
+					margin-top: 140px;
 				}
 				.tavern-bg {
-					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
+					transform: translateY(-400px);
 				}
 				.tavern-bg img {
 					width: 350px;          /* ← adjust size as needed */
 					height: auto;
-					
 				}
 				.tavern-chains img {
 					width: 600px;
@@ -405,48 +402,92 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 			/* Small phone */
 			@media (max-width: 400px) {
-								.studio-button {
+				.studio-button {
 					margin-top: 60px;
 					margin-left: 40px;
 				}
 				.studio-button img {
-					width: 300px;
+					width: 250px;
 				}
 				.studio-title {
 					font-size: 3rem;
 				}
 				.studio-desc {
-					font-size: 1rem;
+					font-size: 0.8rem;
 					max-width: 260px;
-					margin-right:20%;
+					margin-right: 20%;
 				}
 				.studio-bg img {
-					width: 550px;          /* ← fixed size, adjust as needed */
+					width: 400px;
 					height: auto;
-					max-width: none;       /* prevent shrinking */
+					max-width: none;
 				}
 				.tavern-button {
-					top: 3%;
-					left: 00%;
+					top: -10px;
+					left: 0;
 				}
 				.tavern-title {
-					font-size: 3rem;
+					font-size: 2.5rem;
 				}
 				.tavern-desc {
-					font-size: 0.9rem;
-					max-width: 220px;
-					margin-top: 7rem;
+					font-size: 0.6rem;
+					max-width: 150px;
+					margin-top: 45px;
 				}
 				.tavern-bg {
-					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
+					transform: translateY(-300px);
 				}
 				.tavern-bg img {
-					width: 350px;          /* ← adjust size as needed */
+					width: 250px;
 					height: auto;
-					
 				}
 				.tavern-chains img {
-					width: 600px;
+					width: 400px;
+				}
+			}
+			/* Small phone */
+			@media (max-height: 700px) {
+				.studio-button {
+					margin-top: 60px;
+					margin-left: 40px;
+				}
+				.studio-button img {
+					width: 200px;
+				}
+				.studio-title {
+					font-size: 2.5rem;
+				}
+				.studio-desc {
+					font-size: 0.7rem;
+					max-width: 300px;
+					margin-right: 19%;
+				}
+				.studio-bg img {
+					width: 350px;
+					height: auto;
+					max-width: none;
+				}
+				.tavern-button {
+					top: 6px;
+					left: 0;
+				}
+				.tavern-title {
+					font-size: 2rem;
+				}
+				.tavern-desc {
+					font-size: 0.5rem;
+					max-width: 130px;
+					margin-top: 45px;
+				}
+				.tavern-bg {
+					transform: translateY(-230px);
+				}
+				.tavern-bg img {
+					width: 200px;
+					height: auto;
+				}
+				.tavern-chains img {
+					width: 300px;
 				}
 			}
 		</style>
