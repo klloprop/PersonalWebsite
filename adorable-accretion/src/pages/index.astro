@@ -41,9 +41,10 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				flex-direction: row;
 				min-height: calc(100vh - 4rem);
 				width: 100%;
-				max-width: 100%;
+				max-width: 100vw;
 				margin: 0;
 				padding: 0;
+				overflow: hidden;
 			}
 
 			/* ===== DIVIDER ===== */
@@ -377,11 +378,16 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					max-width: none;       /* prevent shrinking */
 				}
 				.tavern-button {
-					top: -1%;
+					top: 3%;
 					left: 00%;
 				}
 				.tavern-title {
 					font-size: 3rem;
+				}
+				.tavern-desc {
+					font-size: 0.9rem;
+					max-width: 220px;
+					margin-top: 7rem;
 				}
 				.tavern-bg {
 					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
@@ -399,7 +405,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 			/* Small phone */
 			@media (max-width: 400px) {
-				.studio-button {
+								.studio-button {
 					margin-top: 60px;
 					margin-left: 40px;
 				}
@@ -420,11 +426,16 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					max-width: none;       /* prevent shrinking */
 				}
 				.tavern-button {
-					top: -1%;
+					top: 3%;
 					left: 00%;
 				}
 				.tavern-title {
 					font-size: 3rem;
+				}
+				.tavern-desc {
+					font-size: 0.9rem;
+					max-width: 220px;
+					margin-top: 7rem;
 				}
 				.tavern-bg {
 					transform: translate(0%, -65%);  /* ← adjust X and Y to shift */
@@ -437,7 +448,6 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				.tavern-chains img {
 					width: 600px;
 				}
-
 			}
 		</style>
 	</head>
