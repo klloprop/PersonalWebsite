@@ -531,7 +531,40 @@ function getAncestors(name: string): string[] {
 				font-size: 0.85rem;
 				line-height: 1;
 			}
+			/* ── Mobile collection toggle button ── */
+			.sidebar-mobile-toggle {
+				display: none;
+			}
 			@media (max-width: 900px) {
+				.sidebar-mobile-toggle {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					width: 100%;
+					padding: 0.75rem 1rem;
+					border: 2px solid #C4A35A;
+					border-radius: 12px;
+					background: #FDF6EC;
+					color: #3E2703;
+					cursor: pointer;
+					font-family: Georgia, 'Times New Roman', serif;
+					font-size: 1rem;
+					font-weight: 600;
+					margin-bottom: 0.75rem;
+					box-shadow: 0 2px 8px rgba(62, 39, 3, 0.08);
+				}
+				:global(html.dark) .sidebar-mobile-toggle {
+					background: #2a1c0a;
+					border-color: #7a5c2e;
+					color: #F5E4C4;
+				}
+				.sidebar-mobile-toggle .toggle-chevron {
+					transition: transform 0.3s;
+					flex-shrink: 0;
+				}
+				.sidebar-mobile-toggle.open .toggle-chevron {
+					transform: rotate(180deg);
+				}
 				.wiki-layout {
 					flex-direction: column;
 					padding: 1.25rem;
@@ -540,81 +573,109 @@ function getAncestors(name: string): string[] {
 					width: 100%;
 					max-width: 100%;
 					box-sizing: border-box;
-					position: static;
-					max-height: 40vh;
+					position: fixed;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					max-height: 100vh;
+					max-height: 100dvh;
+					height: 100vh;
+					height: 100dvh;
 					overflow-y: auto;
+					display: none;
+					flex-direction: column;
+					gap: 0.25rem;
+					border-radius: 0;
+					padding: 1rem 1rem 6rem;
+					margin-bottom: 0;
+					z-index: 100;
+					overscroll-behavior: contain;
+				}
+				.sidebar.mobile-open {
 					display: flex;
-					gap: 0.5rem;
-					overflow-x: auto;
-					flex-wrap: wrap;
-					border-radius: 12px;
-					padding: 0.75rem;
-					margin-bottom: 1.5rem;
+				}
+				/* Scroll indicator gradient at bottom — only shown when scrollable */
+				.sidebar::after {
+					content: '⌄ scroll for more';
+					position: fixed;
+					bottom: 0;
+					left: 0;
+					right: 0;
+					height: 4rem;
+					background: linear-gradient(transparent, #FDF6EC 60%);
+					display: none;
+					align-items: flex-end;
+					justify-content: center;
+					padding-bottom: 1rem;
+					font-family: Georgia, 'Times New Roman', serif;
+					font-size: 0.8rem;
+					color: #8B6914;
+					pointer-events: none;
+					z-index: 101;
+				}
+				.sidebar.can-scroll::after {
+					display: flex;
+				}
+				:global(html.dark) .sidebar.can-scroll::after {
+					background: linear-gradient(transparent, #2a1c0a 60%);
+					color: #C4A35A;
 				}
 				.sidebar-title {
-					display: none;
+					display: block;
+					font-size: 1.1rem;
+					text-align: center;
+					padding-bottom: 0.5rem;
+					margin-bottom: 0.5rem;
+					border-bottom: 1px solid rgba(196, 163, 90, 0.3);
 				}
 				.sidebar-divider {
-					display: none;
+					display: block;
 				}
 				.sidebar-group {
-					flex-direction: row;
-					gap: 0.35rem;
-					flex-shrink: 1;
-					flex-wrap: wrap;
+					flex-direction: column;
 				}
 				.sidebar-group-header {
-					width: auto;
+					width: 100%;
 				}
 				.sidebar-toggle {
-					display: none;
+					display: flex;
 				}
 				.sidebar-children {
-					display: flex;
-					flex-direction: row;
-					padding-left: 0;
-					margin-left: 0;
-					border-left: none;
-					gap: 0.35rem;
-					flex-wrap: wrap;
+					flex-direction: column;
+					padding-left: 0.75rem;
+					margin-left: 0.65rem;
+					border-left: 1.5px solid rgba(196, 163, 90, 0.3);
+					gap: 0;
 				}
 				.sidebar-btn {
-					white-space: nowrap;
-					flex-shrink: 1;
-					padding: 0.5rem 0.75rem;
-					border-radius: 999px;
-					border: 1px solid #C4A35A;
-					min-width: 0;
-					overflow: hidden;
-					text-overflow: ellipsis;
+					white-space: normal;
+					flex-shrink: 0;
+					padding: 0.7rem 0.75rem;
+					border-radius: 10px;
+					border: none;
+					font-size: 1rem;
 				}
 				.sidebar-children .sidebar-btn {
-					font-size: 0.85rem;
-					padding: 0.4rem 0.6rem;
-					padding-left: 1.4rem;
-					position: relative;
+					font-size: 0.92rem;
+					padding: 0.55rem 0.6rem;
+					position: static;
 				}
 				.sidebar-children .sidebar-btn::before {
-					content: '└';
-					position: absolute;
-					left: 0.45rem;
-					top: 50%;
-					transform: translateY(-50%);
-					font-size: 0.75rem;
-					color: #C4A35A;
-					pointer-events: none;
+					display: none;
 				}
 				.sidebar-btn .collection-img,
 				.sidebar-btn .all-icon {
-					width: 24px;
-					height: 24px;
+					width: 32px;
+					height: 32px;
 				}
 				.sidebar-children .sidebar-btn .collection-img {
-					width: 20px;
-					height: 20px;
+					width: 26px;
+					height: 26px;
 				}
 				.sidebar-btn .collection-count {
-					display: none;
+					display: inline;
+					font-size: 0.8rem;
 				}
 				ul.entry-grid {
 					grid-template-columns: 1fr;
@@ -637,6 +698,10 @@ function getAncestors(name: string): string[] {
 	<body>
 		<Header />
 		<div class="wiki-layout">
+			<button class="sidebar-mobile-toggle" id="sidebar-mobile-toggle">
+				<span class="toggle-label">Browse Collections</span>
+				<svg class="toggle-chevron" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+			</button>
 			<aside class="sidebar" data-descendants={JSON.stringify(collectionDescendants)}>
 				<p class="sidebar-title">Collections</p>
 				<button class="sidebar-btn active" data-collection="all">
@@ -775,6 +840,41 @@ function getAncestors(name: string): string[] {
 				const sortLabel = sortBtn?.querySelector('.sort-label');
 				const sortMenu = document.getElementById('sort-menu');
 				const sortOptions = document.querySelectorAll<HTMLButtonElement>('.sort-option');
+				const mobileToggle = document.getElementById('sidebar-mobile-toggle') as HTMLButtonElement | null;
+				const toggleLabel = mobileToggle?.querySelector('.toggle-label');
+
+				// Mobile sidebar toggle
+				function isMobile() {
+					return window.matchMedia('(max-width: 900px)').matches;
+				}
+
+				function closeMobileSidebar() {
+					sidebar?.classList.remove('mobile-open');
+					mobileToggle?.classList.remove('open');
+					document.body.style.overflow = '';
+				}
+
+				function openMobileSidebar() {
+					sidebar?.classList.add('mobile-open');
+					mobileToggle?.classList.add('open');
+					document.body.style.overflow = 'hidden';
+					// Check if sidebar content is scrollable
+					requestAnimationFrame(() => {
+						if (sidebar && sidebar.scrollHeight > sidebar.clientHeight) {
+							sidebar.classList.add('can-scroll');
+						} else {
+							sidebar?.classList.remove('can-scroll');
+						}
+					});
+				}
+
+				mobileToggle?.addEventListener('click', () => {
+					if (sidebar?.classList.contains('mobile-open')) {
+						closeMobileSidebar();
+					} else {
+						openMobileSidebar();
+					}
+				});
 
 				// Sort modes
 				type SortMode = 'newest' | 'oldest' | 'a-z' | 'z-a';
@@ -897,6 +997,12 @@ function getAncestors(name: string): string[] {
 				buttons.forEach((btn) => {
 					btn.addEventListener('click', () => {
 						filterTo(btn.dataset.collection!);
+						// Update the mobile toggle label
+						if (toggleLabel) {
+							toggleLabel.textContent = btn.dataset.collection === 'all'
+								? 'Browse Collections'
+								: btn.dataset.collection!;
+						}
 						// Auto-expand parent group when clicking its button
 						const group = btn.closest('.sidebar-group');
 						if (group) {
@@ -906,6 +1012,10 @@ function getAncestors(name: string): string[] {
 								children.classList.add('open');
 								toggle?.classList.add('expanded');
 							}
+						}
+						// Collapse sidebar on mobile after selection
+						if (isMobile()) {
+							closeMobileSidebar();
 						}
 					});
 				});
