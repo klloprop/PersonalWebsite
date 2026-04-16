@@ -2,7 +2,7 @@
 title: "Arkus"
 description: "Artificer genius"
 pubDate: 2026-04-12
-heroImage: "../../../../assets/WikiImages/Arkus.png"
+heroImage: ""
 collection: "Player Characters"
 tags: ["Arkus"]
 ---
