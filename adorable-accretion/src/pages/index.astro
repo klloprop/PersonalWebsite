@@ -276,10 +276,94 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				margin: 0.3rem 0;
 			}
 
-			/* ===== MOBILE RESPONSIVE ===== */
+			/* ===== RESPONSIVE ===== */
 
-			/* Tablet landscape / small desktop */
-			@media (max-width: 1200px) {
+			/* Shorter desktop screens — row layout still active */
+			@media (min-width: 1001px) and (max-height: 1100px) {
+				.studio-button {
+					margin-top: 60px;
+					margin-left: 40px;
+				}
+				.studio-button img {
+					width: 350px;
+				}
+				.studio-title {
+					font-size: 3.5rem;
+				}
+				.studio-desc {
+					font-size: 1.2rem;
+					max-width: 300px;
+					margin-right: 19%;
+				}
+				.studio-bg img {
+					width: 700px;
+				}
+				.tavern-button {
+					top: 200px;
+				}
+				.tavern-title {
+					font-size: 4.5rem;
+				}
+				.tavern-desc {
+					font-size: 1.2rem;
+					max-width: 300px;
+					margin-top: 360px;
+				}
+				.tavern-bg {
+					transform: translateY(-500px);
+				}
+				.tavern-bg img {
+					width: 500px;
+				}
+				.tavern-chains img {
+					width: 800px;
+				}
+			}
+
+			/* Short desktop screens (e.g. 1366×768 laptops) — row layout */
+			@media (min-width: 1001px) and (max-height: 900px) {
+				.studio-button {
+					margin-top: 30px;
+					margin-left: 30px;
+				}
+				.studio-button img {
+					width: 300px;
+				}
+				.studio-title {
+					font-size: 2.8rem;
+				}
+				.studio-desc {
+					font-size: 1rem;
+					max-width: 220px;
+					margin-right: 19%;
+				}
+				.studio-bg img {
+					width: 600px;
+				}
+				.tavern-button {
+					top: 60px;
+				}
+				.tavern-title {
+					font-size: 3.5rem;
+				}
+				.tavern-desc {
+					font-size: 0.9rem;
+					max-width: 250px;
+					margin-top: 180px;
+				}
+				.tavern-bg {
+					transform: translateY(-420px);
+				}
+				.tavern-bg img {
+					width: 380px;
+				}
+				.tavern-chains img {
+					width: 600px;
+				}
+			}
+
+			/* Tablet and below — switch to vertical column layout */
+			@media (max-width: 1000px) {
 				.landing {
 					flex-direction: column;
 				}
@@ -312,16 +396,10 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				.studio-desc {
 					font-size: 1.2rem;
 					max-width: 260px;
-					margin-right:20%;
-				}
-				.studio-bg {
-					/* Use transform to shift without shrinking */
-					transform: translate(3%, 5%);
+					margin-right: 20%;
 				}
 				.studio-bg img {
-					width: 650px;          /* ← fixed size, adjust as needed */
-					height: auto;
-					max-width: none;       /* prevent shrinking */
+					width: 650px;
 				}
 				.tavern-button {
 					top: 55px;
@@ -335,30 +413,22 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					max-width: 280px;
 					margin-top: 180px;
 				}
-							/* Sign image */
 				.tavern-bg {
 					transform: translateY(-450px);
 				}
 				.tavern-bg img {
-					width: 400px;          /* ← adjust size as needed */
-					height: auto;
-					
+					width: 400px;
 				}
 				.tavern-chains {
 					left: 4%;
 				}
-
 				.tavern-chains img {
 					width: 700px;
 				}
 			}
 
-			/* Large phone */
+			/* Phones (narrow screens) */
 			@media (max-width: 600px) {
-				.studio-button {
-					margin-top: 60px;
-					margin-left: 40px;
-				}
 				.studio-button img {
 					width: 300px;
 				}
@@ -367,17 +437,12 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				}
 				.studio-desc {
 					font-size: 1rem;
-					max-width: 260px;
-					margin-right:20%;
 				}
 				.studio-bg img {
-					width: 550px;          /* ← fixed size, adjust as needed */
-					height: auto;
-					max-width: none;       /* prevent shrinking */
+					width: 550px;
 				}
 				.tavern-button {
 					top: 45px;
-					left: 0;
 				}
 				.tavern-title {
 					font-size: 3rem;
@@ -391,66 +456,15 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					transform: translateY(-400px);
 				}
 				.tavern-bg img {
-					width: 350px;          /* ← adjust size as needed */
-					height: auto;
+					width: 350px;
 				}
 				.tavern-chains img {
 					width: 600px;
 				}
-
 			}
 
-			/* Small phone */
-			@media (max-width: 400px) {
-				.studio-button {
-					margin-top: 60px;
-					margin-left: 40px;
-				}
-				.studio-button img {
-					width: 250px;
-				}
-				.studio-title {
-					font-size: 3rem;
-				}
-				.studio-desc {
-					font-size: 0.8rem;
-					max-width: 260px;
-					margin-right: 20%;
-				}
-				.studio-bg img {
-					width: 400px;
-					height: auto;
-					max-width: none;
-				}
-				.tavern-button {
-					top: -10px;
-					left: 0;
-				}
-				.tavern-title {
-					font-size: 2.5rem;
-				}
-				.tavern-desc {
-					font-size: 0.6rem;
-					max-width: 150px;
-					margin-top: 45px;
-				}
-				.tavern-bg {
-					transform: translateY(-300px);
-				}
-				.tavern-bg img {
-					width: 250px;
-					height: auto;
-				}
-				.tavern-chains img {
-					width: 400px;
-				}
-			}
-			/* Small phone */
-			@media (max-height: 700px) {
-				.studio-button {
-					margin-top: 60px;
-					margin-left: 40px;
-				}
+			/* Narrow screens (any height) OR short screens in column layout */
+			@media (max-width: 500px), (max-width: 1000px) and (max-height: 900px) {
 				.studio-button img {
 					width: 200px;
 				}
@@ -459,17 +473,14 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				}
 				.studio-desc {
 					font-size: 0.7rem;
-					max-width: 300px;
+					max-width: 170px;
 					margin-right: 19%;
 				}
 				.studio-bg img {
 					width: 350px;
-					height: auto;
-					max-width: none;
 				}
 				.tavern-button {
 					top: 6px;
-					left: 0;
 				}
 				.tavern-title {
 					font-size: 2rem;
@@ -484,12 +495,12 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				}
 				.tavern-bg img {
 					width: 200px;
-					height: auto;
 				}
 				.tavern-chains img {
 					width: 300px;
 				}
 			}
+		
 		</style>
 	</head>
 	<body>

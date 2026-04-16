@@ -15,7 +15,7 @@ Harbinger the golden age of humanity and the golden age of magic. <br>
 During her life she was a controversial figure. Especially as Aliana achieved immortality, she was viewed as a undesirable person, as many mortals shared the fey views at the time. However after the hardships that eventually lead to the burning of the Emerald grove and and the Nameless Kings revenge, opinions shifted. Shortly after Aliana died she was praised as a martyr and soon as a god.  
 
 Aliana has in her previous life attained immortality, by yet unknown means.  
-Her soul was split into seven pieces, all of them brought back into this world.. one way or another.
+Her soul was split into seven pieces, all of them brought back into this world... one way or another.
 Namley the Homomachina Perfectus Project has delivered her many of her current vessels. 
 
 Aliana mostly resides in Athenaeum, the new captial of the Starwielders, as Ai'ruma is in the Ivory dominions control.

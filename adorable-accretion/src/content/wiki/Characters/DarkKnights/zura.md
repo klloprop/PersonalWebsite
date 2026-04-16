@@ -7,13 +7,14 @@ heroImagePosition: "0% 10%"
 collection: "Dark Knights"
 tags: ["Zura"]
 ---
-Leader of the Dark Order of the Brightstrider Dominion
+Leader of the Dark Knights of the Brightstrider Dominion
 
-Aspect of Pride
+**Aspect of Pride**
 
-Prideful but moreso uses other peoples pride to trick them
-Is a Light Architect/Weaver of light/It who hides in the light
+Incarnation of pride, but moreso has learned how to use pride to their advantage.
 
-Can create traps as a Light architect, automatons and other things. Weaves strings made of light to control their magic.
+Is considered to be a 'Light Architect', a title which reflects their unique way to shape the arcane.
+
+Can create traps, automatons and other things. Their magic manifests as golden strings of light pulling at the very foundation of reality.
 
 ![zura](../../../../assets/WikiImages/zura2.png)
