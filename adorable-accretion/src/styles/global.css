@@ -66,6 +66,7 @@ body {
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
+	overscroll-behavior-y: none;
 }
 main {
 	width: 720px;
