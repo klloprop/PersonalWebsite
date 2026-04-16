@@ -583,6 +583,7 @@ function getAncestors(name: string): string[] {
 					height: 100vh;
 					height: 100dvh;
 					overflow-y: auto;
+					overflow-x: hidden;
 					display: none;
 					flex-direction: column;
 					gap: 0.25rem;
@@ -613,9 +614,14 @@ function getAncestors(name: string): string[] {
 					color: #8B6914;
 					pointer-events: none;
 					z-index: 101;
+					opacity: 1;
+					transition: opacity 0.2s ease;
 				}
 				.sidebar.can-scroll::after {
 					display: flex;
+				}
+				.sidebar.scrolled-bottom::after {
+					opacity: 0;
 				}
 				:global(html.dark) .sidebar.can-scroll::after {
 					background: linear-gradient(transparent, #2a1c0a 60%);
@@ -856,6 +862,7 @@ function getAncestors(name: string): string[] {
 
 				function openMobileSidebar() {
 					sidebar?.classList.add('mobile-open');
+					sidebar?.classList.remove('scrolled-bottom');
 					mobileToggle?.classList.add('open');
 					document.body.style.overflow = 'hidden';
 					// Check if sidebar content is scrollable
@@ -867,6 +874,13 @@ function getAncestors(name: string): string[] {
 						}
 					});
 				}
+
+				// Fade out scroll hint when user reaches the bottom
+				sidebar?.addEventListener('scroll', () => {
+					if (!sidebar) return;
+					const atBottom = sidebar.scrollTop + sidebar.clientHeight >= sidebar.scrollHeight - 20;
+					sidebar.classList.toggle('scrolled-bottom', atBottom);
+				});
 
 				mobileToggle?.addEventListener('click', () => {
 					if (sidebar?.classList.contains('mobile-open')) {
