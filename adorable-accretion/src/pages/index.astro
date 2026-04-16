@@ -47,14 +47,6 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				overflow: hidden;
 			}
 
-			/* ===== DIVIDER ===== */
-			.landing-divider {
-				width: 7px;
-				background: #000;
-				flex-shrink: 0;
-				z-index: 10;
-			}
-
 			/* ===== PANEL BASE ===== */
 			.panel {
 				flex: 1;
@@ -99,8 +91,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				align-items: center;
 				justify-content: center;
 				pointer-events: none;
-				/* Use transform to shift without shrinking */
-				transform: translate(3%, 5%);
+				transform: translateY(5%);
 			}
 			.studio-bg img {
 				width: 900px;          /* ← fixed size, adjust as needed */
@@ -282,7 +273,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			@media (min-width: 1001px) and (max-height: 1100px) {
 				.studio-button {
 					margin-top: 60px;
-					margin-left: 40px;
+					margin-left: 60px;
 				}
 				.studio-button img {
 					width: 350px;
@@ -324,7 +315,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			@media (min-width: 1001px) and (max-height: 900px) {
 				.studio-button {
 					margin-top: 30px;
-					margin-left: 30px;
+					margin-left: 50px;
 				}
 				.studio-button img {
 					width: 300px;
@@ -363,14 +354,9 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			}
 
 			/* Tablet and below — switch to vertical column layout */
-			@media (max-width: 1000px) {
+			@media (max-width: 1100px) {
 				.landing {
 					flex-direction: column;
-				}
-				.landing-divider {
-					width: auto;
-					height: 7px;
-					order: 2;
 				}
 				.panel-studio {
 					order: 3;
@@ -385,7 +371,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 				.studio-button {
 					margin-top: 60px;
-					margin-left: 40px;
+					margin-right:10px;
 				}
 				.studio-button img {
 					width: 350px;
@@ -527,9 +513,6 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 					</p>
 				</a>
 			</section>
-
-			<!-- ===== DIVIDER ===== -->
-			<div class="landing-divider"></div>
 
 			<!-- ===== TAVERN PANEL ===== -->
 			<section class="panel panel-tavern">
