@@ -987,7 +987,8 @@ const events = allEvents.map((event) => {
 					const eventId = btn.dataset.eventId;
 					const status = btn.dataset.status;
 					if (eventId && status) {
-						submitVote(eventId, status);
+						const isSelected = btn.classList.contains('selected');
+						submitVote(eventId, isSelected ? 'clear' : status);
 					}
 				});
 

@@ -111,7 +111,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 		'cannot-do-not-play',
 	];
 
-	if (!eventId || !status || !validStatuses.includes(status as AvailabilityStatus)) {
+	if (!eventId || !status || (!validStatuses.includes(status as AvailabilityStatus) && status !== 'clear')) {
 		return new Response(JSON.stringify({ error: 'Invalid eventId or status' }), {
 			status: 400,
 			headers: { 'Content-Type': 'application/json' },
@@ -133,12 +133,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 	try {
 		const redis = getRedis();
-		const record: VoteRecord = {
-			status: status as AvailabilityStatus,
-			timestamp: Date.now(),
-		};
 
-		await redis.hset(redisKey(eventId), { [visitorId]: record });
+		if (status === 'clear') {
+			await redis.hdel(redisKey(eventId), visitorId);
+		} else {
+			const record: VoteRecord = {
+				status: status as AvailabilityStatus,
+				timestamp: Date.now(),
+			};
+			await redis.hset(redisKey(eventId), { [visitorId]: record });
+		}
 
 		// Return updated tally
 		const data = await redis.hgetall(redisKey(eventId));
@@ -158,7 +162,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 			}
 		}
 
-		return new Response(JSON.stringify({ votes: tally, myVote: status }), {
+		return new Response(JSON.stringify({ votes: tally, myVote: status === 'clear' ? null : status }), {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (e) {

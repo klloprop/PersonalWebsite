@@ -1,5 +1,5 @@
 ---
-title: "Session Cancelled"
+title: "Session XX"
 description: "My parents are celebrating a big wedding annviersary and therefore session is cancelled."
 date: "2026-04-26"
 time: "16:30"
