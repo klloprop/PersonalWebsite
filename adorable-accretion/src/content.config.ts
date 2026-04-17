@@ -89,6 +89,10 @@ const events = defineCollection({
 		time: z.string(),
 		// Optional duration in minutes
 		duration: z.number().optional(),
+		// "main" or "optional" — defaults to "main"
+		sessionType: z.enum(['main', 'optional']).optional().default('main'),
+		// Whether the session has been cancelled
+		cancelled: z.boolean().optional().default(false),
 	}),
 });
 

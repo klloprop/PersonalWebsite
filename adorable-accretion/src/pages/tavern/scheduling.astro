@@ -98,6 +98,60 @@ const events = allEvents.map((event) => {
 				background: rgba(222, 185, 110, 0.15);
 				color: #C4A35A;
 			}
+
+			/* ── Session type tag ── */
+			.scheduling-layout .session-type-tag {
+				display: inline-block;
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				padding: 0.25em 0.75em;
+				border-radius: 6px;
+				font-weight: 800;
+				font-family: Georgia, 'Times New Roman', serif;
+				line-height: 1.4;
+			}
+			.scheduling-layout .session-type-tag.main-session {
+				background: #133538;
+				color: #fff;
+			}
+			html.dark .scheduling-layout .session-type-tag.main-session {
+				background: #29484b;
+				color: #fff;
+			}
+			.scheduling-layout .session-type-tag.optional-session {
+				background: #9b8923;
+				color: #fff;
+			}
+			html.dark .scheduling-layout .session-type-tag.optional-session {
+				background: #a1923c;
+				color: #fff;
+			}
+
+			/* ── Cancelled state ── */
+			.scheduling-layout .cancelled-tag {
+				display: inline-block;
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				padding: 0.25em 0.75em;
+				border-radius: 6px;
+				font-weight: 800;
+				font-family: Georgia, 'Times New Roman', serif;
+				line-height: 1.4;
+				background: #a33;
+				color: #fff;
+			}
+			html.dark .scheduling-layout .cancelled-tag {
+				background: #c44;
+				color: #ffe8e8;
+			}
+			.scheduling-layout .event-card.cancelled {
+				border-style: dashed;
+			}
+			.scheduling-layout .next-event.cancelled {
+				border-style: dashed;
+			}
 			.scheduling-layout .next-event-title {
 				font-family: Georgia, 'Times New Roman', serif;
 				font-size: 1.55rem;
@@ -237,6 +291,12 @@ const events = allEvents.map((event) => {
 			}
 			.scheduling-layout .event-card-content {
 				padding: 1.5rem 1.75rem;
+			}
+			.scheduling-layout .event-card-tags-row {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin-bottom: 0.5rem;
 			}
 			.scheduling-layout .event-card-top-row {
 				display: flex;
@@ -555,6 +615,8 @@ const events = allEvents.map((event) => {
 			time: e.data.time,
 			duration: e.data.duration,
 			berlinISO: e.berlinISO,
+			sessionType: e.data.sessionType ?? 'main',
+			cancelled: e.data.cancelled ?? false,
 		}))) }}>
 			window.__EVENTS_DATA__ = JSON.parse(eventsJSON);
 		</script>
@@ -582,6 +644,8 @@ const events = allEvents.map((event) => {
 					time: string;
 					duration?: number;
 					berlinISO: string;
+					sessionType: 'main' | 'optional';
+					cancelled: boolean;
 				}>;
 
 				if (!events || events.length === 0) return;
@@ -704,6 +768,17 @@ const events = allEvents.map((event) => {
 					return `<span class="${cls}">${hourglassSVG()} ${short}<span class="countdown-tooltip">${full}</span></span>`;
 				}
 
+				function sessionTypeTag(type: 'main' | 'optional'): string {
+					if (type === 'optional') {
+						return `<span class="session-type-tag optional-session">Optional Session</span>`;
+					}
+					return `<span class="session-type-tag main-session">Main Session</span>`;
+				}
+
+				function cancelledTag(): string {
+					return `<span class="cancelled-tag">Cancelled</span>`;
+				}
+
 				// Split events
 				const parsed = events.map(ev => ({
 					...ev,
@@ -823,17 +898,18 @@ const events = allEvents.map((event) => {
 					const bodyHTML = bodyEl ? bodyEl.innerHTML : '';
 
 					nextContainer.innerHTML = `
-						<div class="next-event">
+						<div class="next-event${next.cancelled ? ' cancelled' : ''}">
 							<div class="next-event-content">
 								<div class="next-event-top-row">
+									${sessionTypeTag(next.sessionType)}
 									<span class="next-event-label">Next Session</span>
-									${countdownBadge(next.localDate, false)}
+									${next.cancelled ? cancelledTag() : countdownBadge(next.localDate, false)}
 								</div>
 								<h2 class="next-event-title">${next.title}</h2>
 								<div class="next-event-datetime">${buildTimeBadges(next)}</div>
 								<p class="next-event-description">${next.description}</p>
-								${bodyHTML ? `<div class="next-event-body">${bodyHTML}</div>` : ''}
-								${buildAvailPoll(next.id, false)}
+								${!next.cancelled && bodyHTML ? `<div class="next-event-body">${bodyHTML}</div>` : ''}
+								${!next.cancelled ? buildAvailPoll(next.id, false) : ''}
 							</div>
 						</div>
 					`;
@@ -844,15 +920,18 @@ const events = allEvents.map((event) => {
 				if (upcomingContainer) {
 					if (upcoming.length > 1) {
 						const cards = upcoming.slice(1).map(ev => `
-							<li class="event-card">
+							<li class="event-card${ev.cancelled ? ' cancelled' : ''}">
 								<div class="event-card-content">
+									<div class="event-card-tags-row">
+										${sessionTypeTag(ev.sessionType)}
+										${ev.cancelled ? cancelledTag() : countdownBadge(ev.localDate, false)}
+									</div>
 									<div class="event-card-top-row">
 										<h3 class="event-card-title">${ev.title}</h3>
-										${countdownBadge(ev.localDate, false)}
 									</div>
 									<div class="event-card-meta">${buildTimeBadges(ev)}</div>
 									<p class="event-card-description">${ev.description}</p>
-									${buildAvailPoll(ev.id, false)}
+									${!ev.cancelled ? buildAvailPoll(ev.id, false) : ''}
 								</div>
 							</li>
 						`).join('');
@@ -867,11 +946,15 @@ const events = allEvents.map((event) => {
 				const pastContainer = document.getElementById('past-container');
 				if (pastContainer && past.length > 0) {
 					const cards = past.map(ev => `
-						<li class="event-card past">
+						<li class="event-card past${ev.cancelled ? ' cancelled' : ''}">
 							<div class="event-card-content">
+								<div class="event-card-tags-row">
+									${sessionTypeTag(ev.sessionType)}
+									${ev.cancelled ? cancelledTag() : ''}
+								</div>
 								<div class="event-card-top-row">
 									<h3 class="event-card-title">${ev.title}</h3>
-									${countdownBadge(ev.localDate, true)}
+									${!ev.cancelled ? countdownBadge(ev.localDate, true) : ''}
 								</div>
 								<div class="event-card-meta">${buildTimeBadges(ev)}</div>
 								<p class="event-card-description">${ev.description}</p>
@@ -908,9 +991,11 @@ const events = allEvents.map((event) => {
 					}
 				});
 
-				// Fetch initial availability data for all upcoming events
+				// Fetch initial availability data for all upcoming non-cancelled events
 				for (const ev of upcoming) {
-					fetchAvailability(ev.id);
+					if (!ev.cancelled) {
+						fetchAvailability(ev.id);
+					}
 				}
 			}
 
