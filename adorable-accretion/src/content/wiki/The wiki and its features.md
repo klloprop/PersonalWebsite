@@ -7,8 +7,6 @@ collection: "QuickStart"
 
 There are links and cool thinks!
 
-Nailo
-
 You can have links and stuff!
 
 
