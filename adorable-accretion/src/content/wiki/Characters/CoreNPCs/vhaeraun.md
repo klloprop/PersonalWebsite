@@ -9,8 +9,6 @@ tags: ["Vhaerun","Vhae"]
 
 Nailos boyfriend.
 
-![Vhae](../../../../assets/WikiImages/Vhaerun.png)
-
 
 # Vhaerun (7) - Statblock
 Support Creation Bard
@@ -52,4 +50,5 @@ Can create a convincing Forgery (DC 17) of anything in 30 minutes.
 **False Identity.**
 You can assume any false identity.
 
-Gay gay homosexual
+![Vhae](../../../../assets/WikiImages/Vhaerun.png)
+
