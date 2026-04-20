@@ -92,6 +92,7 @@ export function parseFrontmatter(raw: string): ParsedContent {
 interface WikiEntry {
 	title: string;
 	slug: string;
+	collection?: string;
 }
 
 let titleMapPromise: Promise<Map<string, WikiEntry>> | null = null;
@@ -106,7 +107,8 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 			for (const entry of entries) {
 				const title = entry.data.title;
 				const slug = entry.id.split('/').pop()!;
-				map.set(title.toLowerCase(), { title, slug });
+				const collection = entry.data.collection as string | undefined;
+				map.set(title.toLowerCase(), { title, slug, collection });
 
 				// For "Firstname, Title" patterns (e.g. "Mevrosal, Dean of Enchantment"),
 				// also index the name before the comma as an alias.
@@ -116,7 +118,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 					titleBeforeComma !== title &&
 					!map.has(titleBeforeComma.toLowerCase())
 				) {
-					map.set(titleBeforeComma.toLowerCase(), { title: titleBeforeComma, slug });
+					map.set(titleBeforeComma.toLowerCase(), { title: titleBeforeComma, slug, collection });
 				}
 
 				// Also index tags as aliases
@@ -125,7 +127,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 					for (const tag of tags) {
 						if (typeof tag === 'string') {
 							if (!map.has(tag.toLowerCase())) {
-								map.set(tag.toLowerCase(), { title: tag, slug });
+								map.set(tag.toLowerCase(), { title: tag, slug, collection });
 							}
 							// Same comma-split alias for tags (e.g. "Mevrosal, Mage of ice" → "Mevrosal")
 							const tagBeforeComma = tag.split(',')[0].trim();
@@ -134,7 +136,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 								tagBeforeComma !== tag &&
 								!map.has(tagBeforeComma.toLowerCase())
 							) {
-								map.set(tagBeforeComma.toLowerCase(), { title: tagBeforeComma, slug });
+							map.set(tagBeforeComma.toLowerCase(), { title: tagBeforeComma, slug, collection });
 							}
 						}
 					}
@@ -147,6 +149,36 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 	})();
 
 	return titleMapPromise;
+}
+
+// ── Collection parent map (for root-collection scoping) ──
+
+let colParentMapPromise: Promise<Map<string, string>> | null = null;
+
+async function getColParentMap(): Promise<Map<string, string>> {
+	if (colParentMapPromise) return colParentMapPromise;
+	colParentMapPromise = (async () => {
+		const map = new Map<string, string>();
+		try {
+			const cols = await getCollection('wikiCollections');
+			for (const col of cols) {
+				if (col.data.parent) map.set(col.data.name, col.data.parent);
+			}
+		} catch { /* collection may not be available */ }
+		return map;
+	})();
+	return colParentMapPromise;
+}
+
+/** Walk the parent chain to find the root (base) collection. */
+function getBaseCollection(
+	collection: string | undefined,
+	parentMap: Map<string, string>,
+): string | undefined {
+	if (!collection) return undefined;
+	let current = collection;
+	while (parentMap.has(current)) current = parentMap.get(current)!;
+	return current;
 }
 
 // ── Marked extension for wiki links ──
@@ -255,7 +287,23 @@ export async function renderFromGitHub(
 
 	const { frontmatter, body } = parseFrontmatter(file.content);
 
+	// Full title map for [[explicit]] link resolution (cross-collection links are allowed).
 	const titleMap = type === 'wiki' ? await getTitleMap() : new Map<string, WikiEntry>();
+
+	// For auto-linking, restrict to entries in the same root collection so that
+	// e.g. QuickStart entries don't accidentally link into Abaron character pages.
+	let autoLinkMap = titleMap;
+	if (type === 'wiki') {
+		const colParentMap = await getColParentMap();
+		const currentBase = getBaseCollection(frontmatter.collection, colParentMap);
+		if (currentBase) {
+			autoLinkMap = new Map(
+				[...titleMap].filter(([, entry]) =>
+					getBaseCollection(entry.collection, colParentMap) === currentBase,
+				),
+			);
+		}
+	}
 
 	const marked = new Marked();
 	marked.use(wikiLinkExtension(titleMap, currentSlug));
@@ -274,9 +322,9 @@ export async function renderFromGitHub(
 
 	let html = await marked.parse(body);
 
-	// Auto-link wiki titles in the rendered HTML (only for wiki pages)
+	// Auto-link wiki titles in the rendered HTML (only for wiki pages, same root collection only)
 	if (type === 'wiki') {
-		html = autoLinkTitles(html, titleMap, currentSlug);
+		html = autoLinkTitles(html, autoLinkMap, currentSlug);
 	}
 
 	return { html, frontmatter, sha: file.sha };
