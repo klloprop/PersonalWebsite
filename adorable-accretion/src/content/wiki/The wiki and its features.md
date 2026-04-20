@@ -8,7 +8,7 @@ collection: "QuickStart"
 There are links and cool thinks!
 
 You can have links and stuff!
-ds
+
 
 Blog posts can have more images like this!
 
