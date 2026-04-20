@@ -7,7 +7,7 @@ collection: "Core NPCs"
 tags: ["Vhaerun","Vhae"]
 ---
 
-Nailos boyfriend. test
+Nailos boyfriend.
 
 
 # Vhaerun (7) - Statblock
