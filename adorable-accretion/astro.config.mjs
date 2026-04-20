@@ -25,6 +25,9 @@ export default defineConfig({
 				/^\/tavern\/admin/,
 				/^\/tavern\/set-password/,
 				/^\/tavern\/scheduling/,
+				// Article pages fetch live content from GitHub — must not be cached
+				/^\/tavern\/wiki\//,
+				/^\/studio\/blog\//,
 			],
 		},
 	}),
