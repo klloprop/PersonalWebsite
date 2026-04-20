@@ -261,7 +261,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 		<script>
 			// Show edit button only for authenticated users
 			fetch('/api/auth/me')
-				.then((r) => r.ok ? r.json() : null)
+				.then((r) => r.ok ? r.json() : Promise.reject())
 				.then((data) => {
 					if (data?.username) {
 						const btn = document.getElementById('edit-btn');

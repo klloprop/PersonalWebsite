@@ -32,6 +32,11 @@ if (type !== 'wiki' && type !== 'blog') return Astro.redirect('/tavern');
 const slug = segments.slice(1).join('/');
 const isNew = !slug;
 
+// Blog editing requires admin role
+if (type === 'blog' && user.role !== 'admin') {
+	return Astro.redirect('/tavern');
+}
+
 let collections: string[] = [];
 try {
 	if (type === 'wiki') {

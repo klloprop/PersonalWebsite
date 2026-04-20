@@ -44,6 +44,11 @@ export const GET: APIRoute = async ({ params, locals }) => {
 	const parsed = parsePath(params.path!);
 	if (!parsed) return json({ error: 'Invalid content path' }, 400);
 
+	// Blog editing requires admin role
+	if (parsed.type === 'blog' && locals.user.role !== 'admin') {
+		return json({ error: 'Forbidden' }, 403);
+	}
+
 	try {
 		const file = await readFile(parsed.filePath);
 		if (!file) return json({ error: 'Not found' }, 404);
@@ -61,6 +66,11 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
 
 	const parsed = parsePath(params.path!);
 	if (!parsed) return json({ error: 'Invalid content path' }, 400);
+
+	// Blog editing requires admin role
+	if (parsed.type === 'blog' && locals.user.role !== 'admin') {
+		return json({ error: 'Forbidden' }, 403);
+	}
 
 	let body: { content?: string; sha?: string; message?: string };
 	try {
@@ -101,6 +111,11 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
 			{ error: 'Invalid type. POST to /api/content/wiki or /api/content/blog' },
 			400,
 		);
+	}
+
+	// Blog creation requires admin role
+	if (type === 'blog' && locals.user.role !== 'admin') {
+		return json({ error: 'Forbidden' }, 403);
 	}
 
 	let body: { slug?: string; content?: string; message?: string };

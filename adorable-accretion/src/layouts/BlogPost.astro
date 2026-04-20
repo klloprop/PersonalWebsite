@@ -305,9 +305,9 @@ const rotations = [-4, 3, -2, 5, -3, 4, -5, 2];
 		<Footer />
 		<script>
 			fetch('/api/auth/me')
-				.then((r) => r.ok ? r.json() : null)
+				.then((r) => r.ok ? r.json() : Promise.reject())
 				.then((data) => {
-					if (data?.username) {
+					if (data?.role === 'admin') {
 						const btn = document.getElementById('edit-btn') as HTMLAnchorElement | null;
 						const match = window.location.pathname.match(/\/studio\/blog\/([^/]+)/);
 						if (btn && match) {
