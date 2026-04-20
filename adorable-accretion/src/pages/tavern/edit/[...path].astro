@@ -428,6 +428,12 @@ const pageTitle = isNew
 			.replace(/"/g, '&quot;');
 	}
 
+	function entryUrl(type: string, slugPath: string) {
+		const pageSlug = slugPath.split('/').pop() || slugPath;
+		if (type === 'wiki') return `/tavern/wiki/${pageSlug}/`;
+		return `/studio/blog/${pageSlug}/`;
+	}
+
 	function markDirty() {
 		dirty = true;
 		saveBtn.disabled = false;
@@ -677,21 +683,15 @@ const pageTitle = isNew
 
 			currentSha = data.sha;
 			dirty = false;
-			showStatus(
-				'Saved successfully! Changes will be live within seconds.',
-				'success',
-			);
+			showStatus('Saved successfully! Redirecting to article...', 'success');
 
 			// Update title display
 			if (fTitle.value) {
 				titleEl.textContent = `Editing: ${fTitle.value}`;
 			}
 
-			// If this was a new entry, redirect to the edit URL
-			if (IS_NEW && fSlug) {
-				const newUrl = `/tavern/edit/${TYPE}/${fSlug.value.trim()}`;
-				window.history.replaceState({}, '', newUrl);
-			}
+			const targetSlug = IS_NEW ? fSlug?.value.trim() || SLUG : SLUG;
+			window.location.href = entryUrl(TYPE, targetSlug);
 		} catch (err) {
 			showStatus(`Network error: ${err}`, 'error');
 			saveBtn.disabled = false;

@@ -55,6 +55,9 @@ const updatedDate = rendered?.frontmatter.updatedDate
 // Edit slug uses original-cased path
 const editSlug = filePath.replace(/^src\/content\/wiki\//, '').replace(/\.\w+$/, '');
 
+// Always serve fresh runtime content for live edits.
+Astro.response.headers.set('Cache-Control', 'no-store, max-age=0');
+
 // Build ancestor chain for collection chips
 const collectionEntries = await getCollection('wikiCollections');
 const colParentMap = new Map<string, string>();

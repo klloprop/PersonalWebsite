@@ -24,6 +24,9 @@ if (!post) {
 const filePath = post.filePath || `src/content/blog/${post.id}.md`;
 const rendered = await renderFromGitHub('blog', filePath);
 
+// Always serve fresh runtime content for live edits.
+Astro.response.headers.set('Cache-Control', 'no-store, max-age=0');
+
 // Use GitHub frontmatter for title/description if available
 const title = rendered?.frontmatter.title || post.data.title;
 const description = rendered?.frontmatter.description || post.data.description;
