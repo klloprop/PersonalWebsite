@@ -1,0 +1,66 @@
+name: Merge content branch into main
+
+# Merges the `content` branch into `main` on a schedule and on-demand.
+# Vercel auto-deploys from `main` only, so this controls when a build runs.
+
+on:
+  schedule:
+    # Every hour at :05 past. Adjust or remove to taste.
+    - cron: '5 * * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you triggering a manual build?'
+        required: false
+        default: 'Manual content publish'
+
+jobs:
+  merge:
+    name: Merge content → main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          # Use a PAT if your default token can't push to a protected branch.
+          # Replace with secrets.CONTENT_MERGE_TOKEN if needed.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch content branch
+        run: git fetch origin content
+
+      - name: Check for new commits on content
+        id: diff
+        run: |
+          COUNT=$(git rev-list --count main..origin/content)
+          echo "new_commits=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Merge content into main
+        if: steps.diff.outputs.new_commits != '0'
+        run: |
+          git merge --no-ff origin/content \
+            -m "chore: publish content from content branch [skip unnecessary rebuild if 0 changes]"
+
+      - name: Push main
+        if: steps.diff.outputs.new_commits != '0'
+        run: git push origin main
+
+      - name: Sync content branch up to main
+        # Fast-forward content so it always starts from the latest main.
+        # This prevents content from drifting behind on code changes and
+        # avoids accumulating merge complexity / conflict risk over time.
+        # Uses --force-with-lease so if a new save landed on content during
+        # this run, the sync is safely skipped and picked up next run.
+        if: steps.diff.outputs.new_commits != '0'
+        run: git push --force-with-lease origin HEAD:refs/heads/content || echo "New content arrived during merge — will sync next run."
+
+      - name: No new content
+        if: steps.diff.outputs.new_commits == '0'
+        run: echo "No new commits on content branch — nothing to merge."
