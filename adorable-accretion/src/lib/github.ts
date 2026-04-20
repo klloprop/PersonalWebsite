@@ -135,3 +135,26 @@ export async function triggerDeploy(): Promise<boolean> {
 	const res = await fetch(deployHook, { method: 'POST' });
 	return res.ok;
 }
+
+/**
+ * Revalidate an ISR-cached page so the next visitor sees fresh content.
+ * Sends a HEAD request with the bypass token to purge Vercel's ISR cache.
+ * Returns true if the revalidation request succeeded.
+ */
+export async function revalidatePath(pagePath: string): Promise<boolean> {
+	const bypassToken = import.meta.env.ISR_BYPASS_TOKEN as string | undefined;
+	const siteUrl = (import.meta.env.SITE as string) || 'https://lucieswebsite.vercel.app';
+
+	if (!bypassToken) return false;
+
+	const url = `${siteUrl.replace(/\/$/, '')}${pagePath}`;
+	try {
+		const res = await fetch(url, {
+			method: 'HEAD',
+			headers: { 'x-prerender-revalidate': bypassToken },
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}

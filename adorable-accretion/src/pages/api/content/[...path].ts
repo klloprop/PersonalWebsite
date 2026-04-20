@@ -6,9 +6,17 @@ import {
 	writeFile,
 	deleteFile,
 	triggerDeploy,
+	revalidatePath,
 } from '../../../lib/github';
 
 const ALLOWED_TYPES = new Set(['wiki', 'blog']);
+
+/** Derive the public page URL for a content entry so we can revalidate its ISR cache. */
+function pageUrl(type: string, slug: string): string {
+	const lastSegment = slug.split('/').pop()!;
+	if (type === 'wiki') return `/tavern/wiki/${lastSegment}`;
+	return `/studio/blog/${lastSegment}`;
+}
 
 function parsePath(raw: string): {
 	type: string;
@@ -91,6 +99,8 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
 	try {
 		const result = await writeFile(parsed.filePath, content, commitMsg, sha);
 		await triggerDeploy();
+		// Bust ISR cache for the edited page (best-effort)
+		revalidatePath(pageUrl(parsed.type, parsed.slug)).catch(() => {});
 		return json({ success: true, sha: result.sha });
 	} catch (err) {
 		return json({ error: String(err) }, 502);
@@ -151,6 +161,8 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
 			`Create ${type}: ${slug} (by ${locals.user.username})`;
 		const result = await writeFile(filePath, content, commitMsg);
 		await triggerDeploy();
+		// Bust ISR cache for the new page (best-effort)
+		revalidatePath(pageUrl(type, slug)).catch(() => {});
 		return json({ success: true, sha: result.sha, path: filePath }, 201);
 	} catch (err) {
 		return json({ error: String(err) }, 502);

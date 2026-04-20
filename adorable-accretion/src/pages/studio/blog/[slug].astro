@@ -1,20 +1,20 @@
 ---
+export const prerender = false;
+
 /**
- * studio/blog/[slug].astro — Individual blog post page.
- * Uses getStaticPaths to generate one page per blog entry.
+ * studio/blog/[slug].astro — Individual blog post page (SSR + ISR).
  * Renders content inside the BlogPost layout.
+ * Served via on-demand rendering, cached by Vercel ISR.
  */
 import BlogPost from '../../../layouts/BlogPost.astro';
-import { getCollection, getEntry, render } from 'astro:content';
+import { getEntry, render } from 'astro:content';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({ params: { slug: post.slug ?? post.id } }));
-}
+const slug = Astro.params.slug;
+if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
 
-const post = await getEntry('blog', Astro.params.slug);
+const post = await getEntry('blog', slug);
 if (!post) {
-	throw new Error('Blog post not found');
+	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
 const { Content } = await render(post);

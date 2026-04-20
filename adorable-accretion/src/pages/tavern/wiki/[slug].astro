@@ -1,10 +1,14 @@
 ---
+export const prerender = false;
+
 /**
- * tavern/wiki/[slug].astro — Individual wiki entry page.
+ * tavern/wiki/[slug].astro — Individual wiki entry page (SSR + ISR).
  * Renders wiki content with hero image, collection breadcrumbs,
  * and WikiLinks component for hover previews and pop-out panels.
+ *
+ * Served via on-demand rendering, cached by Vercel ISR.
  */
-import { getCollection, getEntry, render } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import { Image } from 'astro:assets';
 import D20Icon from '../../../assets/D20_Icon.png';
 import BaseHead from '../../../components/BaseHead.astro';
@@ -14,21 +18,23 @@ import Header from '../../../components/Header.astro';
 import WikiLinks from '../../../components/WikiLinks.astro';
 import { SITE_TITLE } from '../../../consts';
 
-export async function getStaticPaths() {
-	const entries = await getCollection('wiki');
-	return entries.map((entry) => ({
-		params: { slug: (entry.slug ?? entry.id).split('/').pop()! },
-		props: { entry },
-	}));
-}
+const slug = Astro.params.slug;
+if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
 
-const { entry } = Astro.props;
+const entries = await getCollection('wiki');
+const entry = entries.find((e) => e.id.split('/').pop() === slug);
+
 if (!entry) {
-	throw new Error('Wiki entry not found');
+	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
 const { Content } = await render(entry);
 const { title, description, pubDate, updatedDate, heroImage, heroImagePosition, collection } = entry.data;
+
+// Derive original-cased path for editing (entry.id is lowercased by github-slugger)
+const editSlug = entry.filePath
+	? entry.filePath.replace(/^src\/content\/wiki\//, '').replace(/\.\w+$/, '')
+	: entry.id;
 
 // Build ancestor chain for collection chips
 const collectionEntries = await getCollection('wikiCollections');
@@ -235,7 +241,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 							<a
 								class="edit-entry-btn"
 								id="edit-btn"
-								href={`/tavern/edit/wiki/${entry.id}`}
+								href={`/tavern/edit/wiki/${editSlug}`}
 								hidden
 								title="Edit this entry"
 							>
