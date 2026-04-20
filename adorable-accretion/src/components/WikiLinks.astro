@@ -219,30 +219,16 @@
 		async function fetchWikiContent(slug: string): Promise<{ title: string; html: string }> {
 			if (cache[slug]) return cache[slug];
 
-			// cache: 'no-store' bypasses the browser HTTP cache, which may hold
-			// stale 4xx/5xx responses from before recent fixes to the wiki routes.
-			const res = await fetch(`/tavern/wiki/${slug}/`, { cache: 'no-store' });
+			// Use the dedicated preview API instead of scraping the full page.
+			// The API endpoint does the same entry lookup + GitHub render but returns
+			// lightweight JSON, avoiding any edge-routing differences for page fetches.
+			const res = await fetch(`/api/wiki-preview/${encodeURIComponent(slug)}`, { cache: 'no-store' });
 			if (!res.ok) {
 				cache[slug] = { title: slug, html: `<p>Could not load entry (${res.status}).</p>` };
 				return cache[slug];
 			}
-			const text = await res.text();
-			const parser = new DOMParser();
-			const doc = parser.parseFromString(text, 'text/html');
-
-			const title = doc.querySelector('.title h1')?.textContent || slug;
-			const prose = doc.querySelector('.prose');
-			// Get content after the .title div
-			let html = '';
-			if (prose) {
-				const clone = prose.cloneNode(true) as HTMLElement;
-				const titleDiv = clone.querySelector('.title');
-				if (titleDiv) titleDiv.remove();
-				html = clone.innerHTML;
-			}
-
-			const sanitized = sanitizeHTML(html);
-			cache[slug] = { title, html: sanitized };
+			const data = await res.json() as { title: string; html: string };
+			cache[slug] = { title: data.title, html: sanitizeHTML(data.html) };
 			return cache[slug];
 		}
 
