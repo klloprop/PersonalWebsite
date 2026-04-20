@@ -141,7 +141,9 @@ function wikiLinkExtension(titleMap: Map<string, WikiEntry>, currentSlug?: strin
 				tokenizer(src: string) {
 					const match = src.match(/^\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/);
 					if (!match) return undefined;
-					const rawSlug = match[1].trim().toLowerCase().replace(/\s+/g, '-');
+						// Preserve original casing — the [slug].astro lookup is case-insensitive.
+						// Spaces are still replaced with hyphens to keep URLs valid.
+						const rawSlug = match[1].trim().replace(/\s+/g, '-');
 					const text = match[2]?.trim() || match[1].trim();
 					return {
 						type: 'wikiLink',

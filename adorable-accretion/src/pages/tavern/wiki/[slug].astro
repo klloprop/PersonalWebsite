@@ -22,21 +22,31 @@ import { renderFromGitHub } from '../../../lib/content-renderer';
 const slug = Astro.params.slug;
 if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
 
-// Look up entry in content collection for hero image + collection metadata
+// Look up entry in content collection for hero image + collection metadata.
+// Use case-insensitive + space-normalised comparison so mixed-case filenames
+// (e.g. NailoStory.md, alianaStarwielder.md) and [[Slug]] wiki links all work.
 const entries = await getCollection('wiki');
-const entry = entries.find((e) => e.id.split('/').pop() === slug);
+const entry = entries.find((e) => {
+	const normalized = (e.id.split('/').pop() ?? '').toLowerCase().replace(/\s+/g, '-');
+	return normalized === slug.toLowerCase();
+});
 
 if (!entry) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
-// Derive original-cased file path for GitHub fetch
-const filePath = entry.filePath
-	? entry.filePath
-	: `src/content/wiki/${entry.id}.md`;
+// Always derive the file path from entry.id so it is project-relative and
+// safe to pass to the GitHub API (entry.filePath can be an absolute build path).
+const filePath = `src/content/wiki/${entry.id}.md`;
 
 // Fetch latest body from GitHub (instant updates, no rebuild needed)
-const rendered = await renderFromGitHub('wiki', filePath, slug);
+let rendered;
+try {
+	rendered = await renderFromGitHub('wiki', filePath, slug);
+} catch {
+	// GitHub fetch failed — fall through with empty body so the page still loads.
+	rendered = null;
+}
 
 // Use GitHub frontmatter for title/description (instant update), fall back to collection
 const title = rendered?.frontmatter.title || entry.data.title;
