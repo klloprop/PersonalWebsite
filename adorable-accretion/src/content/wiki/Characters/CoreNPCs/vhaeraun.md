@@ -4,7 +4,7 @@ description: "Former traitor to Menzo and bard of lies"
 pubDate: 2026-04-12
 heroImage: "../../../../assets/WikiImages/Vhaerun.png"
 collection: "Core NPCs"
-tags: ["Vhaerun, Vhae"]
+tags: ["Vhaerun","Vhae"]
 ---
 
 Nailos boyfriend.
@@ -51,3 +51,5 @@ Can create a convincing Forgery (DC 17) of anything in 30 minutes.
 
 **False Identity.**
 You can assume any false identity.
+
+Gay gay homosexual
