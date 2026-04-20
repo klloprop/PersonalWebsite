@@ -12,9 +12,10 @@ export default defineConfig({
 	output: 'static',
 	adapter: vercel({
 		isr: {
-			// Cache SSR pages for 60 seconds; resets on each new deployment
-			expiration: 60,
-			// On-demand revalidation token (set ISR_BYPASS_TOKEN env var to enable)
+			// Cache SSR pages until explicitly revalidated or for up to 1 year.
+			// On-demand revalidation busts the cache after content edits.
+			expiration: 60 * 60 * 24 * 365,
+			// On-demand revalidation token (set ISR_BYPASS_TOKEN env var)
 			bypassToken: process.env.ISR_BYPASS_TOKEN,
 			// Exclude dynamic/auth routes from ISR caching
 			exclude: [

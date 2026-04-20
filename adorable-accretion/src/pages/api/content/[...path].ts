@@ -5,7 +5,6 @@ import {
 	readFile,
 	writeFile,
 	deleteFile,
-	triggerDeploy,
 	revalidatePath,
 } from '../../../lib/github';
 
@@ -98,9 +97,8 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
 
 	try {
 		const result = await writeFile(parsed.filePath, content, commitMsg, sha);
-		await triggerDeploy();
-		// Bust ISR cache for the edited page (best-effort)
-		revalidatePath(pageUrl(parsed.type, parsed.slug)).catch(() => {});
+		// Bust ISR cache so the page shows fresh content (no rebuild needed)
+		await revalidatePath(pageUrl(parsed.type, parsed.slug));
 		return json({ success: true, sha: result.sha });
 	} catch (err) {
 		return json({ error: String(err) }, 502);
@@ -160,9 +158,8 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
 			message ||
 			`Create ${type}: ${slug} (by ${locals.user.username})`;
 		const result = await writeFile(filePath, content, commitMsg);
-		await triggerDeploy();
-		// Bust ISR cache for the new page (best-effort)
-		revalidatePath(pageUrl(type, slug)).catch(() => {});
+		// Bust ISR cache so the page shows fresh content (no rebuild needed)
+		await revalidatePath(pageUrl(type, slug));
 		return json({ success: true, sha: result.sha, path: filePath }, 201);
 	} catch (err) {
 		return json({ error: String(err) }, 502);

@@ -3,11 +3,14 @@ export const prerender = false;
 
 /**
  * studio/blog/[slug].astro — Individual blog post page (SSR + ISR).
- * Renders content inside the BlogPost layout.
- * Served via on-demand rendering, cached by Vercel ISR.
+ *
+ * Body content is fetched from GitHub at request time for instant updates.
+ * Images and layout metadata come from the build-time content collection.
+ * ISR caches the result; on-demand revalidation busts it after edits.
  */
 import BlogPost from '../../../layouts/BlogPost.astro';
-import { getEntry, render } from 'astro:content';
+import { getEntry } from 'astro:content';
+import { renderFromGitHub } from '../../../lib/content-renderer';
 
 const slug = Astro.params.slug;
 if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
@@ -17,9 +20,16 @@ if (!post) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
-const { Content } = await render(post);
+// Fetch latest body from GitHub (instant updates, no rebuild needed)
+const filePath = post.filePath || `src/content/blog/${post.id}.md`;
+const rendered = await renderFromGitHub('blog', filePath);
+
+// Use GitHub frontmatter for title/description if available
+const title = rendered?.frontmatter.title || post.data.title;
+const description = rendered?.frontmatter.description || post.data.description;
+const bodyHtml = rendered?.html || '';
 ---
 
-<BlogPost {...post.data}>
-	<Content />
+<BlogPost {...post.data} title={title} description={description}>
+	<Fragment set:html={bodyHtml} />
 </BlogPost>

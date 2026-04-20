@@ -1,0 +1,196 @@
+/**
+ * content-renderer.ts — Runtime markdown rendering for wiki/blog pages.
+ *
+ * Fetches raw markdown from GitHub and renders it to HTML using `marked`,
+ * bypassing Astro's build-time content collections for instant updates.
+ *
+ * Wiki links ([[slug]], [[slug|text]]) and auto-linking of wiki titles
+ * are handled via a custom marked extension that mirrors the remark plugin.
+ */
+import { Marked } from 'marked';
+import { getCollection } from 'astro:content';
+import { readFile } from './github';
+
+// ── Frontmatter parsing ──
+
+export interface ParsedContent {
+	frontmatter: Record<string, string>;
+	body: string;
+}
+
+export function parseFrontmatter(raw: string): ParsedContent {
+	const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+	if (!match) return { frontmatter: {}, body: raw };
+
+	const fm: Record<string, string> = {};
+	for (const line of match[1].split('\n')) {
+		const idx = line.indexOf(':');
+		if (idx < 0) continue;
+		const key = line.slice(0, idx).trim();
+		let val = line.slice(idx + 1).trim();
+		// Strip surrounding quotes
+		if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+			val = val.slice(1, -1);
+		}
+		fm[key] = val;
+	}
+
+	return { frontmatter: fm, body: match[2] };
+}
+
+// ── Wiki title map (built from content collection, cached per request) ──
+
+interface WikiEntry {
+	title: string;
+	slug: string;
+}
+
+let titleMapPromise: Promise<Map<string, WikiEntry>> | null = null;
+
+async function getTitleMap(): Promise<Map<string, WikiEntry>> {
+	if (titleMapPromise) return titleMapPromise;
+
+	titleMapPromise = (async () => {
+		const map = new Map<string, WikiEntry>();
+		try {
+			const entries = await getCollection('wiki');
+			for (const entry of entries) {
+				const title = entry.data.title;
+				const slug = entry.id.split('/').pop()!;
+				map.set(title.toLowerCase(), { title, slug });
+
+				// Also index tags as aliases
+				const tags = (entry.data as Record<string, unknown>).tags;
+				if (Array.isArray(tags)) {
+					for (const tag of tags) {
+						if (typeof tag === 'string' && !map.has(tag.toLowerCase())) {
+							map.set(tag.toLowerCase(), { title: tag, slug });
+						}
+					}
+				}
+			}
+		} catch {
+			// Content collection may not be available
+		}
+		return map;
+	})();
+
+	return titleMapPromise;
+}
+
+// ── Marked extension for wiki links ──
+
+function wikiLinkExtension(titleMap: Map<string, WikiEntry>, currentSlug?: string) {
+	return {
+		extensions: [
+			{
+				name: 'wikiLink',
+				level: 'inline' as const,
+				start(src: string) {
+					return src.indexOf('[[');
+				},
+				tokenizer(src: string) {
+					const match = src.match(/^\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/);
+					if (!match) return undefined;
+					const rawSlug = match[1].trim().toLowerCase().replace(/\s+/g, '-');
+					const text = match[2]?.trim() || match[1].trim();
+					return {
+						type: 'wikiLink',
+						raw: match[0],
+						slug: rawSlug,
+						text,
+					};
+				},
+				renderer(token: { slug: string; text: string }) {
+					return `<a class="wiki-link" data-wiki-slug="${token.slug}" href="/tavern/wiki/${token.slug}/">${escapeHtml(token.text)}</a>`;
+				},
+			},
+		],
+	};
+}
+
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;');
+}
+
+/**
+ * Auto-link wiki titles in rendered HTML.
+ * Scans text content (outside of existing tags) and wraps matching titles
+ * in wiki-link anchors. Only links each title once.
+ */
+function autoLinkTitles(
+	html: string,
+	titleMap: Map<string, WikiEntry>,
+	currentSlug?: string,
+): string {
+	if (titleMap.size === 0) return html;
+
+	const titles = [...titleMap.values()]
+		.map((v) => v.title)
+		.sort((a, b) => b.length - a.length);
+	const unique = [...new Set(titles)];
+	const escaped = unique.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+	const titleRegex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+
+	const linked = new Set<string>();
+
+	// Split HTML into tags and text segments, only process text
+	return html.replace(/(<[^>]+>)|([^<]+)/g, (_, tag, text) => {
+		if (tag) return tag;
+		if (!text) return '';
+
+		return text.replace(titleRegex, (match: string) => {
+			const entry = titleMap.get(match.toLowerCase());
+			if (!entry) return match;
+			if (entry.slug === currentSlug) return match;
+			if (linked.has(entry.slug)) return match;
+			linked.add(entry.slug);
+			return `<a class="wiki-link" data-wiki-slug="${entry.slug}" href="/tavern/wiki/${entry.slug}/">${escapeHtml(match)}</a>`;
+		});
+	});
+}
+
+// ── Main render function ──
+
+export interface RenderedContent {
+	html: string;
+	frontmatter: Record<string, string>;
+	sha: string;
+}
+
+/**
+ * Fetch a content file from GitHub and render it to HTML.
+ *
+ * @param type - 'wiki' or 'blog'
+ * @param filePath - Original-cased file path relative to project root
+ *                   e.g. "src/content/wiki/Characters/CoreNPCs/vhaeraun.md"
+ * @param currentSlug - The current page slug (to avoid self-linking)
+ */
+export async function renderFromGitHub(
+	type: string,
+	filePath: string,
+	currentSlug?: string,
+): Promise<RenderedContent | null> {
+	const file = await readFile(filePath);
+	if (!file) return null;
+
+	const { frontmatter, body } = parseFrontmatter(file.content);
+
+	const titleMap = type === 'wiki' ? await getTitleMap() : new Map<string, WikiEntry>();
+
+	const marked = new Marked();
+	marked.use(wikiLinkExtension(titleMap, currentSlug));
+
+	let html = await marked.parse(body);
+
+	// Auto-link wiki titles in the rendered HTML (only for wiki pages)
+	if (type === 'wiki') {
+		html = autoLinkTitles(html, titleMap, currentSlug);
+	}
+
+	return { html, frontmatter, sha: file.sha };
+}

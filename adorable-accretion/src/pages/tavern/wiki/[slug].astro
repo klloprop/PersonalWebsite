@@ -3,12 +3,12 @@ export const prerender = false;
 
 /**
  * tavern/wiki/[slug].astro — Individual wiki entry page (SSR + ISR).
- * Renders wiki content with hero image, collection breadcrumbs,
- * and WikiLinks component for hover previews and pop-out panels.
  *
- * Served via on-demand rendering, cached by Vercel ISR.
+ * Body content is fetched from GitHub at request time for instant updates.
+ * Hero images and collection chips come from the build-time content collection.
+ * ISR caches the result; on-demand revalidation busts it after edits.
  */
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import D20Icon from '../../../assets/D20_Icon.png';
 import BaseHead from '../../../components/BaseHead.astro';
@@ -17,10 +17,12 @@ import FormattedDate from '../../../components/FormattedDate.astro';
 import Header from '../../../components/Header.astro';
 import WikiLinks from '../../../components/WikiLinks.astro';
 import { SITE_TITLE } from '../../../consts';
+import { renderFromGitHub } from '../../../lib/content-renderer';
 
 const slug = Astro.params.slug;
 if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
 
+// Look up entry in content collection for hero image + collection metadata
 const entries = await getCollection('wiki');
 const entry = entries.find((e) => e.id.split('/').pop() === slug);
 
@@ -28,13 +30,30 @@ if (!entry) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
-const { Content } = await render(entry);
-const { title, description, pubDate, updatedDate, heroImage, heroImagePosition, collection } = entry.data;
+// Derive original-cased file path for GitHub fetch
+const filePath = entry.filePath
+	? entry.filePath
+	: `src/content/wiki/${entry.id}.md`;
 
-// Derive original-cased path for editing (entry.id is lowercased by github-slugger)
-const editSlug = entry.filePath
-	? entry.filePath.replace(/^src\/content\/wiki\//, '').replace(/\.\w+$/, '')
-	: entry.id;
+// Fetch latest body from GitHub (instant updates, no rebuild needed)
+const rendered = await renderFromGitHub('wiki', filePath, slug);
+
+// Use GitHub frontmatter for title/description (instant update), fall back to collection
+const title = rendered?.frontmatter.title || entry.data.title;
+const description = rendered?.frontmatter.description || entry.data.description;
+const bodyHtml = rendered?.html || '';
+
+// Hero image & collection from build-time content collection (requires rebuild to change)
+const { heroImage, heroImagePosition, collection } = entry.data;
+const pubDate = rendered?.frontmatter.pubDate
+	? new Date(rendered.frontmatter.pubDate)
+	: entry.data.pubDate;
+const updatedDate = rendered?.frontmatter.updatedDate
+	? new Date(rendered.frontmatter.updatedDate)
+	: entry.data.updatedDate;
+
+// Edit slug uses original-cased path
+const editSlug = filePath.replace(/^src\/content\/wiki\//, '').replace(/\.\w+$/, '');
 
 // Build ancestor chain for collection chips
 const collectionEntries = await getCollection('wikiCollections');
@@ -258,7 +277,7 @@ const collectionChain = collection ? getAncestors(collection) : [];
 						}
 						<hr />
 					</div>
-					<Content />
+					<Fragment set:html={bodyHtml} />
 				</div>
 			</article>
 		</main>
