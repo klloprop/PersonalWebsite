@@ -6,10 +6,59 @@
  *
  * Wiki links ([[slug]], [[slug|text]]) and auto-linking of wiki titles
  * are handled via a custom marked extension that mirrors the remark plugin.
+ *
+ * Image paths are resolved from relative `../../assets/` references to their
+ * Astro-optimized URLs (built at deploy time via import.meta.glob).
+ *
+ * In dev mode, reads files from the local filesystem instead of GitHub.
  */
 import { Marked } from 'marked';
 import { getCollection } from 'astro:content';
-import { readFile } from './github';
+import { readFile as readGitHubFile } from './github';
+import fs from 'node:fs/promises';
+import nodePath from 'node:path';
+
+// ── Build-time image map (baked into the bundle by Vite) ──
+
+const imageModules = import.meta.glob<{ default: ImageMetadata }>(
+	'/src/assets/WikiImages/**/*.{png,jpg,jpeg,gif,webp,svg}',
+	{ eager: true },
+);
+
+const imageUrlMap = new Map<string, string>();
+for (const [path, mod] of Object.entries(imageModules)) {
+	// path: "/src/assets/WikiImages/Hexapod.png" → key: "WikiImages/Hexapod.png"
+	const key = path.replace('/src/assets/', '');
+	imageUrlMap.set(key.toLowerCase(), mod.default.src);
+}
+
+/** Resolve a relative image src (from markdown) to an optimized asset URL. */
+function resolveImageSrc(src: string): string {
+	// Match any relative path ending in assets/WikiImages/...
+	const match = src.match(/assets\/WikiImages\/(.+)$/);
+	if (match) {
+		const key = `WikiImages/${match[1]}`.toLowerCase();
+		return imageUrlMap.get(key) ?? src;
+	}
+	return src;
+}
+
+// ── File reading (dev: filesystem, prod: GitHub API) ──
+
+async function readContentFile(
+	filePath: string,
+): Promise<{ content: string; sha: string } | null> {
+	if (import.meta.env.DEV) {
+		try {
+			const fullPath = nodePath.join(process.cwd(), filePath);
+			const content = await fs.readFile(fullPath, 'utf-8');
+			return { content, sha: 'local' };
+		} catch {
+			// Fall through to GitHub in case dev has a token
+		}
+	}
+	return readGitHubFile(filePath);
+}
 
 // ── Frontmatter parsing ──
 
@@ -163,7 +212,9 @@ export interface RenderedContent {
 }
 
 /**
- * Fetch a content file from GitHub and render it to HTML.
+ * Fetch a content file and render it to HTML.
+ *
+ * In dev mode reads from the local filesystem; in production from GitHub.
  *
  * @param type - 'wiki' or 'blog'
  * @param filePath - Original-cased file path relative to project root
@@ -175,7 +226,7 @@ export async function renderFromGitHub(
 	filePath: string,
 	currentSlug?: string,
 ): Promise<RenderedContent | null> {
-	const file = await readFile(filePath);
+	const file = await readContentFile(filePath);
 	if (!file) return null;
 
 	const { frontmatter, body } = parseFrontmatter(file.content);
@@ -184,6 +235,18 @@ export async function renderFromGitHub(
 
 	const marked = new Marked();
 	marked.use(wikiLinkExtension(titleMap, currentSlug));
+
+	// Custom image renderer to resolve relative asset paths
+	marked.use({
+		renderer: {
+			image({ href, title, text }) {
+				const src = resolveImageSrc(href);
+				const alt = text ? ` alt="${escapeHtml(text)}"` : '';
+				const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+				return `<img src="${escapeHtml(src)}"${alt}${titleAttr} />`;
+			},
+		},
+	});
 
 	let html = await marked.parse(body);
 
