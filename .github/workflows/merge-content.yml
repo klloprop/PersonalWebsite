@@ -14,6 +14,9 @@ on:
         required: false
         default: 'Manual content publish'
 
+permissions:
+  contents: write   # needed to push the merge back to main / sync content
+
 jobs:
   merge:
     name: Merge content → main
