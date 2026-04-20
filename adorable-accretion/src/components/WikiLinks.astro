@@ -219,9 +219,11 @@
 		async function fetchWikiContent(slug: string): Promise<{ title: string; html: string }> {
 			if (cache[slug]) return cache[slug];
 
-			const res = await fetch(`/tavern/wiki/${slug}/`);
+			// cache: 'no-store' bypasses the browser HTTP cache, which may hold
+			// stale 4xx/5xx responses from before recent fixes to the wiki routes.
+			const res = await fetch(`/tavern/wiki/${slug}/`, { cache: 'no-store' });
 			if (!res.ok) {
-				cache[slug] = { title: slug, html: '<p>Page not found.</p>' };
+				cache[slug] = { title: slug, html: `<p>Could not load entry (${res.status}).</p>` };
 				return cache[slug];
 			}
 			const text = await res.text();
