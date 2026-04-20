@@ -9,6 +9,7 @@
  *   GITHUB_OWNER        — Repository owner (e.g. "myuser")
  *   GITHUB_REPO         — Repository name (e.g. "my-website")
  *   GITHUB_BRANCH       — Branch to commit to (default: "main")
+ *   GITHUB_PATH_PREFIX  — Subdirectory prefix if the Astro project is not at repo root (e.g. "adorable-accretion")
  *   VERCEL_DEPLOY_HOOK  — Vercel deploy hook URL (optional, triggers rebuild)
  */
 
@@ -18,8 +19,15 @@ function getConfig() {
 		owner: import.meta.env.GITHUB_OWNER as string,
 		repo: import.meta.env.GITHUB_REPO as string,
 		branch: (import.meta.env.GITHUB_BRANCH as string) || 'main',
+		pathPrefix: (import.meta.env.GITHUB_PATH_PREFIX as string) || '',
 		deployHook: import.meta.env.VERCEL_DEPLOY_HOOK as string | undefined,
 	};
+}
+
+/** Prepend the repo subdirectory prefix to a project-relative path. */
+function repoPath(projectPath: string): string {
+	const { pathPrefix } = getConfig();
+	return pathPrefix ? `${pathPrefix}/${projectPath}` : projectPath;
 }
 
 function apiUrl(path: string): string {
@@ -45,7 +53,8 @@ export async function readFile(
 	path: string,
 ): Promise<{ content: string; sha: string } | null> {
 	const { branch } = getConfig();
-	const url = `${apiUrl(path)}?ref=${encodeURIComponent(branch)}`;
+	const fullPath = repoPath(path);
+	const url = `${apiUrl(fullPath)}?ref=${encodeURIComponent(branch)}`;
 	const res = await fetch(url, { headers: headers() });
 
 	if (res.status === 404) return null;
@@ -77,7 +86,8 @@ export async function writeFile(
 	};
 	if (sha) body.sha = sha;
 
-	const res = await fetch(apiUrl(path), {
+	const fullPath = repoPath(path);
+	const res = await fetch(apiUrl(fullPath), {
 		method: 'PUT',
 		headers: headers(),
 		body: JSON.stringify(body),
@@ -101,7 +111,8 @@ export async function deleteFile(
 	sha: string,
 ): Promise<void> {
 	const { branch } = getConfig();
-	const res = await fetch(apiUrl(path), {
+	const fullPath = repoPath(path);
+	const res = await fetch(apiUrl(fullPath), {
 		method: 'DELETE',
 		headers: headers(),
 		body: JSON.stringify({ message, sha, branch }),
