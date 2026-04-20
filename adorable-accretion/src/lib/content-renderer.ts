@@ -108,12 +108,34 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 				const slug = entry.id.split('/').pop()!;
 				map.set(title.toLowerCase(), { title, slug });
 
+				// For "Firstname, Title" patterns (e.g. "Mevrosal, Dean of Enchantment"),
+				// also index the name before the comma as an alias.
+				const titleBeforeComma = title.split(',')[0].trim();
+				if (
+					titleBeforeComma.length > 2 &&
+					titleBeforeComma !== title &&
+					!map.has(titleBeforeComma.toLowerCase())
+				) {
+					map.set(titleBeforeComma.toLowerCase(), { title: titleBeforeComma, slug });
+				}
+
 				// Also index tags as aliases
 				const tags = (entry.data as Record<string, unknown>).tags;
 				if (Array.isArray(tags)) {
 					for (const tag of tags) {
-						if (typeof tag === 'string' && !map.has(tag.toLowerCase())) {
-							map.set(tag.toLowerCase(), { title: tag, slug });
+						if (typeof tag === 'string') {
+							if (!map.has(tag.toLowerCase())) {
+								map.set(tag.toLowerCase(), { title: tag, slug });
+							}
+							// Same comma-split alias for tags (e.g. "Mevrosal, Mage of ice" → "Mevrosal")
+							const tagBeforeComma = tag.split(',')[0].trim();
+							if (
+								tagBeforeComma.length > 2 &&
+								tagBeforeComma !== tag &&
+								!map.has(tagBeforeComma.toLowerCase())
+							) {
+								map.set(tagBeforeComma.toLowerCase(), { title: tagBeforeComma, slug });
+							}
 						}
 					}
 				}
