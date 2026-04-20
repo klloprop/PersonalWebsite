@@ -429,7 +429,11 @@ const pageTitle = isNew
 	}
 
 	function entryUrl(type: string, slugPath: string) {
-		const pageSlug = slugPath.split('/').pop() || slugPath;
+		// Normalise to lowercase + hyphens to match the case-insensitive slug lookup
+		// in [slug].astro — filenames like "The wiki and its features.md" otherwise
+		// produce %20-encoded URLs that the router won't match.
+		const raw = slugPath.split('/').pop() || slugPath;
+		const pageSlug = raw.toLowerCase().replace(/\s+/g, '-');
 		if (type === 'wiki') return `/tavern/wiki/${pageSlug}/`;
 		return `/studio/blog/${pageSlug}/`;
 	}
