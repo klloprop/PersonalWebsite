@@ -6,9 +6,9 @@ collection: "QuickStart"
 ---
 
 There are links and cool thinks!
+Links are auto created between posts with the same Base Collection, for example all Abaron collections automatically create links with each other based on their tags and names.
 
 You can have links and stuff!
-
 
 Blog posts can have more images like this!
 
