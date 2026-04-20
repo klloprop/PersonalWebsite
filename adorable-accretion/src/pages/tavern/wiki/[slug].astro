@@ -35,9 +35,19 @@ if (!entry) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
-// Always derive the file path from entry.id so it is project-relative and
-// safe to pass to the GitHub API (entry.filePath can be an absolute build path).
-const filePath = `src/content/wiki/${entry.id}.md`;
+// Derive a project-relative path with correct original casing.
+// entry.id is lowercased by Astro's glob loader, so Characters/CoreNPCs/mask
+// becomes characters/corenpcs/mask — wrong for the case-sensitive GitHub API.
+// entry.filePath preserves real casing but is an absolute filesystem path, so
+// we strip everything before the first occurrence of src/content/wiki/.
+function projectRelativePath(absPath: string): string {
+	const normalized = absPath.replace(/\\/g, '/');
+	const idx = normalized.indexOf('src/content/wiki/');
+	return idx >= 0 ? normalized.slice(idx) : `src/content/wiki/${entry!.id}.md`;
+}
+const filePath = entry.filePath
+	? projectRelativePath(entry.filePath)
+	: `src/content/wiki/${entry.id}.md`;
 
 // Fetch latest body from GitHub (instant updates, no rebuild needed)
 let rendered;
