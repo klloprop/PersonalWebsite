@@ -19,6 +19,10 @@
 	--bg-secondary: #f9fafb;
 }
 
+html {
+	scrollbar-gutter: stable;
+}
+
 html.dark {
 	--accent: #6b7bff;
 	--accent-dark: #8e9aff;
@@ -48,9 +52,6 @@ html.dark {
 	font-display: swap;
 }
 
-html {
-	height: 100%;
-}
 body {
 	font-family: "Atkinson", sans-serif;
 	margin: 0;
@@ -66,10 +67,9 @@ body {
 	font-size: 20px;
 	line-height: 1.7;
 	transition: background-color 0.3s ease, color 0.3s ease;
-	min-height: 100%;
+	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
-	overscroll-behavior-y: none;
 }
 main {
 	width: 720px;
@@ -199,25 +199,6 @@ hr {
 	font-display: swap;
 }
 
-/* Dyslexia-friendly mode */
-html.dyslexia p,
-html.dyslexia li,
-html.dyslexia td,
-html.dyslexia th,
-html.dyslexia span,
-html.dyslexia a,
-html.dyslexia label,
-html.dyslexia blockquote,
-html.dyslexia figcaption,
-html.dyslexia time,
-html.dyslexia code,
-html.dyslexia pre {
-	font-family: "OpenDyslexic", sans-serif;
-	letter-spacing: 0.01em;
-	word-spacing: 0.10em;
-	line-height: 2;
-}
-
 .sr-only {
 	border: 0;
 	padding: 0;
@@ -306,9 +287,31 @@ header {
 	left: 0;
 	right: 0;
 	z-index: 1000;
+	overflow: hidden;
 }
 body {
 	padding-top: 60px;
+}
+html[data-section="tavern"] body {
+	padding-top: 10rem;
+}
+@media (max-width: 1500px) {
+	html[data-section="tavern"] body {
+		padding-top: 8rem;
+	}
+}
+@media (max-width: 1100px) {
+	html[data-section="tavern"] body {
+		padding-top: 6.5rem;
+	}
+}
+@media (max-width: 720px) {
+	html[data-section="tavern"] body {
+		padding-top: 5.5rem;
+	}
+	html[data-section="tavern"] header {
+		overflow: visible;
+	}
 }
 html.dark header {
 	background: #22223a;
@@ -316,23 +319,19 @@ html.dark header {
 
 /* Landing page (no section) button colors */
 html:not([data-section]) header .dark-toggle,
-html:not([data-section]) header .dyslexia-toggle,
 html:not([data-section]) header .nav-toggle {
 	color: #333;
 	border-color: rgba(0, 0, 0, 0.2);
 }
-html:not([data-section]) header .dark-toggle:hover,
-html:not([data-section]) header .dyslexia-toggle:hover {
+html:not([data-section]) header .dark-toggle:hover {
 	background: rgba(0, 0, 0, 0.08);
 }
 html.dark:not([data-section]) header .dark-toggle,
-html.dark:not([data-section]) header .dyslexia-toggle,
 html.dark:not([data-section]) header .nav-toggle {
 	color: #fff;
 	border-color: rgba(255, 255, 255, 0.3);
 }
-html.dark:not([data-section]) header .dark-toggle:hover,
-html.dark:not([data-section]) header .dyslexia-toggle:hover {
+html.dark:not([data-section]) header .dark-toggle:hover {
 	background: rgba(255, 255, 255, 0.15);
 }
 
@@ -369,8 +368,7 @@ html[data-section="studio"] header nav a.active {
 	color: #ffd6f6;
 	box-shadow: 0 2px 4px rgba(155, 16, 136, 0.3);
 }
-html[data-section="studio"] header .dark-toggle:hover,
-html[data-section="studio"] header .dyslexia-toggle:hover {
+html[data-section="studio"] header .dark-toggle:hover {
 	background: rgba(255, 160, 242, 0.25);
 }
 
@@ -405,8 +403,7 @@ html[data-section="tavern"] header nav a.active {
 	color: #FFD700;
 	box-shadow: 0 2px 4px rgba(139, 105, 20, 0.4);
 }
-html[data-section="tavern"] header .dark-toggle:hover,
-html[data-section="tavern"] header .dyslexia-toggle:hover {
+html[data-section="tavern"] header .dark-toggle:hover {
 	background: rgba(139, 105, 20, 0.3);
 }
 

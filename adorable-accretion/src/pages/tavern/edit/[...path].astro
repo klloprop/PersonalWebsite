@@ -1,0 +1,758 @@
+---
+export const prerender = false;
+
+/**
+ * tavern/edit/[...path].astro — Content editor for wiki and blog entries.
+ *
+ * URL patterns:
+ *   /tavern/edit/wiki              → create new wiki entry
+ *   /tavern/edit/blog              → create new blog post
+ *   /tavern/edit/wiki/{slug}       → edit existing wiki entry
+ *   /tavern/edit/blog/{slug}       → edit existing blog post
+ *
+ * Requires authentication (enforced by middleware).
+ * Uses the GitHub API to read/write content files.
+ */
+import { getCollection } from 'astro:content';
+import BaseHead from '../../../components/BaseHead.astro';
+import Footer from '../../../components/Footer.astro';
+import Header from '../../../components/Header.astro';
+import { SITE_TITLE } from '../../../consts';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/tavern/login');
+
+const rawPath = Astro.params.path;
+if (!rawPath) return Astro.redirect('/tavern');
+
+const segments = rawPath.split('/');
+const type = segments[0];
+if (type !== 'wiki' && type !== 'blog') return Astro.redirect('/tavern');
+
+const slug = segments.slice(1).join('/');
+const isNew = !slug;
+
+let collections: string[] = [];
+try {
+	if (type === 'wiki') {
+		const cols = await getCollection('wikiCollections');
+		collections = cols.map((c) => c.data.name).sort();
+	} else {
+		const cols = await getCollection('blogCollections');
+		collections = cols.map((c) => c.data.name).sort();
+	}
+} catch {
+	/* collections may not be available in all environments */
+}
+
+const pageTitle = isNew
+	? `New ${type === 'wiki' ? 'Wiki Entry' : 'Blog Post'}`
+	: 'Edit Entry';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - ${pageTitle}`} description="Content editor" />
+		<style>
+			main {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 1.5rem 2rem 3rem;
+			}
+
+			/* ── Header bar ── */
+			.editor-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 0.75rem;
+				margin-bottom: 1.5rem;
+			}
+			.editor-bar h1 {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 1.4rem;
+				margin: 0;
+				color: #3E2703;
+			}
+			:global(html.dark) .editor-bar h1 {
+				color: #DEB96E;
+			}
+			.editor-bar-actions {
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+			}
+
+			/* ── Buttons ── */
+			.btn-primary {
+				padding: 0.5rem 1.25rem;
+				background: #744908;
+				color: #F5E4C4;
+				border: none;
+				border-radius: 6px;
+				cursor: pointer;
+				font-weight: 700;
+				font-size: 0.9rem;
+				font-family: Georgia, 'Times New Roman', serif;
+			}
+			.btn-primary:hover { background: #8B6914; }
+			.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+			:global(html.dark) .btn-primary { background: #6B4710; }
+			:global(html.dark) .btn-primary:hover { background: #8B6914; }
+
+			.btn-secondary {
+				padding: 0.45rem 0.9rem;
+				border: 1px solid #c99026;
+				border-radius: 6px;
+				background: transparent;
+				color: #744908;
+				cursor: pointer;
+				font-size: 0.85rem;
+				font-family: Georgia, 'Times New Roman', serif;
+				text-decoration: none;
+			}
+			.btn-secondary:hover { background: rgba(201, 144, 38, 0.15); }
+			.btn-secondary.active {
+				background: rgba(201, 144, 38, 0.2);
+				font-weight: 700;
+			}
+			:global(html.dark) .btn-secondary {
+				color: #DEB96E;
+				border-color: #6B4710;
+			}
+
+			.btn-danger {
+				padding: 0.45rem 0.9rem;
+				border: 1px solid #a00;
+				border-radius: 6px;
+				background: transparent;
+				color: #a00;
+				cursor: pointer;
+				font-size: 0.85rem;
+				font-family: Georgia, 'Times New Roman', serif;
+			}
+			.btn-danger:hover { background: rgba(170, 0, 0, 0.1); }
+			:global(html.dark) .btn-danger {
+				color: #ff8080;
+				border-color: #ff8080;
+			}
+
+			/* ── Status / loading ── */
+			.loading-msg {
+				text-align: center;
+				padding: 3rem;
+				color: #8B6914;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-style: italic;
+			}
+			.status-msg {
+				padding: 0.75rem 1rem;
+				border-radius: 6px;
+				margin-bottom: 1rem;
+				font-size: 0.9rem;
+			}
+			.status-msg.success {
+				background: rgba(34, 139, 34, 0.1);
+				border: 1px solid #2a7a2a;
+				color: #2a7a2a;
+			}
+			.status-msg.error {
+				background: rgba(170, 0, 0, 0.1);
+				border: 1px solid #a00;
+				color: #a00;
+			}
+			.status-msg.info {
+				background: rgba(139, 105, 20, 0.1);
+				border: 1px solid #c99026;
+				color: #744908;
+			}
+			:global(html.dark) .status-msg.success {
+				color: #6bdf6b;
+				border-color: #3a9a3a;
+				background: rgba(34, 139, 34, 0.15);
+			}
+			:global(html.dark) .status-msg.error {
+				color: #ff8080;
+				border-color: #cc4444;
+				background: rgba(170, 0, 0, 0.15);
+			}
+			:global(html.dark) .status-msg.info {
+				color: #DEB96E;
+				border-color: #6B4710;
+				background: rgba(107, 71, 16, 0.15);
+			}
+
+			/* ── Form fields ── */
+			.fields-grid {
+				display: grid;
+				gap: 1rem;
+				margin-bottom: 1rem;
+			}
+			.field-row {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 1rem;
+			}
+			@media (max-width: 600px) {
+				.field-row { grid-template-columns: 1fr; }
+			}
+			.field label {
+				display: block;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.85rem;
+				font-weight: 700;
+				color: #5C3D0E;
+				margin-bottom: 0.35rem;
+			}
+			:global(html.dark) .field label {
+				color: #DEB96E;
+			}
+			.field-hint {
+				font-weight: 400;
+				color: #8B6914;
+				font-size: 0.8rem;
+			}
+			:global(html.dark) .field-hint {
+				color: #C4A35A;
+			}
+			.field input[type="text"],
+			.field input[type="date"],
+			.field select,
+			.field textarea {
+				width: 100%;
+				padding: 0.55rem 0.75rem;
+				border: 2px solid #C4A35A;
+				border-radius: 8px;
+				background: #FDF6EC;
+				color: #3E2703;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.95rem;
+				box-sizing: border-box;
+			}
+			:global(html.dark) .field input[type="text"],
+			:global(html.dark) .field input[type="date"],
+			:global(html.dark) .field select,
+			:global(html.dark) .field textarea {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+				color: #F5E4C4;
+			}
+			.field input:focus,
+			.field select:focus,
+			.field textarea:focus {
+				outline: none;
+				border-color: #8B6914;
+				box-shadow: 0 0 0 2px rgba(139, 105, 20, 0.2);
+			}
+			.field textarea {
+				font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+				font-size: 0.9rem;
+				line-height: 1.6;
+				resize: vertical;
+				min-height: 200px;
+			}
+			.field textarea#raw-content {
+				min-height: 500px;
+			}
+
+			/* ── Bottom actions ── */
+			.editor-footer {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-top: 1.5rem;
+				padding-top: 1rem;
+				border-top: 1px solid rgba(196, 163, 90, 0.3);
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main
+			data-type={type}
+			data-slug={slug}
+			data-is-new={isNew ? 'true' : 'false'}
+			data-collections={JSON.stringify(collections)}
+			data-username={user.username}
+		>
+			<div class="editor-bar">
+				<h1 id="editor-title">{pageTitle}</h1>
+				<div class="editor-bar-actions">
+					<button id="toggle-mode" class="btn-secondary">Raw Mode</button>
+					<button id="save-btn" class="btn-primary" disabled>Save</button>
+				</div>
+			</div>
+
+			<div id="status-area"></div>
+			<div id="loading" class="loading-msg">Loading…</div>
+
+			<!-- ============ Structured editor ============ -->
+			<div id="structured-editor" hidden>
+				<div class="fields-grid">
+					<div class="field">
+						<label for="field-title">Title</label>
+						<input type="text" id="field-title" required />
+					</div>
+					<div class="field">
+						<label for="field-description">Description</label>
+						<input type="text" id="field-description" />
+					</div>
+					<div class="field-row">
+						<div class="field">
+							<label for="field-date">Publish Date</label>
+							<input type="date" id="field-date" required />
+						</div>
+						<div class="field">
+							<label for="field-collection">Collection</label>
+							<select id="field-collection">
+								<option value="">— None —</option>
+								{collections.map((c) => <option value={c}>{c}</option>)}
+							</select>
+						</div>
+					</div>
+					{type === 'wiki' && (
+						<div class="field">
+							<label for="field-tags">
+								Tags <span class="field-hint">(comma-separated)</span>
+							</label>
+							<input type="text" id="field-tags" placeholder="e.g. Magic, History" />
+						</div>
+					)}
+					{isNew && (
+						<div class="field">
+							<label for="field-slug">
+								Slug
+								<span class="field-hint">(URL path, e.g. "my-entry" or "Characters/PlayerCharacters/new-char")</span>
+							</label>
+							<input
+								type="text"
+								id="field-slug"
+								required
+								pattern="[a-zA-Z0-9_\-\/]+"
+								title="Letters, numbers, hyphens, underscores, and slashes"
+							/>
+						</div>
+					)}
+				</div>
+				<div class="field">
+					<label for="field-body">
+						Content <span class="field-hint">(Markdown)</span>
+					</label>
+					<textarea id="field-body" rows="24"></textarea>
+				</div>
+			</div>
+
+			<!-- ============ Raw editor ============ -->
+			<div id="raw-editor" hidden>
+				<div class="field">
+					<label for="raw-content">
+						Raw Markdown <span class="field-hint">(frontmatter + body)</span>
+					</label>
+					<textarea id="raw-content" rows="36" spellcheck="false"></textarea>
+				</div>
+			</div>
+
+			<div id="editor-footer" class="editor-footer" hidden>
+				<div>
+					<a
+						href={type === 'wiki' ? '/tavern/wiki/' : '/studio/blog/'}
+						class="btn-secondary"
+					>
+						Cancel
+					</a>
+				</div>
+				<button id="save-btn-bottom" class="btn-primary" disabled>
+					{isNew ? 'Create Entry' : 'Save Changes'}
+				</button>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	// ── Config from data attributes ──
+	const main = document.querySelector('main')!;
+	const TYPE = main.dataset.type!;
+	const SLUG = main.dataset.slug!;
+	const IS_NEW = main.dataset.isNew === 'true';
+
+	// ── DOM elements ──
+	const loadingEl = document.getElementById('loading')!;
+	const statusArea = document.getElementById('status-area')!;
+	const structuredEl = document.getElementById('structured-editor')!;
+	const rawEditorEl = document.getElementById('raw-editor')!;
+	const footerEl = document.getElementById('editor-footer')!;
+	const titleEl = document.getElementById('editor-title')!;
+	const toggleBtn = document.getElementById('toggle-mode')!;
+	const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+	const saveBtnBottom = document.getElementById('save-btn-bottom') as HTMLButtonElement;
+
+	// Fields
+	const fTitle = document.getElementById('field-title') as HTMLInputElement;
+	const fDesc = document.getElementById('field-description') as HTMLInputElement;
+	const fDate = document.getElementById('field-date') as HTMLInputElement;
+	const fCollection = document.getElementById('field-collection') as HTMLSelectElement;
+	const fTags = document.getElementById('field-tags') as HTMLInputElement | null;
+	const fSlug = document.getElementById('field-slug') as HTMLInputElement | null;
+	const fBody = document.getElementById('field-body') as HTMLTextAreaElement;
+	const rawContent = document.getElementById('raw-content') as HTMLTextAreaElement;
+
+	// ── State ──
+	let currentSha = '';
+	let originalRawYaml = '';       // Raw YAML between --- delimiters (for preserving unknown fields)
+	let isRawMode = false;
+	let dirty = false;
+
+	// ── Helpers ──
+	function showStatus(message: string, type: 'success' | 'error' | 'info' = 'info') {
+		statusArea.innerHTML = `<div class="status-msg ${type}">${escapeHtml(message)}</div>`;
+	}
+
+	function clearStatus() {
+		statusArea.innerHTML = '';
+	}
+
+	function escapeHtml(s: string) {
+		return s
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	function markDirty() {
+		dirty = true;
+		saveBtn.disabled = false;
+		saveBtnBottom.disabled = false;
+	}
+
+	// ── Frontmatter parsing ──
+	function parseFrontmatter(content: string) {
+		const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+		if (!match) return { rawYaml: '', body: content, fields: {} as Record<string, any> };
+
+		const rawYaml = match[1];
+		const body = match[2];
+		const fields: Record<string, any> = {};
+
+		for (const line of rawYaml.split('\n')) {
+			const colonIdx = line.indexOf(':');
+			if (colonIdx === -1) continue;
+			const key = line.slice(0, colonIdx).trim();
+			let val = line.slice(colonIdx + 1).trim();
+
+			// Remove surrounding quotes
+			if (
+				(val.startsWith('"') && val.endsWith('"')) ||
+				(val.startsWith("'") && val.endsWith("'"))
+			) {
+				val = val.slice(1, -1);
+			}
+			// Parse JSON arrays like ["tag1", "tag2"]
+			else if (val.startsWith('[')) {
+				try {
+					fields[key] = JSON.parse(val);
+					continue;
+				} catch {
+					/* leave as string */
+				}
+			}
+
+			fields[key] = val;
+		}
+
+		return { rawYaml, body, fields };
+	}
+
+	/**
+	 * Update specific fields in the raw YAML while preserving all other lines.
+	 */
+	function updateFrontmatterYaml(
+		originalYaml: string,
+		updates: Record<string, any>,
+	): string {
+		const lines = originalYaml.split('\n');
+		const result: string[] = [];
+		const updatedKeys = new Set<string>();
+
+		for (const line of lines) {
+			const colonIdx = line.indexOf(':');
+			if (colonIdx === -1) {
+				result.push(line);
+				continue;
+			}
+			const key = line.slice(0, colonIdx).trim();
+			if (key in updates) {
+				updatedKeys.add(key);
+				const val = updates[key];
+				// Skip fields set to empty/null
+				if (val === undefined || val === null || val === '') continue;
+				result.push(serializeField(key, val));
+			} else {
+				result.push(line);
+			}
+		}
+
+		// Append new fields not present in the original
+		for (const [key, val] of Object.entries(updates)) {
+			if (updatedKeys.has(key)) continue;
+			if (val === undefined || val === null || val === '') continue;
+			result.push(serializeField(key, val));
+		}
+
+		return result.join('\n');
+	}
+
+	function serializeField(key: string, val: any): string {
+		if (Array.isArray(val)) {
+			return `${key}: ${JSON.stringify(val)}`;
+		}
+		// Dates stay unquoted
+		if (key === 'pubDate' || key === 'updatedDate') {
+			return `${key}: ${val}`;
+		}
+		// Strings get quoted
+		return `${key}: "${val}"`;
+	}
+
+	/**
+	 * Build the full file content from structured fields.
+	 */
+	function buildContent(): string {
+		const updates: Record<string, any> = {
+			title: fTitle.value,
+			description: fDesc.value,
+			pubDate: fDate.value,
+			collection: fCollection.value || undefined,
+		};
+		if (fTags) {
+			const tags = fTags.value
+				.split(',')
+				.map((t) => t.trim())
+				.filter(Boolean);
+			updates.tags = tags.length > 0 ? tags : undefined;
+		}
+
+		const yaml = updateFrontmatterYaml(originalRawYaml, updates);
+		return `---\n${yaml}\n---\n${fBody.value}`;
+	}
+
+	/**
+	 * Build a new-entry template.
+	 */
+	function newTemplate(): string {
+		const today = new Date().toISOString().slice(0, 10);
+		const lines = [`title: "New Entry"`, `description: ""`, `pubDate: ${today}`];
+		if (TYPE === 'wiki') lines.push(`tags: []`);
+		return `---\n${lines.join('\n')}\n---\n\nWrite your content here.\n`;
+	}
+
+	// ── Populate form from parsed data ──
+	function populateFields(fields: Record<string, any>, body: string) {
+		fTitle.value = fields.title || '';
+		fDesc.value = fields.description || '';
+		fDate.value = fields.pubDate || '';
+		fCollection.value = fields.collection || '';
+		if (fTags) {
+			const tags = Array.isArray(fields.tags) ? fields.tags : [];
+			fTags.value = tags.join(', ');
+		}
+		fBody.value = body;
+	}
+
+	// ── Mode toggle ──
+	toggleBtn.addEventListener('click', () => {
+		if (isRawMode) {
+			// Switch to structured: parse raw content
+			const { rawYaml, body, fields } = parseFrontmatter(rawContent.value);
+			originalRawYaml = rawYaml;
+			populateFields(fields, body);
+			rawEditorEl.hidden = true;
+			structuredEl.hidden = false;
+			toggleBtn.textContent = 'Raw Mode';
+			toggleBtn.classList.remove('active');
+		} else {
+			// Switch to raw: build from structured
+			rawContent.value = buildContent();
+			structuredEl.hidden = true;
+			rawEditorEl.hidden = false;
+			toggleBtn.textContent = 'Structured Mode';
+			toggleBtn.classList.add('active');
+		}
+		isRawMode = !isRawMode;
+	});
+
+	// ── Dirty tracking ──
+	for (const el of [fTitle, fDesc, fDate, fCollection, fTags, fBody, rawContent]) {
+		el?.addEventListener('input', markDirty);
+	}
+
+	// Auto-generate slug from title (new entries only)
+	if (IS_NEW && fSlug) {
+		fTitle.addEventListener('input', () => {
+			if (!fSlug.dataset.manual) {
+				fSlug.value = fTitle.value
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/^-|-$/g, '');
+			}
+		});
+		fSlug.addEventListener('input', () => {
+			fSlug.dataset.manual = 'true';
+		});
+	}
+
+	// Warn on unsaved changes
+	window.addEventListener('beforeunload', (e) => {
+		if (dirty) {
+			e.preventDefault();
+		}
+	});
+
+	// ── Save ──
+	async function save() {
+		saveBtn.disabled = true;
+		saveBtnBottom.disabled = true;
+		clearStatus();
+
+		const content = isRawMode ? rawContent.value : buildContent();
+
+		// Basic validation
+		const { fields } = parseFrontmatter(content);
+		if (!fields.title) {
+			showStatus('Title is required.', 'error');
+			saveBtn.disabled = false;
+			saveBtnBottom.disabled = false;
+			return;
+		}
+
+		try {
+			let res: Response;
+
+			if (IS_NEW) {
+				const newSlug = fSlug?.value?.trim();
+				if (!newSlug) {
+					showStatus('Slug is required for new entries.', 'error');
+					saveBtn.disabled = false;
+					saveBtnBottom.disabled = false;
+					return;
+				}
+
+				res = await fetch(`/api/content/${TYPE}`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ slug: newSlug, content }),
+				});
+			} else {
+				res = await fetch(`/api/content/${TYPE}/${SLUG}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ content, sha: currentSha }),
+				});
+			}
+
+			const data = await res.json();
+
+			if (!res.ok) {
+				if (res.status === 409) {
+					showStatus(
+						'Conflict: this file was modified elsewhere. Please refresh and try again.',
+						'error',
+					);
+				} else {
+					showStatus(data.error || 'Save failed.', 'error');
+				}
+				saveBtn.disabled = false;
+				saveBtnBottom.disabled = false;
+				return;
+			}
+
+			currentSha = data.sha;
+			dirty = false;
+			showStatus(
+				'Saved successfully! A site rebuild has been triggered. Changes will be live in a few minutes.',
+				'success',
+			);
+
+			// Update title display
+			if (fTitle.value) {
+				titleEl.textContent = `Editing: ${fTitle.value}`;
+			}
+
+			// If this was a new entry, redirect to the edit URL
+			if (IS_NEW && fSlug) {
+				const newUrl = `/tavern/edit/${TYPE}/${fSlug.value.trim()}`;
+				window.history.replaceState({}, '', newUrl);
+			}
+		} catch (err) {
+			showStatus(`Network error: ${err}`, 'error');
+			saveBtn.disabled = false;
+			saveBtnBottom.disabled = false;
+		}
+	}
+
+	saveBtn.addEventListener('click', save);
+	saveBtnBottom.addEventListener('click', save);
+
+	// Ctrl+S / Cmd+S shortcut
+	document.addEventListener('keydown', (e) => {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			if (!saveBtn.disabled) save();
+		}
+	});
+
+	// ── Load content ──
+	async function load() {
+		if (IS_NEW) {
+			// New entry: start with template
+			const content = newTemplate();
+			const { rawYaml, body, fields } = parseFrontmatter(content);
+			originalRawYaml = rawYaml;
+			populateFields(fields, body);
+			rawContent.value = content;
+
+			loadingEl.hidden = true;
+			structuredEl.hidden = false;
+			footerEl.hidden = false;
+			saveBtn.disabled = false;
+			saveBtnBottom.disabled = false;
+			dirty = true;
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/content/${TYPE}/${SLUG}`);
+			const data = await res.json();
+
+			if (!res.ok) {
+				loadingEl.hidden = true;
+				showStatus(data.error || 'Failed to load content.', 'error');
+				return;
+			}
+
+			currentSha = data.sha;
+			const { rawYaml, body, fields } = parseFrontmatter(data.content);
+			originalRawYaml = rawYaml;
+			populateFields(fields, body);
+			rawContent.value = data.content;
+
+			// Update page title
+			if (fields.title) {
+				titleEl.textContent = `Editing: ${fields.title}`;
+			}
+
+			loadingEl.hidden = true;
+			structuredEl.hidden = false;
+			footerEl.hidden = false;
+		} catch (err) {
+			loadingEl.hidden = true;
+			showStatus(`Failed to load: ${err}`, 'error');
+		}
+	}
+
+	load();
+</script>

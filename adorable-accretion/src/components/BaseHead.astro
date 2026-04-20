@@ -26,6 +26,7 @@ interface Props {
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const isTavern = Astro.url.pathname.startsWith('/tavern');
 
 const { title, description, image = FallbackImage } = Astro.props;
 ---
@@ -39,14 +40,103 @@ const { title, description, image = FallbackImage } = Astro.props;
 	if (localStorage.getItem('theme') === 'dark') {
 		document.documentElement.classList.add('dark');
 	}
-	if (localStorage.getItem('dyslexia') === 'on') {
-		document.documentElement.classList.add('dyslexia');
-	}
 	(function() {
 		var p = window.location.pathname;
-		if (p.startsWith('/tavern')) document.documentElement.setAttribute('data-section', 'tavern');
-		else if (p.startsWith('/studio')) document.documentElement.setAttribute('data-section', 'studio');
+		if (p.startsWith('/tavern')) {
+			document.documentElement.setAttribute('data-section', 'tavern');
+			if (sessionStorage.getItem('section') !== 'tavern') {
+				document.documentElement.setAttribute('data-tavern-enter', '');
+			}
+			sessionStorage.setItem('section', 'tavern');
+		} else {
+			if (p.startsWith('/studio')) document.documentElement.setAttribute('data-section', 'studio');
+			sessionStorage.setItem('section', p.startsWith('/studio') ? 'studio' : '');
+		}
 	})();
+</script>
+<style is:inline>
+	/* Critical tavern layout — header box and background are inlined so the
+	   page reserves space and paints the gradient before any external CSS loads.
+	   Nav *content* is kept invisible until scoped styles arrive (data-tavern-ready). */
+	html[data-section="tavern"] header {
+		position: fixed; top: 0; left: 0; right: 0;
+		z-index: 1000; overflow: hidden; height: 10rem;
+		margin: 0; padding: 0 1em;
+		background: linear-gradient(180deg, #744908, #c99026);
+	}
+	html.dark[data-section="tavern"] header {
+		background: linear-gradient(180deg, #633e04, #311e0e);
+	}
+	html[data-section="tavern"] body { padding-top: 10rem; }
+	@media (max-width: 1500px) {
+		html[data-section="tavern"] header { height: 8rem; }
+		html[data-section="tavern"] body { padding-top: 8rem; }
+	}
+	@media (max-width: 1100px) {
+		html[data-section="tavern"] header { height: 6.5rem; }
+		html[data-section="tavern"] body { padding-top: 6.5rem; }
+	}
+</style>
+<script is:inline>
+	// Tavern navbar reveal & drop-in animation
+	document.addEventListener('DOMContentLoaded', function() {
+		var html = document.documentElement;
+		if (html.getAttribute('data-section') !== 'tavern') return;
+
+		var nav = document.querySelector('header nav');
+		if (!nav) return;
+		var isEntry = html.hasAttribute('data-tavern-enter');
+
+		if (!isEntry) {
+			// Tavern-to-tavern navigation: reveal nav once styles are settled
+			requestAnimationFrame(function() {
+				requestAnimationFrame(function() {
+					nav.style.visibility = '';
+				});
+			});
+			return;
+		}
+
+		// First entry into tavern — start animations while hidden, then reveal
+		html.removeAttribute('data-tavern-enter');
+
+		// Wait for styles to settle
+		requestAnimationFrame(function() {
+			requestAnimationFrame(function() {
+				var signs = document.querySelectorAll('.tavern-sign-link:not(.tavern-sign-mobile-home)');
+				var darkSign = document.querySelector('.tavern-dark-sign');
+				// fill:'backwards' makes the first keyframe apply immediately,
+				// even during each sign's stagger delay — no flash at resting position
+				var timing = { duration: 2000, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' };
+
+				signs.forEach(function(sign, i) {
+					sign.animate([
+						{ transform: 'translateY(-200%)', offset: 0 },
+						{ transform: 'translateY(-58%)', offset: 0.55 },
+						{ transform: 'translateY(-62%)', offset: 0.72 },
+						{ transform: 'translateY(-59.5%)', offset: 0.85 },
+						{ transform: 'translateY(-60.3%)', offset: 0.94 },
+						{ transform: 'translateY(-60%)', offset: 1 }
+					], Object.assign({}, timing, { delay: i * 40 }));
+				});
+
+				if (darkSign) {
+					darkSign.animate([
+						{ transform: 'translate(0%, -200%)', offset: 0 },
+						{ transform: 'translate(0%, -47.5%)', offset: 0.55 },
+						{ transform: 'translate(0%, -52%)', offset: 0.72 },
+						{ transform: 'translate(0%, -49.5%)', offset: 0.85 },
+						{ transform: 'translate(0%, -50.3%)', offset: 0.94 },
+						{ transform: 'translate(0%, -50%)', offset: 1 }
+					], Object.assign({}, timing, { delay: 200 }));
+				}
+
+				// Reveal immediately — fill:'backwards' ensures all signs
+				// are already at translateY(-200%) even during their delays
+				nav.style.visibility = '';
+			});
+		});
+	});
 </script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" href="/favicon.ico" />
@@ -62,6 +152,17 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Font preloads -->
 <link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin />
 <link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin />
+
+{isTavern && (
+	<>
+		<link rel="preload" href="/images/tavern_navbar/HomeSign.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/tavern_navbar/SchedulingSign.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/tavern_navbar/WikiSign.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/tavern_navbar/LibrarySign.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/tavern_navbar/AboutSign.webp" as="image" type="image/webp" />
+		<link rel="preload" href="/images/tavern_navbar/DarkmodeSign.webp" as="image" type="image/webp" />
+	</>
+)}
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
