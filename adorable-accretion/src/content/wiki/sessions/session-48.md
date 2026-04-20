@@ -10,3 +10,5 @@ collection: "The Story so Far"
 - Akira, Nailo, Vhaeraun, Mala are tasked to create a big distraction in the courtyard, which they achieve by staging a fight
 - Carmelio, Arneal, Mask, Arkus attend the recombination ritual, with Carmelio being part of the ritual
 - All plans, after improvising around some issues, work out, the recombination ritual is complete and Noon successfully destroyed the artifact that held Vhaerauns curse
+
+Hi this is a test, is it working?
