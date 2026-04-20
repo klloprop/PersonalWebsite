@@ -7,7 +7,7 @@ collection: "Core NPCs"
 tags: ["Vhaerun","Vhae"]
 ---
 
-Nailos boyfriend.
+Nailos boyfriend. Krazes Ragebait toy.
 
 
 # Vhaerun (7) - Statblock
