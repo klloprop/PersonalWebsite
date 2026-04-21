@@ -1,7 +1,7 @@
 ---
-name: "Geography"
+name: "Places"
 image: "../../assets/D20_Icon.png"
-description: "Locations and landscapes of Abaron."
+description: "Locations of note in Abaron."
 order: 1
 parent: "Abaron"
 ---
