@@ -1,10 +1,11 @@
 ---
 title: "The Structure of the World"
-description: "XXXX"
+description: "The structure of the world, split up into each of its strata."
 pubDate: 2026-04-06
-heroImage: "../../assets/WikiImages/StormPicture.jpg"
-collection: "Geography"
+collection: "Abarons Strata"
 ---
+The structure of the world, split up into each of its strata.
+
 ### Cosmos
 The cosmos is the domain of Ades, the primordial God of Stars. The cosmos holds endless vastness and the unfathomable secrets of stars and the dark spaces in between.
 ### Sky
