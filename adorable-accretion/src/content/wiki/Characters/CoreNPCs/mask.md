@@ -9,8 +9,6 @@ collection: "Core NPCs"
 Met party in the capacity as a whistleblower, is now considered family by Noon and Akira. 
 Girlfriend to Noon.
 
-![Mask](../../../../assets/WikiImages/Mask.png)
-
 # Mask (7) - Statblock
 Support Creation Bard
 HP: 40  | AC: 13 | DC: 15 | Bonus Attack: +7 | Prof/Saves: +3
@@ -42,4 +40,4 @@ ___
 **Feline Agility**.
 Double Speed for a turn. Reuse only after not moving for a turn.
 
-
+![Mask](../../../../assets/WikiImages/Mask.png)
