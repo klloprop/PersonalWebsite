@@ -306,11 +306,22 @@ html[data-section="tavern"] body {
 	}
 }
 @media (max-width: 720px) {
+	html[data-section="tavern"] header {
+		height: 5.5rem;
+	}
 	html[data-section="tavern"] body {
-		padding-top: 5.5rem;
+		padding-top: 6.5rem;
 	}
 	html[data-section="tavern"] header {
 		overflow: visible;
+	}
+}
+@media (max-width: 500px) {
+	html[data-section="tavern"] header {
+		height: 5rem;
+	}
+	html[data-section="tavern"] body {
+		padding-top: 6rem;
 	}
 }
 html.dark header {
