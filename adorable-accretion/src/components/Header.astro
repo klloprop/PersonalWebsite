@@ -729,6 +729,9 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			bottom: 1rem;
 		}
 
+		.tavern-home-sign {
+			left:-4%;
+		}
 		.tavern-home-sign .sign-img {
 			height: 8rem;
 		}
@@ -768,6 +771,9 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		.tavern-sign-link .sign-text {
 			font-size: 1.2rem;
 			bottom: 0.8rem;
+		}
+		.tavern-home-sign {
+			left:-4%;
 		}
 
 		.tavern-home-sign .sign-img {
@@ -811,6 +817,9 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			font-size: 1rem;
 			bottom: 0.8rem;
 			transform: translateX(-35%);
+		}
+		.tavern-home-sign {
+			left:-7%;
 		}
 
 		.tavern-home-sign .sign-img {
@@ -1099,7 +1108,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			box-shadow: none !important;
 			padding: 0;
 			cursor: pointer;
-			transform: translateY(-57%);
+			transform: translateY(-55%);
 			transition: filter 0.2s ease;
 			outline: none;
 			-webkit-tap-highlight-color: transparent;
@@ -1226,6 +1235,11 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 	   ═══════════════════════════════════════════ */
 	@media (max-width: 500px) {
 
+		header.tavern .tavern-mobile-bar {
+    		min-height: 0;
+    		height: 7.5rem; 
+			max-height: 1;
+		}
 		.hamburger-collapsed-img {
 			height: 7.5rem;
 		}
@@ -1233,7 +1247,11 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		.hamburger-text {
 			transform: translate(-50%, 50%);
 		}
-		
+		.tavern-mobile-trigger {
+			position: absolute;
+			left: 50%;
+			transform: translateX(-50%) translateY(-40%);
+		}
 		.tavern-mobile-home-sign {
 			position: absolute;
 			left: -2.3rem;
@@ -1280,7 +1298,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			box-shadow: none !important;
 			padding: 0;
 			cursor: pointer;
-			transform: translateY(-60%);
+			transform: translateY(-59%);
 			transition: filter 0.2s ease;
 			outline: none;
 			-webkit-tap-highlight-color: transparent;
