@@ -2,7 +2,7 @@
 title: "The Structure of the World"
 description: "The structure of the world, split up into each of its strata."
 pubDate: 2026-04-06
-collection: "Abarons Strata"
+collection: "Strata"
 ---
 The structure of the world, split up into each of its strata.
 
