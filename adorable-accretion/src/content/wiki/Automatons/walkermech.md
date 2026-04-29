@@ -3,6 +3,7 @@ title: "Walker Mech"
 description: "A mobile command center operated by engineers"
 pubDate: 2026-04-28
 heroImage: "../../../assets/WikiImages/Walker_Mech.png"
+heroImagePosition: "0% 20%"   
 collection: "Automatons"
 ---
 

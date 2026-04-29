@@ -3,6 +3,7 @@ title: "White Crow"
 description: "A generation 4 automaton designed for close quarter combat"
 pubDate: 2026-04-28
 heroImage: "../../../assets/WikiImages/White_Crow.png"
+heroImagePosition: "0% 5%"    
 collection: "Automatons"
 ---
 

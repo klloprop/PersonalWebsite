@@ -3,6 +3,7 @@ title: "Slasher"
 description: "The 3rd Gen Infantry Automaton"
 pubDate: 2026-04-28
 heroImage: "../../../assets/WikiImages/Slasher.png"
+heroImagePosition: "0% 15%"   
 collection: "Automatons"
 ---
 
