@@ -3,6 +3,7 @@ title: "Crawler"
 description: "The transport automaton"
 pubDate: 2026-04-28
 heroImage: "../../../assets/WikiImages/Crawler.png"
+heroImagePosition: "0% 25%"   
 collection: "Automatons"
 ---
 

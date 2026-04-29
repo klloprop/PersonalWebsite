@@ -151,18 +151,18 @@ function getAncestors(name: string): string[] {
 				position: fixed;
 				top: 12.4rem;
 				left: max(1rem, calc((100vw - 1260px) / 2 + 1rem));
-				max-height: calc(100vh - 10rem);
+				max-height: calc(100vh - 12.4rem - 2rem);
 			}
 			@media (max-width: 1500px) {
 				.sidebar {
 					top: 10.4rem;
-					max-height: calc(100vh - 8rem);
+					max-height: calc(100vh - 10.4rem - 2rem);
 				}
 			}
 			@media (max-width: 1100px) {
 				.sidebar {
 					top: 8.9rem;
-					max-height: calc(100vh - 6.5rem);
+					max-height: calc(100vh - 8.9rem - 2rem);
 				}
 			}
 			.sidebar {
@@ -170,9 +170,30 @@ function getAncestors(name: string): string[] {
 				background: #FDF6EC;
 				border: 2px solid #C4A35A;
 				border-radius: 16px;
-				padding: 1.25rem 0.75rem;
+				padding: 1.25rem 0.75rem 1.5rem;
 				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.1);
 				z-index: 10;
+				scrollbar-width: thin;
+				scrollbar-color: #C4A35A transparent;
+			}
+			.sidebar::-webkit-scrollbar {
+				width: 6px;
+			}
+			.sidebar::-webkit-scrollbar-track {
+				background: transparent;
+			}
+			.sidebar::-webkit-scrollbar-thumb {
+				background: #C4A35A;
+				border-radius: 999px;
+			}
+			.sidebar::-webkit-scrollbar-thumb:hover {
+				background: #8B6914;
+			}
+			:global(html.dark) .sidebar::-webkit-scrollbar-thumb {
+				background: #7a5c2e;
+			}
+			:global(html.dark) .sidebar::-webkit-scrollbar-thumb:hover {
+				background: #C4A35A;
 			}
 			:global(html.dark) .sidebar {
 				background: #2a1c0a;
@@ -906,7 +927,17 @@ function getAncestors(name: string): string[] {
 
 				// Sort modes
 				type SortMode = 'newest' | 'oldest' | 'a-z' | 'z-a';
-				let currentSort: SortMode = 'newest';
+				const SORT_KEY = 'wiki-sort';
+				const saved = sessionStorage.getItem(SORT_KEY) as SortMode | null;
+				let currentSort: SortMode = (saved && ['newest','oldest','a-z','z-a'].includes(saved)) ? saved : 'newest';
+
+				// Apply saved sort to UI on load
+				sortOptions.forEach((o) => {
+					const isActive = o.dataset.sort === currentSort;
+					o.classList.toggle('active', isActive);
+					if (isActive && sortLabel) sortLabel.textContent = o.textContent || '';
+				});
+				sortCards();
 
 				function sortCards() {
 					if (!grid) return;
@@ -943,6 +974,7 @@ function getAncestors(name: string): string[] {
 				sortOptions.forEach((opt) => {
 					opt.addEventListener('click', () => {
 						currentSort = opt.dataset.sort as SortMode;
+						sessionStorage.setItem(SORT_KEY, currentSort);
 						if (sortLabel) sortLabel.textContent = opt.textContent || '';
 						sortOptions.forEach((o) => o.classList.toggle('active', o === opt));
 						sortMenu?.classList.remove('open');
@@ -998,8 +1030,10 @@ function getAncestors(name: string): string[] {
 					});
 
 					// Filter cards — just toggle display + featured class, no DOM movement
+					// Use live DOM query so order reflects any active sort
+					const sortedCards = Array.from(grid?.querySelectorAll<HTMLElement>('.entry-card') || []);
 					let visibleCount = 0;
-					cards.forEach((card) => {
+					sortedCards.forEach((card) => {
 						const cardCol = card.dataset.collection || '';
 						const visible = selected === 'all' || matchNames.has(cardCol);
 						card.style.display = visible ? '' : 'none';
@@ -1024,7 +1058,9 @@ function getAncestors(name: string): string[] {
 
 				buttons.forEach((btn) => {
 					btn.addEventListener('click', () => {
-						filterTo(btn.dataset.collection!);
+						const col = btn.dataset.collection!;
+						sessionStorage.setItem('wiki-collection', col);
+						filterTo(col);
 						// Update the mobile toggle label
 						if (toggleLabel) {
 							toggleLabel.textContent = btn.dataset.collection === 'all'
@@ -1049,9 +1085,14 @@ function getAncestors(name: string): string[] {
 				});
 
 				const params = new URLSearchParams(window.location.search);
-				const col = params.get('collection');
+				const urlCol = params.get('collection');
+				const col = urlCol || sessionStorage.getItem('wiki-collection');
+				if (urlCol) sessionStorage.setItem('wiki-collection', urlCol);
 				if (col) {
 					filterTo(col);
+					if (toggleLabel) {
+						toggleLabel.textContent = col === 'all' ? 'Browse Collections' : col;
+					}
 					// Auto-expand the group containing this collection
 					buttons.forEach((btn) => {
 						if (btn.dataset.collection === col) {

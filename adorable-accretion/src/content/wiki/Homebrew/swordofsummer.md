@@ -5,9 +5,9 @@ pubDate: 2026-04-28
 heroImage: "../../../assets/WikiImages/SwordOfSummer.png"
 collection: "Homebrew"
 ---
-Summer Afternoons Namesword forged by Guldor and bestowed upon Noon as she reached the rank of paladin. 
+Summer Afternoons nameblade forged by Guldor and bestowed upon Noon as she reached the rank of paladin. 
 
-This Sword of slowly adjusts to the season/climate the wielder is currently in, in small ways. The metal might change color and leaves may grow or ice may form on it.
+This sword slowly adjusts to the conditions the wielder is currently in. The metal might change color, leaves may grow or ice may form.
 
 **1st Stage:** +1 to Attack and Damage Rolls
 
