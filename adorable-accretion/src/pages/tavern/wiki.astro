@@ -587,6 +587,8 @@ function getAncestors(name: string): string[] {
 					font-weight: 600;
 					margin-bottom: 0.75rem;
 					box-shadow: 0 2px 8px rgba(62, 39, 3, 0.08);
+					position: relative;
+					z-index: 2;
 				}
 				:global(html.dark) .sidebar-mobile-toggle {
 					background: #2a1c0a;
@@ -605,28 +607,51 @@ function getAncestors(name: string): string[] {
 					padding: 1.25rem;
 				}
 				.sidebar {
-					width: 100%;
-					max-width: 100%;
+					width: auto;
 					box-sizing: border-box;
 					position: fixed;
-					top: 0;
-					left: 0;
-					right: 0;
+					top: 8rem;
+					left: 5%;
+					right: 5%;
 					bottom: 0;
-					max-height: 100vh;
-					max-height: 100dvh;
-					height: 100vh;
-					height: 100dvh;
+					max-height: calc(100vh - 8rem);
+					max-height: calc(100dvh - 8rem);
+					height: calc(100vh - 8rem);
+					height: calc(100dvh - 8rem);
 					overflow-y: auto;
 					overflow-x: hidden;
 					display: none;
 					flex-direction: column;
 					gap: 0.25rem;
-					border-radius: 0;
+					border-radius: 0 0 16px 16px;
 					padding: 1rem 1rem 6rem;
 					margin-bottom: 0;
 					z-index: 100;
 					overscroll-behavior: contain;
+				}
+				@media (max-width: 720px) {
+					.sidebar {
+						top: 5.5rem;
+						max-height: calc(100vh - 5.5rem);
+						max-height: calc(100dvh - 5.5rem);
+						height: calc(100vh - 5.5rem);
+						height: calc(100dvh - 5.5rem);
+						left: 0;
+						right: 0;
+						border-radius: 0;
+					}
+				}
+				@media (max-width: 500px) {
+					.sidebar {
+						top: 5rem;
+						max-height: calc(100vh - 5rem);
+						max-height: calc(100dvh - 5rem);
+						height: calc(100vh - 5rem);
+						height: calc(100dvh - 5rem);
+						left: 0;
+						right: 0;
+						border-radius: 0;
+					}
 				}
 				.sidebar.mobile-open {
 					display: flex;
@@ -636,8 +661,8 @@ function getAncestors(name: string): string[] {
 					content: '⌄ scroll for more';
 					position: fixed;
 					bottom: 0;
-					left: 0;
-					right: 0;
+					left: 5%;
+					right: 5%;
 					height: 4rem;
 					background: linear-gradient(transparent, #FDF6EC 60%);
 					display: none;
