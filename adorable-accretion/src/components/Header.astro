@@ -1057,9 +1057,11 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 			display: flex;
 			align-items: flex-start;
 			gap: 0;
+			pointer-events: none;
 		}
 
 		.tavern-admin-sign {
+			pointer-events: auto;
 			position: relative;
 			display: inline-flex;
 			align-items: center;
@@ -1099,6 +1101,7 @@ const siteTitle = pathname === '/' ? "Lucy's Space" : pathname.startsWith('/stud
 		}
 
 		.tavern-mobile-dark-sign {
+			pointer-events: auto;
 			position: relative;
 			display: inline-flex;
 			align-items: center;
