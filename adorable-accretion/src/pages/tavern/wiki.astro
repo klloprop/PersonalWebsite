@@ -151,18 +151,18 @@ function getAncestors(name: string): string[] {
 				position: fixed;
 				top: 12.4rem;
 				left: max(1rem, calc((100vw - 1260px) / 2 + 1rem));
-				max-height: calc(100vh - 12.4rem - 2rem);
+				max-height: min(calc(100vh - 12.4rem - 2rem), var(--sidebar-max-h, calc(100vh - 12.4rem - 2rem)));
 			}
 			@media (max-width: 1500px) {
 				.sidebar {
 					top: 10.4rem;
-					max-height: calc(100vh - 10.4rem - 2rem);
+					max-height: min(calc(100vh - 10.4rem - 2rem), var(--sidebar-max-h, calc(100vh - 10.4rem - 2rem)));
 				}
 			}
 			@media (max-width: 1100px) {
 				.sidebar {
 					top: 8.9rem;
-					max-height: calc(100vh - 8.9rem - 2rem);
+					max-height: min(calc(100vh - 8.9rem - 2rem), var(--sidebar-max-h, calc(100vh - 8.9rem - 2rem)));
 				}
 			}
 			.sidebar {
@@ -902,6 +902,27 @@ function getAncestors(name: string): string[] {
 		</div>
 		<Footer />
 		<script>
+			// Keep sidebar above the footer by updating --sidebar-max-h on scroll/resize
+			function initSidebarFooterClamp() {
+				const sidebar = document.querySelector<HTMLElement>('.sidebar');
+				const footer = document.querySelector<HTMLElement>('footer');
+				if (!sidebar || !footer) return;
+
+				function clamp() {
+					const footerTop = footer!.getBoundingClientRect().top;
+					const sidebarTop = sidebar!.getBoundingClientRect().top;
+					const gap = 85; // 1rem breathing room above footer
+					const available = footerTop - sidebarTop - gap;
+					sidebar!.style.setProperty('--sidebar-max-h', `${Math.max(available, 100)}px`);
+				}
+
+				clamp();
+				window.addEventListener('scroll', clamp, { passive: true });
+				window.addEventListener('resize', clamp, { passive: true });
+				new ResizeObserver(clamp).observe(footer);
+			}
+			initSidebarFooterClamp();
+
 			function initWikiFilter() {
 				const sidebar = document.querySelector<HTMLElement>('.sidebar');
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
