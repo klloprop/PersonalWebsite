@@ -246,6 +246,34 @@ const collectionChain = collection ? getAncestors(collection) : [];
 			:global(html.dark) .edit-entry-btn:hover {
 				background: rgba(222, 185, 110, 0.22);
 			}
+			/* ── PDF embed wrapper ── */
+			/* .pdf-embed in markdown body is rendered via set:html so needs :global */
+			.prose :global(.pdf-embed) {
+				margin: 0 -15rem;
+			}
+			@media (max-width: 1200px) {
+				.prose :global(.pdf-embed) {
+					margin: 0;
+				}
+			}
+			/* ── Responsive PDF iframes ── */
+			.prose :global(iframe) {
+				display: block;
+				width: 100% !important;
+				border: none;
+				height: min(1200px, 85vh);
+			}
+			@media (max-width: 768px) {
+				.prose :global(iframe) {
+					height: 75vh;
+				}
+			}
+			@media (max-width: 480px) {
+				.prose :global(iframe) {
+					height: 65vh;
+				}
+			}
+
 		</style>
 	</head>
 
