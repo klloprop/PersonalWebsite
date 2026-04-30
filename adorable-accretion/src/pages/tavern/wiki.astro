@@ -360,10 +360,13 @@ function getAncestors(name: string): string[] {
 				flex-shrink: 0;
 			}
 			.sort-btn {
+				-webkit-appearance: none;
+				appearance: none;
 				display: flex;
 				align-items: center;
 				gap: 0.4rem;
-				height: 42px;
+				height: 3rem;
+				box-sizing: border-box;
 				padding: 0 0.75rem;
 				border: 2px solid #C4A35A;
 				border-radius: 12px;
@@ -572,11 +575,15 @@ function getAncestors(name: string): string[] {
 			}
 			@media (max-width: 900px) {
 				.sidebar-mobile-toggle {
+					-webkit-appearance: none;
+					appearance: none;
 					display: flex;
 					align-items: center;
 					justify-content: space-between;
 					width: 100%;
-					padding: 0.75rem 1rem;
+					box-sizing: border-box;
+					height: 3rem;
+					padding: 0 1rem;
 					border: 2px solid #C4A35A;
 					border-radius: 12px;
 					background: #FDF6EC;
@@ -585,6 +592,7 @@ function getAncestors(name: string): string[] {
 					font-family: Georgia, 'Times New Roman', serif;
 					font-size: 1rem;
 					font-weight: 600;
+					line-height: 1;
 					margin-bottom: 0.75rem;
 					box-shadow: 0 2px 8px rgba(62, 39, 3, 0.08);
 					position: relative;
