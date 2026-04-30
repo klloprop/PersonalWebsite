@@ -4,6 +4,7 @@
  * Section-specific gradient backgrounds are applied via global.css
  * using the html[data-section] attribute.
  */
+import FeedbackBunny from './FeedbackBunny.astro';
 const today = new Date();
 ---
 
@@ -12,7 +13,12 @@ const today = new Date();
 	Damn look at the news, im not sure I have too many rights.
 	<br> <br>
 	All content on this website is created <strong>by hand by humans,</strong> without the use of any kind of AI. <br><strong>Note:</strong> Images in the Taverns wiki are taken from the internet and may have been created by AI, but I try to use those created by humans.
+	<br><br>
+	<button class="summon-bunny-btn" onclick="window.summonBunny && window.summonBunny()" aria-label="Summon the bunny">
+		🐇 Summon the bunny
+	</button>
 </footer>
+<FeedbackBunny />
 <style>
 	footer {
 		padding: 2em 1em 6em 1em;
@@ -21,5 +27,24 @@ const today = new Date();
 		text-align: center;
 		position: relative;
 		z-index: 3;
+	}
+
+	.summon-bunny-btn {
+		-webkit-appearance: none;
+		appearance: none;
+		background: none;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		color: inherit;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 0.8rem;
+		opacity: 0.6;
+		padding: 0.3em 0.9em;
+		transition: opacity 0.2s;
+	}
+
+	.summon-bunny-btn:hover {
+		opacity: 1;
 	}
 </style>

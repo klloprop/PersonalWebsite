@@ -1,0 +1,186 @@
+---
+/**
+ * FeedbackBunny.astro — A little bunny that pops up randomly with dialogue.
+ * - Appears randomly ~30% of the time on page load
+ * - Can be summoned manually via window.summonBunny()
+ * - Dismissable by clicking the bunny or the bubble
+ */
+---
+
+<div id="feedback-bunny" aria-hidden="true">
+	<div id="bunny-bubble" role="status" aria-live="polite"></div>
+	<button id="bunny-dismiss" aria-label="Dismiss bunny">
+		<img src="/images/FeedbackBunny/bunny.webp" alt="A small bunny" draggable="false" />
+	</button>
+</div>
+
+<style>
+	/* ── Easy size/position controls ── */
+	#feedback-bunny {
+		--bunny-size: 120px;       /* width of the bunny image */
+		--bunny-bottom: 1.5rem;   /* distance from bottom of viewport */
+		--bunny-right: 1.5rem;    /* distance from right of viewport */
+
+		position: fixed;
+		bottom: var(--bunny-bottom);
+		right: var(--bunny-right);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.5rem;
+		z-index: 9999;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateY(30px);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+	}
+
+	#feedback-bunny.visible {
+		opacity: 1;
+		transform: translateY(0);
+		pointer-events: auto;
+	}
+
+	#bunny-bubble {
+		background: #FDF6EC;
+		border: 2px solid #C4A35A;
+		border-radius: 16px 16px 4px 16px;
+		padding: 0.65rem 0.9rem;
+		max-width: 220px;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 0.875rem;
+		color: #3E2703;
+		line-height: 1.5;
+		box-shadow: 0 4px 16px rgba(62, 39, 3, 0.15);
+		position: relative;
+	}
+
+	#bunny-bubble::after {
+		content: '';
+		position: absolute;
+		bottom: -10px;
+		right: 75px;
+		width: 0;
+		height: 0;
+		border-left: 8px solid transparent;
+		border-right: 0px solid transparent;
+		border-top: 10px solid #C4A35A;
+	}
+
+	#bunny-bubble::before {
+		content: '';
+		position: absolute;
+		bottom: -7px;
+		right: 75px;
+		width: 0;
+		height: 0;
+		border-left: 6px solid transparent;
+		border-right: 0px solid transparent;
+		border-top: 8px solid #FDF6EC;
+		z-index: 1;
+	}
+
+	#bunny-dismiss {
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+		line-height: 0;
+		transition: transform 0.2s ease;
+	}
+
+	#bunny-dismiss:hover {
+		transform: scale(1.05);
+	}
+
+	#bunny-dismiss img {
+		width: var(--bunny-size);
+		height: auto;
+		display: block;
+		filter: drop-shadow(0 4px 8px rgba(62, 39, 3, 0.25));
+	}
+
+	:global(html.dark) #bunny-bubble {
+		background: #2a1c0a;
+		border-color: #7a5c2e;
+		color: #F5E4C4;
+	}
+
+	:global(html.dark) #bunny-bubble::after {
+		border-top-color: #7a5c2e;
+	}
+
+	:global(html.dark) #bunny-bubble::before {
+		border-top-color: #2a1c0a;
+	}
+
+	@media (max-width: 480px) {
+		#feedback-bunny {
+			bottom: 1rem;
+			right: 1rem;
+		}
+
+		#bunny-dismiss img {
+			width: 64px;
+		}
+
+		#bunny-bubble {
+			max-width: 180px;
+			font-size: 0.8rem;
+		}
+	}
+</style>
+
+<script>
+	const dialogues = [
+		"Hello there!",
+		"What? Have you never seen a bunny owning a Tavern?",
+		"Do you think they put carrots in the wiki too?",
+		"You've been reading for a while. Take a little stretch!",
+		"Did you know bunnies can't vomit? Anyway, enjoy the site!",
+		"Carrots are good. So is this website. (unbiased opinion)",
+        "If you want to submit feedback, you will have to wait, that is currently being implemented.",
+	];
+
+	function pickDialogue(): string {
+		return dialogues[Math.floor(Math.random() * dialogues.length)];
+	}
+
+	const bunny = document.getElementById('feedback-bunny')!;
+	const bubble = document.getElementById('bunny-bubble')!;
+	const dismissBtn = document.getElementById('bunny-dismiss')!;
+
+	let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function showBunny() {
+		bubble.textContent = pickDialogue();
+		bunny.classList.add('visible');
+		bunny.setAttribute('aria-hidden', 'false');
+		// Auto-hide after 18 seconds
+		if (hideTimer) clearTimeout(hideTimer);
+		hideTimer = setTimeout(hideBunny, 18000);
+	}
+
+	function hideBunny() {
+		bunny.classList.remove('visible');
+		bunny.setAttribute('aria-hidden', 'true');
+		if (hideTimer) {
+			clearTimeout(hideTimer);
+			hideTimer = null;
+		}
+	}
+
+	dismissBtn.addEventListener('click', hideBunny);
+	bubble.addEventListener('click', hideBunny);
+
+	// Expose for footer summon button
+	(window as any).summonBunny = showBunny;
+
+	// Appear randomly ~10% of the time, after a short delay
+	if (Math.random() < 0.1) {
+		const delay = 2000 + Math.random() * 3000; // 2–5 seconds after load
+		setTimeout(showBunny, delay);
+	}
+</script>
