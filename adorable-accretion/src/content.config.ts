@@ -61,6 +61,7 @@ const wiki = defineCollection({
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
 			heroImagePosition: z.string().optional().default('center'),
+			heroImageCredit: z.string().optional(),
 			collection: z.string().optional(),
 			tags: z.array(z.string()).optional(),
 		}),
