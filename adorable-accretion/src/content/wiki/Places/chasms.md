@@ -3,7 +3,7 @@ title: "Chasms"
 description: "Large deep holes in the Ramshorn Area"
 pubDate: 2026-05-01
 collection: "Places"
-tags: ["Trýpa, Trypa, Chasm, Curse"]
+tags: ["Trýpa","Trypa","Chasm","Curse"]
 ---
 The fey call these gigantic naturally occuring holes Trýpa, many locals have adopted that name too. 
 A curse of unknown origin permeates every one of these chasms, but the allure of the treasures within still attract the dominions and miners. 
@@ -11,7 +11,7 @@ A curse of unknown origin permeates every one of these chasms, but the allure of
 The chasms are known to lead deep into the earth, as deep as the caverns and some speculate it could go as deep as the abyss.
 
 ## Before the Mining Operations
-People used to live peacefully in harmony with h and never venture deep into the holes, they would commune with the spirits and respect and weave the curses to take what they needed and not more
+People used to live peacefully in harmony with their surroundings and never venture deep into the holes, they would commune with the spirits and respect and weave the curses to take only what they needed.
 
 ## Mining Operations
 Notable mining operation in the greater Ramshorn area include Mirefield, but many more villages are scattered all over. If you find a chasm you will find souls desperate enough to go inside.
