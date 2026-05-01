@@ -8,13 +8,9 @@ collection: "Starwielders"
 tags: ["Percival"]
 ---
 **Race :** Human 
-
 **Sex** : male
-
 **Age** : 63
-
 **Pronouns** : He/they
-
 **Occupation** : Archmage/Inventor, Carmelio’s father, Leader of Ornata Homomachina Project
 
 Percival has done what no one else since Aliana has accomplished, he established a new school of magic. Very few students study the arcane side of technomancy, but soon that following might increase and he could command a academy of his own. Currently is considered an outcast of the Starwielders. 
