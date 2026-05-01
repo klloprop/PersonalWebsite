@@ -6,7 +6,7 @@ collection: "Player Characters"
 tags: ["Carm"]
 ---
 
-> "To remain kind in times of hardship, that is the true essence of humanity"
+> To remain kind in times of hardship, that is the true essence of humanity
 
 Formerly known as the project "Ornata Homomachina", Carmelio is now driven towards a brand new purpose in life. He aims to usher in a new world from the ashes of the war and nurture it into a place where everyone can coexist in harmony.
 
