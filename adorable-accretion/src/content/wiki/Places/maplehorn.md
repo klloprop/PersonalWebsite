@@ -17,6 +17,9 @@ Most villagers left Maplehorn after the storm, dooming the village.
 
 A witch by the name of Alecto La Croix once resided here. She even provided boons to the party, but left after Faena, her foster daugther shared some concering information with her.
 
+Maplehorn village:
+![Mask](../../../assets/WikiImages/Maplehorn1.png)
 
+Surrounding swamp:
 ![Mask](../../../assets/WikiImages/Maplehorn.jpg)
 > Art by [Anton Fadeev](https://www.artstation.com/artwork/6blGkO)
