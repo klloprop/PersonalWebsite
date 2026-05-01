@@ -153,6 +153,35 @@
 		flex: 1;
 		font-size: 1.05rem;
 		line-height: 1.7;
+		scrollbar-width: thin;
+		scrollbar-color: #C4A35A transparent;
+	}
+	.wiki-popout-body::-webkit-scrollbar {
+		width: 6px;
+	}
+	.wiki-popout-body::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.wiki-popout-body::-webkit-scrollbar-thumb {
+		background-color: #C4A35A;
+		border-radius: 3px;
+	}
+	.wiki-popout-body blockquote {
+		margin: -0.5em 0 0.75em 0;
+		padding: 0 0 0 0.75em;
+		border-left: 2px solid #C4A35A;
+		font-size: 1rem;
+		color: #8B6914;
+	}
+	html.dark .wiki-popout-body blockquote {
+		border-left-color: #8B6914;
+		color: #C4A35A;
+	}
+	.wiki-popout-body blockquote p {
+		margin: 0;
+	}
+	.wiki-popout-body p:has(> img) + blockquote {
+		margin-top: -0.75em;
 	}
 	.wiki-popout-body h1,
 	.wiki-popout-body h2,
