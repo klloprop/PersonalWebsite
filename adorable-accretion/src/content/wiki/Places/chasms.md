@@ -1,6 +1,6 @@
 ---
 title: "Chasms"
-description: "Large deep holes in the Ramshorn Area"
+description: "Fathomless depths containing mere endless horror"
 pubDate: 2026-05-01
 collection: "Places"
 heroImage: "../../../assets/WikiImages/chasm.png"
