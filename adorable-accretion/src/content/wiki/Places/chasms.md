@@ -3,6 +3,9 @@ title: "Chasms"
 description: "Large deep holes in the Ramshorn Area"
 pubDate: 2026-05-01
 collection: "Places"
+heroImage: "../../../assets/WikiImages/chasm.png"
+heroImagePosition: "00% 25%"  
+heroImageCredit: "u/totallynotrobboss"
 tags: ["Trýpa","Trypa","Chasm","Curse"]
 ---
 The fey call these gigantic naturally occuring holes Trýpa, many locals have adopted that name too. 
@@ -36,3 +39,6 @@ When the curse progresses to stage 2 crystals start growing out of the skin and 
 A miner that progresses to stage 2 cannot work the chasms anymore and often ends up in crystal slums.
 
 If a individual in stage 2 is experiencing continued exposure to the curse only death ensues.
+
+![Mask](../../../assets/WikiImages/chasm.png)
+> Art credit to u/totallynotrobboss
