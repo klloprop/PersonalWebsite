@@ -3,6 +3,8 @@ title: "Crossroads"
 description: "The central city that connects the overworld, umbra and what lies below."
 pubDate: 2026-05-01
 collection: "Places"
+heroImage: "../../../assets/WikiImages/crossroads.png"
+heroImagePosition: "00% 55%"
 tags: ["Devils Gate, Earthen Gate, Umbra Gate"]
 ---
 The central city that connects the overworld, umbra and what lies below.
@@ -18,3 +20,5 @@ Three main gates secure the borders of the city, the Earthen gate at the surface
 ## Currently
 
 The Crossroads are occupied by the ivory dominion. Trade has died down with the war making the streets unsafe to travel and restricting funds from potential buyers. Around a third of the crossroads buildings stand empty as travelers abandon their stores there to find safer buisness deeper in the ivory dominion. 
+
+![Mask](../../../assets/WikiImages/crossroads.png)
