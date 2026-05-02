@@ -17,9 +17,9 @@
 <style>
 	/* ── Easy size/position controls ── */
 	#feedback-bunny {
-		--bunny-size: 120px;       /* width of the bunny image */
-		--bunny-bottom: 1.5rem;   /* distance from bottom of viewport */
-		--bunny-right: 1.5rem;    /* distance from right of viewport */
+		--bunny-size: 320px;       /* width of the bunny image */
+		--bunny-bottom: 0.5rem;   /* distance from bottom of viewport */
+		--bunny-right: 0.5rem;    /* distance from right of viewport */
 
 		position: fixed;
 		bottom: var(--bunny-bottom);
@@ -53,13 +53,15 @@
 		line-height: 1.5;
 		box-shadow: 0 4px 16px rgba(62, 39, 3, 0.15);
 		position: relative;
+		right: 9rem;
+		bottom: -10px;
 	}
 
 	#bunny-bubble::after {
 		content: '';
 		position: absolute;
 		bottom: -10px;
-		right: 75px;
+		right: 60px;
 		width: 0;
 		height: 0;
 		border-left: 8px solid transparent;
@@ -71,7 +73,7 @@
 		content: '';
 		position: absolute;
 		bottom: -7px;
-		right: 75px;
+		right: 60px;
 		width: 0;
 		height: 0;
 		border-left: 6px solid transparent;
@@ -118,12 +120,12 @@
 
 	@media (max-width: 480px) {
 		#feedback-bunny {
-			bottom: 1rem;
-			right: 1rem;
+			bottom: 0rem;
+			right: 0rem;
 		}
 
 		#bunny-dismiss img {
-			width: 64px;
+			width: 200px;
 		}
 
 		#bunny-bubble {
@@ -136,12 +138,26 @@
 <script>
 	const dialogues = [
 		"Hello there!",
-		"What? Have you never seen a bunny owning a Tavern?",
+		"What? Have you never seen a bunny and a hamster owning a Tavern?",
 		"Do you think they put carrots in the wiki too?",
 		"You've been reading for a while. Take a little stretch!",
 		"Did you know bunnies can't vomit? Anyway, enjoy the site!",
 		"Carrots are good. So is this website. (unbiased opinion)",
-        "If you want to submit feedback, you will have to wait, that is currently being implemented.",
+		"Remember to stay hop-timistic!",
+		"I know I'm ear-resistible",
+		"I'm booooored, roll initiative!",
+		"Oops, you take 25 dmg!",
+		"What is a cleric’s favorite hot drink? - Divini-tea",
+		"What happens when a dark elf casts sleep on you? - You get drow-sy",
+		"Why does leather armor make you better at sneaking? - It’s made of hide",
+		"Why do wizards like fireball so much? - It’s a well-rounded spell",
+		"How do you get a TTRPG player to go out with you? - You ask them for a d8",
+		"What’s a beholder’s favorite snack? - Eyes cream.",
+		"What do you need to be able to sail across an ocean? - Proficien-sea",
+		"What tool helps a wizard the most? - Spell check",
+		"Why do interns make the best players? - They do it for the experience",
+		"How can you dodge a heatwave? - Turn up your AC!",
+		"What's a magic skillet made of? - Cast iron!"
 	];
 
 	function pickDialogue(): string {
