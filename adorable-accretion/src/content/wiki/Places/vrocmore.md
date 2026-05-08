@@ -3,6 +3,9 @@ title: "Vrocmore"
 description: "A former neighbouring town to Aneridge, now only ruins remain."
 pubDate: 2026-04-21
 collection: "Places"
+heroImage: "../../../assets/WikiImages/vrocmore.png"
+heroImagePosition: "00% 28%"
+heroImageCredit: "Jun Lee"
 tags: [""]
 ---
 A former neighbouring town to Aneridge, now only ruins remain.

@@ -8,7 +8,8 @@ heroImagePosition: "00% 72%"
 heroImageCredit: "Asur Misoa"
 tags: [""]
 ---
-A forest afflicted by the Ramshorn curse, located in the Ramshorn area.
+As the mining operations around at the Trypa continued and more material and artifacts the curse spread in the overworld too. 
+This forest started petrifying first, then the wildlife started changing. Now the forest is avoided by all, as only death awaits inside. 
 
 ![Mask](../../../assets/WikiImages/twistedForest.png)
 > Art by Asur Misoa
