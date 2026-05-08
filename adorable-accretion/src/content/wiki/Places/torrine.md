@@ -3,7 +3,7 @@ title: "Torrine"
 description: "A small lumberjack village outside of Raphia"
 pubDate: 2026-04-21
 collection: "Places"
-heroImage: "../../../assets/WikiImages/torrine.png"
+heroImage: "../../../assets/WikiImages/Torrine.png"
 heroImagePosition: "00% 28%"
 heroImageCredit: "Miklaheim - Warhammer"
 ---
