@@ -3,6 +3,9 @@ title: "Torrine"
 description: "A small lumberjack village outside of Raphia"
 pubDate: 2026-04-21
 collection: "Places"
+heroImage: "../../../assets/WikiImages/torrine.png"
+heroImagePosition: "00% 28%"
+heroImageCredit: "Miklaheim - Warhammer"
 tags: [""]
 ---
 A small lumberjack village outside of Raphia. Only one engineer remains here as its sole citizen. The work is completely automated and performed by large machines. 

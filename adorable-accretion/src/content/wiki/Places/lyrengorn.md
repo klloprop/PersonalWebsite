@@ -9,8 +9,8 @@ heroImageCredit: "Kent Davis"
 tags: ["festival of lights"]
 ---
 
-The city at the top of the world.
-Located in the region known as 'The roof of the world'.
+The city at the top of the world, located in the split mountains.
+Located in the region known as 'The Roof of the World'.
 
 The festival of lights is held in Lyrengorn once a year and is home to famous Wyvern riders who also perform the Festival of Light.
 

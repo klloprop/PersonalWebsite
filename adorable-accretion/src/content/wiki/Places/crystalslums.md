@@ -3,6 +3,9 @@ title: "Crystal Slums"
 description: "The crystal slums of the Ramshorn Area."
 pubDate: 2026-05-01
 collection: "Places"
+heroImage: "../../../assets/WikiImages/CrystalSlums.png"
+heroImagePosition: "00% 32%"
+heroImageCredit: "Michelle Leffler"
 tags: [""]
 ---
 
