@@ -1,6 +1,6 @@
 ---
 title: "Ramshorn Area"
-description: "A larger area, known for its chasms that lead deep into the earth."
+description: "TODO: A larger area, known for its chasms that lead deep into the earth."
 pubDate: 2026-04-21
 collection: "Places"
 heroImage: "../../../assets/WikiImages/ramshorn.png"

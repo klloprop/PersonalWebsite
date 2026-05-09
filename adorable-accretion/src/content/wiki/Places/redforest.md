@@ -1,6 +1,6 @@
 ---
 title: "Red Forest"
-description: "A mighty red forest."
+description: "TODO: A mighty red forest."
 pubDate: 2026-04-21
 collection: "Places"
 heroImage: "../../../assets/WikiImages/redforest.png"
