@@ -8,8 +8,9 @@ collection: "Dark Knights"
 heroImageCredit: "Rudi Indra"
 tags: ["Karim"]
 ---
-You have learned very little about this individual.
+A eurasian lynx tabaxi that was born in Shiverfall.
 
+You have learned very little about this individual.
 
 ![Karim](../../../../assets/WikiImages/Karim.png)
 > Karim; art by Rudi Indra
