@@ -1,6 +1,6 @@
 ---
 title: "Karim, the Raven Knight"
-description: "The unseen dark knight."
+description: "The everfrost dark knight"
 pubDate: 2026-04-07
 heroImage: "../../../../assets/WikiImages/Karim.png"
 heroImagePosition: "0% 7%"    
