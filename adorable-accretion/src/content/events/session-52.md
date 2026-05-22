@@ -4,6 +4,6 @@ description: "The Study grounds and a long slumbering secret await to be uncover
 date: "2026-05-24"
 time: "16:30"
 duration: 240
-cancelled: false
+cancelled: true
 sessionType: optional
 ---
