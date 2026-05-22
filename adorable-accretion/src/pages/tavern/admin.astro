@@ -45,6 +45,18 @@ const user = Astro.locals.user!;
 					<p class="loading">Loading…</p>
 				</div>
 			</section>
+
+			<!-- ============ VOTE MANAGEMENT ============ -->
+			<section>
+				<h2>Clear Availability Votes</h2>
+				<p style="font-size:0.9rem;opacity:0.75;margin:0 0 0.75rem;">Use this when a session is rescheduled and its file is reused, causing old votes to carry over.</p>
+				<form id="clear-votes-form" class="inline-form">
+					<input type="text" id="votes-event-id" placeholder="Event ID (e.g. session-52)" required
+						pattern="[a-zA-Z0-9_\-]+" title="Letters, numbers, hyphens and underscores only" />
+					<button type="submit">Clear Votes</button>
+				</form>
+				<div id="votes-result" class="result-box" hidden></div>
+			</section>
 		</main>
 		<Footer />
 	</body>
@@ -338,6 +350,30 @@ const user = Astro.locals.user!;
 	document.getElementById('logout-btn')?.addEventListener('click', async () => {
 		await fetch('/api/auth/logout', { method: 'POST' });
 		window.location.href = '/tavern/login';
+	});
+
+	// ----------- Clear votes -----------
+	(document.getElementById('clear-votes-form') as HTMLFormElement).addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const eventIdEl = document.getElementById('votes-event-id') as HTMLInputElement;
+		const eventId = eventIdEl.value.trim();
+		if (!confirm(`Clear ALL votes for "${eventId}"? This cannot be undone.`)) return;
+		try {
+			const res = await fetch('/api/admin/votes', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ eventId }),
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showResult('votes-result', `All votes for "${eventId}" have been cleared.`);
+				eventIdEl.value = '';
+			} else {
+				showResult('votes-result', data.error || 'Failed', true);
+			}
+		} catch {
+			showResult('votes-result', 'Request failed', true);
+		}
 	});
 
 	// ----------- Init -----------
