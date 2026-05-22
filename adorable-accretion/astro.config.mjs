@@ -22,6 +22,7 @@ export default defineConfig({
 				/^\/api\//,
 				/^\/tavern\/edit\//,
 				/^\/tavern\/login/,
+				/^\/tavern\/library/,
 				/^\/tavern\/admin/,
 				/^\/tavern\/set-password/,
 				/^\/tavern\/scheduling/,
