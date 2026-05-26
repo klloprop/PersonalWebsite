@@ -6,4 +6,3 @@ time: "16:30"
 duration: 240
 cancelled: false
 sessionType: main
----
