@@ -1,6 +1,6 @@
 ---
 name: "Homebrew"
-image: "../../assets/D20_Icon.png"
+image: "../../assets/WikiIcons/HomebrewIcon.png"
 description: "Homebrew made for our players."
 order: 2
 parent: "Abaron"
