@@ -1,4 +1,4 @@
----
+﻿---
 /**
  * tavern/wiki.astro — Wiki entry listing page.
  *
@@ -89,6 +89,39 @@ function calcTotal(node: ColNode): number {
 	return node.totalCount;
 }
 roots.forEach(calcTotal);
+
+// Assign pastel rainbow background colours to collection icons (pre-order traversal)
+const RainbowCafe = [
+	'rgba(250, 86, 89, 0.3)', // terracotta
+	'rgba(247, 163, 74, 0.3)', // amber
+	'rgba(248, 208, 66, 0.3)', // sage
+	'rgba(98, 182, 77, 0.3)', // dusty teal
+	'rgba(34, 118, 148, 0.3)', // slate blue
+	'rgba(72, 69, 114, 0.3)', // plum
+];
+
+// Assign pastel rainbow background colours to collection icons (pre-order traversal)
+const pastelIconColors = [
+	'rgba(250, 86, 89, 0.6)', // terracotta
+	'rgba(0, 121, 255, 0.6)', // amber
+	'rgba(0, 241, 29, 0.6)', // sage
+	'rgba( 255, 239, 0, 0.6)', // dusty teal
+	'rgba(255, 127, 0, 0.6)', // slate blue
+	'rgba(255, 9, 0, 0.6)', // plum
+	'rgba(200, 200, 145, 0.6)', // dusty rose
+];
+function flatOrder(nodes: ColNode[]): string[] {
+	const result: string[] = [];
+	for (const node of nodes) {
+		result.push(node.name);
+		if (node.children.length) result.push(...flatOrder(node.children));
+	}
+	return result;
+}
+const colIconBg: Record<string, string> = {};
+flatOrder(roots).forEach((name, i) => {
+	colIconBg[name] = RainbowCafe[i % RainbowCafe.length];
+});
 
 // Build a map: collection name → array of all names it encompasses
 const collectionDescendants: Record<string, string[]> = {};
@@ -253,6 +286,7 @@ function getAncestors(name: string): string[] {
 				object-fit: cover;
 				flex-shrink: 0;
 				border: 1px solid #C4A35A;
+				background: var(--icon-bg);
 			}
 			.sidebar-btn .all-icon {
 				width: 36px;
@@ -795,7 +829,7 @@ function getAncestors(name: string): string[] {
 								<button class="sidebar-toggle" aria-label={`Expand ${root.name}`}>
 									<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 								</button>
-								<button class="sidebar-btn" data-collection={root.name}>
+								<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}`}>
 									<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
 									<span class="collection-info">
 										<span class="collection-name">{root.name}</span>
@@ -811,7 +845,7 @@ function getAncestors(name: string): string[] {
 												<button class="sidebar-toggle" aria-label={`Expand ${child.name}`}>
 													<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 												</button>
-												<button class="sidebar-btn" data-collection={child.name}>
+												<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}`}>
 													<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
 													<span class="collection-info">
 														<span class="collection-name">{child.name}</span>
@@ -821,7 +855,7 @@ function getAncestors(name: string): string[] {
 											</div>
 											<div class="sidebar-children">
 												{child.children.map((grandchild) => (
-													<button class="sidebar-btn" data-collection={grandchild.name}>
+													<button class="sidebar-btn" data-collection={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.name]}`}>
 														<Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={28} height={28} />
 														<span class="collection-info">
 															<span class="collection-name">{grandchild.name}</span>
@@ -832,7 +866,7 @@ function getAncestors(name: string): string[] {
 											</div>
 										</div>
 									) : (
-										<button class="sidebar-btn" data-collection={child.name}>
+										<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}`}>
 											<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
 											<span class="collection-info">
 												<span class="collection-name">{child.name}</span>
@@ -844,7 +878,7 @@ function getAncestors(name: string): string[] {
 							</div>
 						</div>
 					) : (
-						<button class="sidebar-btn" data-collection={root.name}>
+						<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}`}>
 							<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
 							<span class="collection-info">
 								<span class="collection-name">{root.name}</span>
