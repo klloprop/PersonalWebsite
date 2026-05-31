@@ -578,6 +578,451 @@ const events = allEvents.map((event) => {
 				font-size: 0.75rem;
 				margin-top: 0.4rem;
 			}
+
+			/* ── Schedule Calendar ── */
+			.scheduling-layout .calendar-section {
+				margin: 2rem 0 3rem;
+			}
+			.scheduling-layout .session-calendar {
+				background: #FDF6EC;
+				border: 2px solid #C4A35A;
+				border-radius: 16px;
+				padding: 1.5rem;
+				box-shadow: 0 2px 12px rgba(62, 39, 3, 0.08);
+			}
+			html.dark .scheduling-layout .session-calendar {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+			}
+			.scheduling-layout .calendar-legend {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				flex-wrap: wrap;
+				margin-bottom: 1.25rem;
+				padding-bottom: 1rem;
+				border-bottom: 1px solid rgba(196, 163, 90, 0.25);
+			}
+			.scheduling-layout .legend-item {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				font-size: 0.78rem;
+				color: #5C3D0E;
+				font-family: Georgia, 'Times New Roman', serif;
+			}
+			html.dark .scheduling-layout .legend-item {
+				color: #F5E4C4;
+			}
+			.scheduling-layout .legend-dot {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				flex-shrink: 0;
+				box-sizing: border-box;
+			}
+			.scheduling-layout .legend-dot.main { background: #133538; }
+			.scheduling-layout .legend-dot.optional { background: #9b8923; }
+			.scheduling-layout .legend-dot.cancelled { background: #a33; }
+			.scheduling-layout .legend-dot.extrapolated-main {
+				background: rgba(19, 53, 56, 0.12);
+				border: 1.5px dashed #133538;
+			}
+			.scheduling-layout .legend-dot.extrapolated-optional {
+				background: rgba(155, 137, 35, 0.12);
+				border: 1.5px dashed #9b8923;
+			}
+			.scheduling-layout .cal-nav {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 1.25rem;
+			}
+			.scheduling-layout .cal-nav-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.35rem;
+				padding: 0.4em 0.85em;
+				border-radius: 8px;
+				border: 1.5px solid #C4A35A;
+				background: #FDF6EC;
+				color: #5C3D0E;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.82rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: background 0.15s, border-color 0.15s;
+				line-height: 1.4;
+			}
+			.scheduling-layout .cal-nav-btn:hover:not(:disabled) {
+				background: rgba(139, 105, 20, 0.12);
+				border-color: #8B6914;
+			}
+			.scheduling-layout .cal-nav-btn:disabled {
+				opacity: 0.35;
+				cursor: default;
+			}
+			html.dark .scheduling-layout .cal-nav-btn {
+				background: #2a1c0a;
+				border-color: #7a5c2e;
+				color: #F5E4C4;
+			}
+			html.dark .scheduling-layout .cal-nav-btn:hover:not(:disabled) {
+				background: rgba(222, 185, 110, 0.12);
+				border-color: #DEB96E;
+			}
+			.scheduling-layout .calendar-months {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				gap: 0;
+			}
+			@media (max-width: 560px) {
+				.scheduling-layout .calendar-months {
+					grid-template-columns: 1fr;
+				}
+				.scheduling-layout .cal-month:first-child {
+					border-right: none;
+					padding-right: 0;
+					border-bottom: 1px solid rgba(196, 163, 90, 0.35);
+					padding-bottom: 1.25rem;
+					margin-bottom: 1.25rem;
+				}
+				.scheduling-layout .cal-month:last-child {
+					padding-left: 0;
+				}
+			}
+			.scheduling-layout .cal-month {
+				min-width: 0;
+				padding: 0 1.25rem;
+			}
+			.scheduling-layout .cal-month:first-child {
+				padding-left: 0;
+				border-right: 1px solid rgba(196, 163, 90, 0.35);
+			}
+			html.dark .scheduling-layout .cal-month:first-child {
+				border-right-color: rgba(122, 92, 46, 0.4);
+			}
+			.scheduling-layout .cal-month:last-child {
+				padding-right: 0;
+			}
+			html.dark .scheduling-layout .cal-month:first-child {
+				border-bottom-color: rgba(122, 92, 46, 0.4);
+			}
+			.scheduling-layout .cal-month-header {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.88rem;
+				font-weight: 700;
+				color: #3E2703;
+				text-align: center;
+				margin-bottom: 0.5rem;
+				gap: 0.35rem;
+			}
+			html.dark .scheduling-layout .cal-month-header {
+				color: #DEB96E;
+			}
+			html.dark .scheduling-layout .cal-month.current-month .cal-month-header {
+				color: #F5D680;
+			}
+			.scheduling-layout .cal-grid {
+				display: grid;
+				grid-template-columns: repeat(7, 1fr);
+				gap: 2px;
+			}
+			.scheduling-layout .cal-dow {
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.63rem;
+				color: #8B6914;
+				text-align: center;
+				padding: 0.15rem 0 0.35rem;
+				text-transform: uppercase;
+				letter-spacing: 0.03em;
+			}
+			html.dark .scheduling-layout .cal-dow {
+				color: #C4A35A;
+			}
+			.scheduling-layout .cal-grid {
+				display: grid;
+				grid-template-columns: repeat(7, 1fr);
+				gap: 2px;
+				place-items: center;
+			}
+			.scheduling-layout .cal-day {
+				width: 2rem;
+				height: 2rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.88rem;
+				color: #5C3D0E;
+				border-radius: 50%;
+				position: relative;
+				transition: transform 0.15s ease, filter 0.15s ease;
+				user-select: none;
+			}
+			html.dark .scheduling-layout .cal-day {
+				color: #F5E4C4;
+			}
+			.scheduling-layout .cal-day.today:not(.session):not(.extrapolated) {
+				box-shadow: 0 0 0 2px #C4A35A;
+				font-weight: 700;
+			}
+			html.dark .scheduling-layout .cal-day.today:not(.session):not(.extrapolated) {
+				box-shadow: 0 0 0 2px #7a5c2e;
+			}
+			.scheduling-layout .cal-day.today.session {
+				box-shadow: 0 0 0 2.5px #C4A35A, 0 0 6px rgba(196, 163, 90, 0.55);
+			}
+			.scheduling-layout .cal-day.today.extrapolated {
+				box-shadow: 0 0 0 2px rgba(196, 163, 90, 0.6);
+			}
+			.scheduling-layout .cal-day.session {
+				cursor: pointer;
+				font-weight: 700;
+				color: #fff;
+			}
+			.scheduling-layout .cal-day.session:hover:not(.past):not(.cancelled) {
+				filter: brightness(1.18);
+				transform: scale(1.15);
+				z-index: 2;
+			}
+			.scheduling-layout .cal-day.session.past:hover {
+				filter: brightness(1.25);
+				transform: scale(1.1);
+				z-index: 2;
+			}
+			.scheduling-layout .cal-day.session.main-session { background: #133538; }
+			.scheduling-layout .cal-day.session.optional-session { background: #9b8923; }
+			.scheduling-layout .cal-day.session.cancelled {
+				background: #a33;
+				text-decoration: line-through;
+				cursor: default;
+			}
+			html.dark .scheduling-layout .cal-day.session.main-session { background: #29484b; }
+			html.dark .scheduling-layout .cal-day.session.optional-session { background: #a1923c; }
+			html.dark .scheduling-layout .cal-day.session.cancelled { background: #a33; }
+			/* Calendar settings panel */
+			.scheduling-layout .cal-settings { margin-bottom: 0.5rem; }
+			.scheduling-layout .cal-settings-toggle {
+				background: none;
+				border: 1px solid rgba(128,128,128,0.4);
+				border-radius: 6px;
+				padding: 0.28em 0.65em;
+				font-size: 0.78rem;
+				cursor: pointer;
+				opacity: 0.6;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				color: inherit;
+				transition: opacity 0.15s;
+			}
+			.scheduling-layout .cal-settings-toggle:hover { opacity: 1; }
+			.scheduling-layout .cal-settings-panel {
+				display: none;
+				margin-top: 0.6rem;
+				padding: 0.65rem 0.75rem;
+				border: 1px solid rgba(128,128,128,0.2);
+				border-radius: 8px;
+				background: rgba(128,128,128,0.06);
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+			.scheduling-layout .cal-settings.open .cal-settings-panel { display: flex; }
+			.scheduling-layout .cal-setting-row {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				flex-wrap: wrap;
+			}
+			.scheduling-layout .cal-setting-label {
+				font-size: 0.8rem;
+				min-width: 10rem;
+				opacity: 0.75;
+			}
+			.scheduling-layout .cal-select {
+				font-size: 0.8rem;
+				padding: 0.2em 0.45em;
+				border-radius: 5px;
+				border: 1px solid rgba(128,128,128,0.4);
+				background: transparent;
+				color: inherit;
+				cursor: pointer;
+			}
+			.scheduling-layout .cal-select:disabled { opacity: 0.4; cursor: default; }
+			.scheduling-layout .cal-checkbox { width: 1rem; height: 1rem; cursor: pointer; accent-color: #C4A35A; }
+			
+/* Calendar settings panel */
+			.scheduling-layout .cal-settings { margin-bottom: 0.5rem; }
+			.scheduling-layout .cal-settings-toggle {
+				background: none;
+				border: 1px solid rgba(128,128,128,0.4);
+				border-radius: 6px;
+				padding: 0.28em 0.65em;
+				font-size: 0.78rem;
+				cursor: pointer;
+				opacity: 0.6;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				color: inherit;
+				transition: opacity 0.15s;
+			}
+			.scheduling-layout .cal-settings-toggle:hover { opacity: 1; }
+			.scheduling-layout .cal-settings-panel {
+				display: none;
+				margin-top: 0.6rem;
+				padding: 0.65rem 0.75rem;
+				border: 1px solid rgba(128,128,128,0.2);
+				border-radius: 8px;
+				background: rgba(128,128,128,0.06);
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+			.scheduling-layout .cal-settings.open .cal-settings-panel { display: flex; }
+			.scheduling-layout .cal-setting-row {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				flex-wrap: wrap;
+			}
+			.scheduling-layout .cal-setting-label {
+				font-size: 0.8rem;
+				min-width: 10rem;
+				opacity: 0.75;
+			}
+			.scheduling-layout .cal-select {
+				font-size: 0.8rem;
+				padding: 0.2em 0.45em;
+				border-radius: 5px;
+				border: 1px solid rgba(128,128,128,0.4);
+				background: transparent;
+				color: inherit;
+				cursor: pointer;
+			}
+			.scheduling-layout .cal-select:disabled { opacity: 0.4; cursor: default; }
+			.scheduling-layout .cal-checkbox { width: 1rem; height: 1rem; cursor: pointer; accent-color: #C4A35A; }
+			
+/* Next upcoming session: pulsing white ring */
+			@keyframes next-session-pulse {
+				0%, 100% { box-shadow: 0 0 0 2.5px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.3); }
+				50%       { box-shadow: 0 0 0 2.5px rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.65); }
+			}
+			.scheduling-layout .cal-day.session.next-session {
+				animation: next-session-pulse 1.8s ease-in-out infinite;
+			}
+			/* When today IS the next session: gold today ring + white outer ring, no pulse */
+			.scheduling-layout .cal-day.today.next-session {
+				animation: none;
+				box-shadow: 0 0 0 2.5px #C4A35A, 0 0 0 5px rgba(255,255,255,0.75), 0 0 10px rgba(196,163,90,0.45);
+			}
+			/* Past (played) sessions: dimmed with hatching */
+			.scheduling-layout .cal-day.session.past {
+				opacity: 0.38;
+				cursor: default;
+				background-image: repeating-linear-gradient(
+					-45deg,
+					transparent,
+					transparent 3px,
+					rgba(255, 255, 255, 0.22) 3px,
+					rgba(255, 255, 255, 0.22) 5px
+				);
+			}
+			.scheduling-layout .cal-day.session.past:hover .cal-tooltip {
+				opacity: 1;
+			}
+			.scheduling-layout .cal-day.extrapolated {
+				cursor: default;
+				border: 1.5px dashed;
+				font-weight: 600;
+			}
+			.scheduling-layout .cal-day.extrapolated.main-session {
+				border-color: #133538;
+				color: #133538;
+				background: rgba(19, 53, 56, 0.08);
+			}
+			.scheduling-layout .cal-day.extrapolated.optional-session {
+				border-color: #9b8923;
+				color: #9b8923;
+				background: rgba(155, 137, 35, 0.08);
+			}
+			html.dark .scheduling-layout .cal-day.extrapolated.main-session {
+				border-color: #4a9ea3;
+				color: #4a9ea3;
+				background: rgba(41, 72, 75, 0.15);
+			}
+			html.dark .scheduling-layout .cal-day.extrapolated.optional-session {
+				border-color: #c4a83e;
+				color: #c4a83e;
+				background: rgba(161, 146, 60, 0.15);
+			}
+			/* Calendar tooltip */
+			.scheduling-layout .cal-day .cal-tooltip {
+				position: absolute;
+				bottom: calc(100% + 6px);
+				left: 50%;
+				transform: translateX(-50%);
+				background: #3E2703;
+				color: #FDF6EC;
+				font-size: 0.7rem;
+				font-weight: 400;
+				padding: 0.35em 0.65em;
+				border-radius: 6px;
+				white-space: nowrap;
+				pointer-events: none;
+				opacity: 0;
+				transition: opacity 0.15s ease;
+				z-index: 50;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+				max-width: 200px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.scheduling-layout .cal-day .cal-tooltip::after {
+				content: '';
+				position: absolute;
+				top: 100%;
+				left: 50%;
+				transform: translateX(-50%);
+				border: 4px solid transparent;
+				border-top-color: #3E2703;
+			}
+			html.dark .scheduling-layout .cal-day .cal-tooltip {
+				background: #DEB96E;
+				color: #1a1008;
+			}
+			html.dark .scheduling-layout .cal-day .cal-tooltip::after {
+				border-top-color: #DEB96E;
+			}
+			.scheduling-layout .cal-day:hover .cal-tooltip {
+				opacity: 1;
+			}
+			/* Clip tooltips near left/right edges */
+			.scheduling-layout .cal-grid > .cal-day:nth-child(7n+2) .cal-tooltip,
+			.scheduling-layout .cal-grid > .cal-day:nth-child(7n+3) .cal-tooltip {
+				left: 0;
+				transform: none;
+			}
+			.scheduling-layout .cal-grid > .cal-day:nth-child(7n+8) .cal-tooltip,
+			.scheduling-layout .cal-grid > .cal-day:nth-child(7n) .cal-tooltip {
+				left: auto;
+				right: 0;
+				transform: none;
+			}
+			/* Highlighted event card when scrolled-to */
+			@keyframes cal-highlight-pulse {
+				0%   { box-shadow: 0 0 0 3px #C4A35A, 0 0 18px rgba(196, 163, 90, 0.55); }
+				50%  { box-shadow: 0 0 0 5px #C4A35A, 0 0 28px rgba(196, 163, 90, 0.75); }
+				100% { box-shadow: 0 0 0 3px #C4A35A, 0 0 18px rgba(196, 163, 90, 0.55); }
+			}
+			.scheduling-layout .event-card.cal-highlighted,
+			.scheduling-layout .next-event.cal-highlighted {
+				animation: cal-highlight-pulse 0.7s ease 2;
+				box-shadow: 0 0 0 3px #C4A35A, 0 0 18px rgba(196, 163, 90, 0.55) !important;
+			}
 		</style>
 	</head>
 
@@ -586,6 +1031,9 @@ const events = allEvents.map((event) => {
 		<div class="scheduling-layout">
 			<h1 class="page-title">Scheduling</h1>
 			<p class="page-subtitle">Session times are shown in your local timezone.</p>
+
+			<!-- Schedule Calendar -->
+			<div id="calendar-container"></div>
 
 			<!-- Next upcoming event (rendered as hero) — replaced client-side -->
 			<div id="next-event-container"></div>
@@ -896,9 +1344,10 @@ const events = allEvents.map((event) => {
 					const next = upcoming[0];
 					const bodyEl = document.querySelector(`#event-bodies [data-event-id="${next.id}"]`);
 					const bodyHTML = bodyEl ? bodyEl.innerHTML : '';
+					const nextSafeId = next.id.replace(/[^a-zA-Z0-9_-]/g, '_');
 
 					nextContainer.innerHTML = `
-						<div class="next-event${next.cancelled ? ' cancelled' : ''}">
+						<div class="next-event${next.cancelled ? ' cancelled' : ''}" id="event-card-${nextSafeId}">
 							<div class="next-event-content">
 								<div class="next-event-top-row">
 									${sessionTypeTag(next.sessionType)}
@@ -919,8 +1368,10 @@ const events = allEvents.map((event) => {
 				const upcomingContainer = document.getElementById('upcoming-container');
 				if (upcomingContainer) {
 					if (upcoming.length > 1) {
-						const cards = upcoming.slice(1).map(ev => `
-							<li class="event-card${ev.cancelled ? ' cancelled' : ''}">
+						const cards = upcoming.slice(1).map(ev => {
+							const safeId = ev.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+							return `
+							<li class="event-card${ev.cancelled ? ' cancelled' : ''}" id="event-card-${safeId}">
 								<div class="event-card-content">
 									<div class="event-card-tags-row">
 										${sessionTypeTag(ev.sessionType)}
@@ -934,7 +1385,7 @@ const events = allEvents.map((event) => {
 									${!ev.cancelled ? buildAvailPoll(ev.id, false) : ''}
 								</div>
 							</li>
-						`).join('');
+						`}).join('');
 						upcomingContainer.innerHTML = `
 							<h2 class="section-heading">Upcoming Sessions</h2>
 							<ul class="event-list">${cards}</ul>
@@ -945,8 +1396,10 @@ const events = allEvents.map((event) => {
 				// Render past events
 				const pastContainer = document.getElementById('past-container');
 				if (pastContainer && past.length > 0) {
-					const cards = past.map(ev => `
-						<li class="event-card past${ev.cancelled ? ' cancelled' : ''}">
+					const cards = past.map(ev => {
+						const safeId = ev.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+						return `
+						<li class="event-card past${ev.cancelled ? ' cancelled' : ''}" id="event-card-${safeId}">
 							<div class="event-card-content">
 								<div class="event-card-tags-row">
 									${sessionTypeTag(ev.sessionType)}
@@ -960,7 +1413,7 @@ const events = allEvents.map((event) => {
 								<p class="event-card-description">${ev.description}</p>
 							</div>
 						</li>
-					`).join('');
+					`}).join('');
 					pastContainer.innerHTML = `
 						<h2 class="section-heading past-heading">Past Sessions</h2>
 						<ul class="event-list">${cards}</ul>
@@ -998,6 +1451,249 @@ const events = allEvents.map((event) => {
 						fetchAvailability(ev.id);
 					}
 				}
+
+				// ── Schedule Calendar ──
+				async function buildCalendar(): Promise<void> {
+					const calContainer = document.getElementById('calendar-container');
+					if (!calContainer) return;
+
+					// Build date → events[] map
+					const dateMap = new Map<string, typeof parsed>();
+					for (const ev of parsed) {
+						const existing = dateMap.get(ev.date) || [];
+						existing.push(ev);
+						dateMap.set(ev.date, existing);
+					}
+
+					// Determine session day-of-week from actual events
+					const allDates = [...dateMap.keys()].sort();
+					if (allDates.length === 0) return;
+					const dowTally = new Array(7).fill(0);
+					for (const ds of allDates) {
+						const d = new Date(ds + 'T12:00:00Z');
+						dowTally[d.getUTCDay()]++;
+					}
+					const autoDOW = dowTally.indexOf(Math.max(...dowTally));
+
+					// Anchor for main/optional alternation
+					const mainEvents = parsed.filter(e => e.sessionType === 'main' && !e.cancelled);
+					if (mainEvents.length === 0) return;
+					mainEvents.sort((a, b) => a.date.localeCompare(b.date));
+					const anchorDate = mainEvents[mainEvents.length - 1].date;
+
+					// Calendar display settings (fetched from server, admin-writable)
+					type CalSettings = { dowOverride: number | null; dow2: number | null; extrapolate: boolean };
+					const [settingsData, meData] = await Promise.all([
+						fetch('/api/admin/cal-settings').then(r => r.json()).catch(() => ({})),
+						fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
+					]);
+					const isAdmin: boolean = meData?.role === 'admin';
+					let calSettings: CalSettings = { dowOverride: null, dow2: null, extrapolate: true, ...settingsData };
+					function saveCalSettings(s: CalSettings): void {
+						fetch('/api/admin/cal-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
+					}
+					function effectiveDOW(): number { return calSettings.dowOverride !== null ? calSettings.dowOverride : autoDOW; }
+
+					function getExpectedType(dateStr: string): 'main' | 'optional' {
+						const anchor = new Date(anchorDate + 'T12:00:00Z');
+						const test = new Date(dateStr + 'T12:00:00Z');
+						const diffWeeks = Math.round(
+							(test.getTime() - anchor.getTime()) / (7 * 24 * 60 * 60 * 1000)
+						);
+						return diffWeeks % 2 === 0 ? 'main' : 'optional';
+					}
+
+					const todayMidnight = new Date();
+					todayMidnight.setHours(0, 0, 0, 0);
+
+					const nextSessionDate = upcoming.find(e => !e.cancelled)?.date ?? null;
+
+					function pad2(n: number): string { return String(n).padStart(2, '0'); }
+					function toDateStr(y: number, m: number, d: number): string {
+						return `${y}-${pad2(m + 1)}-${pad2(d)}`;
+					}
+
+					const DOW_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+					function buildMonthHTML(year: number, month: number, isCurrent: boolean): string {
+						const monthName = new Date(year, month, 1).toLocaleDateString('en-US', {
+							month: 'long', year: 'numeric',
+						});
+						const firstDOW = new Date(year, month, 1).getDay();
+						const daysInMonth = new Date(year, month + 1, 0).getDate();
+						let html = `<div class="cal-month${isCurrent ? ' current-month' : ''}">
+							<div class="cal-month-header">${monthName}</div>
+							<div class="cal-grid">`;
+
+						for (const label of DOW_LABELS) {
+							html += `<div class="cal-dow">${label}</div>`;
+						}
+						for (let blank = 0; blank < firstDOW; blank++) {
+							html += `<div class="cal-day"></div>`;
+						}
+
+						for (let d = 1; d <= daysInMonth; d++) {
+							const dateStr = toDateStr(year, month, d);
+							const cellDate = new Date(year, month, d);
+							cellDate.setHours(0, 0, 0, 0);
+							const isToday = cellDate.getTime() === todayMidnight.getTime();
+							const isPast = cellDate < todayMidnight;
+							const isSessionDay = cellDate.getDay() === effectiveDOW() || (calSettings.dow2 !== null && cellDate.getDay() === calSettings.dow2);
+							const todayClass = isToday ? ' today' : '';
+
+							const dayEvents = dateMap.get(dateStr);
+							if (dayEvents && dayEvents.length > 0) {
+								const active = dayEvents.find(e => !e.cancelled) || dayEvents[0];
+								const isCancelled = active.cancelled;
+								const typeClass = active.sessionType === 'main' ? 'main-session' : 'optional-session';
+								const safeId = active.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+								const tooltipText = isCancelled
+									? `Cancelled · ${active.title}`
+									: active.title;
+								const pastClass = isPast ? ' past' : '';
+								const scrollAttr = !isCancelled ? ` data-scroll-to="${safeId}"` : '';
+								const cancelClass = isCancelled ? ' cancelled' : '';
+                                                            const nextClass = (!isPast && !isCancelled && dateStr === nextSessionDate) ? ' next-session' : '';
+								html += `<div class="cal-day session ${typeClass}${cancelClass}${pastClass}${nextClass}${todayClass}"${scrollAttr}>${d}<span class="cal-tooltip">${tooltipText}</span></div>`;
+							} else if (isSessionDay && !isPast && calSettings.extrapolate) {
+								const isPrimary = cellDate.getDay() === effectiveDOW();
+								const expectedType = isPrimary ? getExpectedType(dateStr) : 'optional';
+								const typeClass = expectedType === 'main' ? 'main-session' : 'optional-session';
+								const typeLabel = expectedType === 'main' ? 'Main Session' : 'Optional Session';
+								html += `<div class="cal-day extrapolated ${typeClass}${todayClass}">${d}<span class="cal-tooltip">Not yet scheduled · ${typeLabel}</span></div>`;
+							} else {
+								html += `<div class="cal-day${todayClass}">${d}</div>`;
+							}
+						}
+
+						html += `</div></div>`;
+						return html;
+					}
+
+					// Pre-build all 6 month HTMLs (offsets -2 … +3 from current month)
+					// Index 0 = -2 months, index 2 = current month, index 5 = +3 months
+					const MONTH_COUNT = 6;
+					const CURRENT_IDX = 2;
+					let monthHTMLs: string[] = [];
+					function rebuildMonths(): void {
+						monthHTMLs = [];
+						for (let i = 0; i < MONTH_COUNT; i++) {
+							const offset = i - CURRENT_IDX;
+							const d = new Date(todayMidnight.getFullYear(), todayMidnight.getMonth() + offset, 1);
+							monthHTMLs.push(buildMonthHTML(d.getFullYear(), d.getMonth(), i === CURRENT_IDX));
+						}
+					}
+					rebuildMonths();
+
+					const legendHTML = `
+						<div class="calendar-legend">
+							<span class="legend-item"><span class="legend-dot main"></span>Main Session</span>
+							<span class="legend-item"><span class="legend-dot optional"></span>Optional Session</span>
+							<span class="legend-item"><span class="legend-dot cancelled"></span>Cancelled</span>
+							<span class="legend-item"><span class="legend-dot extrapolated-main"></span>Potential Main</span>
+							<span class="legend-item"><span class="legend-dot extrapolated-optional"></span>Potential Optional</span>
+						</div>`;
+
+					// viewStart: which index is shown as the left column (right = viewStart + 1)
+					// Default: show current month (idx 2) + next month (idx 3)
+					let viewStart = CURRENT_IDX;
+
+					let settingsOpen = false;
+
+					const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+					function buildSettingsHTML(): string {
+						if (!isAdmin) return '';
+						const gearSVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54a7.37 7.37 0 0 0-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.47.47 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54a7.37 7.37 0 0 0 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>';
+						const dowOpts = DOW_NAMES.map((n, i) => '<option value="' + i + '"' + (calSettings.dowOverride === i ? ' selected' : '') + '>' + n + '</option>').join('');
+						const dow2Opts = DOW_NAMES.map((n, i) => '<option value="' + i + '"' + (calSettings.dow2 === i ? ' selected' : '') + '>' + n + '</option>').join('');
+						const openClass = settingsOpen ? ' open' : '';
+						const dowAutoSel = calSettings.dowOverride === null ? ' selected' : '';
+						const dow2Chk = calSettings.dow2 !== null ? ' checked' : '';
+						const dow2Dis = calSettings.dow2 === null ? ' disabled' : '';
+						const extChk = calSettings.extrapolate ? ' checked' : '';
+						return '<div class="cal-settings' + openClass + '">' +
+							'<button class="cal-settings-toggle" id="cal-settings-btn" type="button">' + gearSVG + ' Options</button>' +
+							'<div class="cal-settings-panel">' +
+							'<div class="cal-setting-row"><span class="cal-setting-label">Session day</span>' +
+							'<select class="cal-select" id="cal-dow-select">' +
+							'<option value=""' + dowAutoSel + '>Auto (' + DOW_NAMES[autoDOW] + ')</option>' +
+							dowOpts + '</select></div>' +
+							'<div class="cal-setting-row"><span class="cal-setting-label">Second session day</span>' +
+							'<input type="checkbox" id="cal-dow2-enable" class="cal-checkbox"' + dow2Chk + '>' +
+							'<select class="cal-select" id="cal-dow2-select"' + dow2Dis + '>' + dow2Opts + '</select></div>' +
+							'<div class="cal-setting-row"><span class="cal-setting-label">Show potential sessions</span>' +
+							'<input type="checkbox" id="cal-extrapolate" class="cal-checkbox"' + extChk + '></div>' +
+							'</div></div>';
+					}
+function wireScrollHandlers(): void {
+						calContainer!.querySelectorAll<HTMLElement>('[data-scroll-to]').forEach(cell => {
+							cell.addEventListener('click', () => {
+								const safeId = cell.dataset.scrollTo!;
+								const target = document.getElementById(`event-card-${safeId}`);
+								if (!target) return;
+								target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+								target.classList.remove('cal-highlighted');
+								void (target as HTMLElement).offsetWidth;
+								target.classList.add('cal-highlighted');
+								setTimeout(() => target.classList.remove('cal-highlighted'), 1600);
+							});
+						});
+					}
+
+					function render(): void {
+						const canPrev = viewStart > 0;
+						const canNext = viewStart < MONTH_COUNT - 2; // max viewStart = 4 (shows idx 4+5)
+
+						const prevSVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>`;
+						const nextSVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>`;
+
+						calContainer!.innerHTML = `
+							<div class="calendar-section">
+								<div class="session-calendar">
+									${legendHTML}
+
+									${buildSettingsHTML()}
+									<div class="cal-nav">
+										<button class="cal-nav-btn" id="cal-prev" ${canPrev ? '' : 'disabled'}>
+											${prevSVG} Earlier
+										</button>
+										<button class="cal-nav-btn" id="cal-next" ${canNext ? '' : 'disabled'}>
+											Later ${nextSVG}
+										</button>
+									</div>
+									<div class="calendar-months">${monthHTMLs[viewStart]}${monthHTMLs[viewStart + 1]}</div>
+								</div>
+							</div>`;
+
+						document.getElementById('cal-prev')?.addEventListener('click', () => {
+							if (viewStart > 0) { viewStart--; render(); }
+						});
+						document.getElementById('cal-next')?.addEventListener('click', () => {
+							if (viewStart < MONTH_COUNT - 2) { viewStart++; render(); }
+						});
+						
+						document.getElementById('cal-settings-btn')?.addEventListener('click', () => { settingsOpen = !settingsOpen; render(); });
+						(document.getElementById('cal-dow-select') as HTMLSelectElement | null)?.addEventListener('change', function() {
+							calSettings.dowOverride = (this as HTMLSelectElement).value === '' ? null : parseInt((this as HTMLSelectElement).value);
+							saveCalSettings(calSettings); rebuildMonths(); render();
+						});
+						const _dow2En = document.getElementById('cal-dow2-enable') as HTMLInputElement | null;
+						const _dow2Sel = document.getElementById('cal-dow2-select') as HTMLSelectElement | null;
+						_dow2En?.addEventListener('change', () => {
+							if (_dow2En!.checked) { calSettings.dow2 = calSettings.dow2 ?? (effectiveDOW() + 3) % 7; if (_dow2Sel) { _dow2Sel.disabled = false; _dow2Sel.value = String(calSettings.dow2); } }
+							else { calSettings.dow2 = null; if (_dow2Sel) _dow2Sel.disabled = true; }
+							saveCalSettings(calSettings); rebuildMonths(); render();
+						});
+						_dow2Sel?.addEventListener('change', () => { calSettings.dow2 = parseInt(_dow2Sel!.value); saveCalSettings(calSettings); rebuildMonths(); render(); });
+						(document.getElementById('cal-extrapolate') as HTMLInputElement | null)?.addEventListener('change', function() { calSettings.extrapolate = (this as HTMLInputElement).checked; saveCalSettings(calSettings); rebuildMonths(); render(); });
+						wireScrollHandlers();
+					}
+
+					render();
+				}
+
+				buildCalendar();
 			}
 
 			initScheduling();
