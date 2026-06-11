@@ -27,7 +27,7 @@ His faceplate is a latter gift from the combined efforts of Percival, Ana and Ze
 His soul is composed of the following fragments :
 
 - **Percival Mourningbloom** : Strive, Love, Envy, Disappointment
-- **Zephyr Crestfyre* : Happiness, Anger, Anxiety, Sadness, Excitement
+- **Zephyr Crestfyre** : Happiness, Anger, Anxiety, Sadness, Excitement
 - **Ana Mechalistus** : Passion, Calmness, Anticipation, Pride
 - **Flynster Blightwing** : Fear, Awe, Suprise, Frustration
 - **Edwin Strongfern** : Disgust, Contentment, Doubt, Shame
