@@ -34,8 +34,8 @@ His soul is composed of the following fragments :
 
 
 (Formely but not integral part of him) 
-**Aliana** : Ambition, Courage, Determination, Aspiration
+- **Aliana** : Ambition, Courage, Determination, Aspiration
 
 
 (Defining traits of his being) 
-**Carmelio** : Hope, Devotion, Resilience, Adoration
+- **Carmelio** : Hope, Devotion, Resilience, Adoration
