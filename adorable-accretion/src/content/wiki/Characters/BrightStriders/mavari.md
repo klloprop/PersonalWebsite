@@ -4,7 +4,7 @@ description: "The technomancer dark knight"
 pubDate: 2026-04-07
 heroImage: "../../../../assets/WikiImages/Mavari.png"
 heroImagePosition: "top"    
-collection: "Dark Knights"
+collection: "Brightstriders"
 tags: ["Mavari","Tor"]
 ---
 

@@ -1,6 +1,6 @@
 ﻿---
 /**
- * tavern/wiki.astro — Wiki entry listing page.
+ * tavern/wiki.astro � Wiki entry listing page.
  *
  * Features:
  *  - Hierarchical collection sidebar with tree-structured expand/collapse.
@@ -42,6 +42,7 @@ const collectionEntries = (await getCollection('wikiCollections')).sort(
 interface ColNode {
 	name: string;
 	image: ImageMetadata;
+	imageScale: number;
 	description?: string;
 	parent?: string;
 	count: number;          // direct entries
@@ -62,6 +63,7 @@ for (const col of collectionEntries) {
 	colMap.set(col.data.name, {
 		name: col.data.name,
 		image: col.data.image,
+		imageScale: col.data.imageScale ?? 1,
 		description: col.data.description,
 		parent: col.data.parent,
 		count: entries.filter((e) => e.data.collection === col.data.name).length,
@@ -90,26 +92,6 @@ function calcTotal(node: ColNode): number {
 }
 roots.forEach(calcTotal);
 
-// Assign pastel rainbow background colours to collection icons (pre-order traversal)
-const RainbowCafe = [
-	'rgba(250, 86, 89, 0.3)', // terracotta
-	'rgba(247, 163, 74, 0.3)', // amber
-	'rgba(248, 208, 66, 0.3)', // sage
-	'rgba(98, 182, 77, 0.3)', // dusty teal
-	'rgba(34, 118, 148, 0.3)', // slate blue
-	'rgba(72, 69, 114, 0.3)', // plum
-];
-
-// Assign pastel rainbow background colours to collection icons (pre-order traversal)
-const pastelIconColors = [
-	'rgba(250, 86, 89, 0.6)', // terracotta
-	'rgba(0, 121, 255, 0.6)', // amber
-	'rgba(0, 241, 29, 0.6)', // sage
-	'rgba( 255, 239, 0, 0.6)', // dusty teal
-	'rgba(255, 127, 0, 0.6)', // slate blue
-	'rgba(255, 9, 0, 0.6)', // plum
-	'rgba(200, 200, 145, 0.6)', // dusty rose
-];
 function flatOrder(nodes: ColNode[]): string[] {
 	const result: string[] = [];
 	for (const node of nodes) {
@@ -119,11 +101,11 @@ function flatOrder(nodes: ColNode[]): string[] {
 	return result;
 }
 const colIconBg: Record<string, string> = {};
-flatOrder(roots).forEach((name, i) => {
-	colIconBg[name] = RainbowCafe[i % RainbowCafe.length];
+flatOrder(roots).forEach((name) => {
+	colIconBg[name] = 'rgba(196, 163, 90, 0.8)';
 });
 
-// Build a map: collection name → array of all names it encompasses
+// Build a map: collection name ? array of all names it encompasses
 const collectionDescendants: Record<string, string[]> = {};
 for (const node of colMap.values()) {
 	collectionDescendants[node.name] = getDescendantNames(node);
@@ -137,7 +119,7 @@ const wikiSearchItems: SearchItem[] = entries.map((entry) => ({
 	extra: entry.data.collection || '',
 }));
 
-// Build ancestor chain: collection name → [topmost, ..., parent, self]
+// Build ancestor chain: collection name ? [topmost, ..., parent, self]
 function getAncestors(name: string): string[] {
 	const chain: string[] = [];
 	let current = name;
@@ -163,6 +145,10 @@ function getAncestors(name: string): string[] {
 				scrollbar-gutter: stable;
 			}
 			.wiki-layout {
+				--wiki-icon-size: 45px;
+				--wiki-icon-nested-ratio: 0.78;
+				--wiki-icon-mobile-size: 32px;
+				--wiki-icon-mobile-nested-ratio: 0.8125;
 				position: relative;
 				width: 100%;
 				max-width: 1480px;
@@ -279,18 +265,35 @@ function getAncestors(name: string): string[] {
 			:global(html.dark) .sidebar-btn:hover {
 				background: rgba(222, 185, 110, 0.1);
 			}
-			.sidebar-btn .collection-img {
-				width: 36px;
-				height: 36px;
+			.sidebar-btn .collection-img-wrap,
+			.sidebar-btn .all-icon {
+				--size: var(--wiki-icon-size);
+				width: var(--size);
+				height: var(--size);
+			}
+			.sidebar-btn .collection-img-wrap {
+				width: var(--size);
+				height: var(--size);
 				border-radius: 8px;
-				object-fit: cover;
 				flex-shrink: 0;
 				border: 1px solid #C4A35A;
 				background: var(--icon-bg);
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				overflow: hidden;
+			}
+			.sidebar-btn :global(.collection-img) {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+				object-position: center center;
+				display: block;
+				flex-shrink: 0;
+				transform: scale(var(--icon-scale, 1));
+				transform-origin: center center;
 			}
 			.sidebar-btn .all-icon {
-				width: 36px;
-				height: 36px;
 				border-radius: 8px;
 				background: linear-gradient(135deg, #8B6914, #5C3D0E);
 				display: flex;
@@ -317,7 +320,7 @@ function getAncestors(name: string): string[] {
 			:global(html.dark) .sidebar-btn .collection-count {
 				color: #C4A35A;
 			}
-			/* ── Tree nesting ── */
+			/* -- Tree nesting -- */
 			.sidebar-group {
 				display: flex;
 				flex-direction: column;
@@ -365,9 +368,10 @@ function getAncestors(name: string): string[] {
 				font-size: 0.88rem;
 				padding: 0.45rem 0.6rem;
 			}
-			.sidebar-children .sidebar-btn .collection-img {
-				width: 28px;
-				height: 28px;
+			.sidebar-children .sidebar-btn .collection-img-wrap {
+				--size: calc(var(--wiki-icon-size) * var(--wiki-icon-nested-ratio));
+				width: var(--size);
+				height: var(--size);
 			}
 			.sidebar-divider {
 				height: 1px;
@@ -603,7 +607,7 @@ function getAncestors(name: string): string[] {
 				font-size: 0.85rem;
 				line-height: 1;
 			}
-			/* ── Mobile collection toggle button ── */
+			/* -- Mobile collection toggle button -- */
 			.sidebar-mobile-toggle {
 				display: none;
 			}
@@ -698,9 +702,9 @@ function getAncestors(name: string): string[] {
 				.sidebar.mobile-open {
 					display: flex;
 				}
-				/* Scroll indicator gradient at bottom — only shown when scrollable */
+				/* Scroll indicator gradient at bottom � only shown when scrollable */
 				.sidebar::after {
-					content: '⌄ scroll for more';
+					content: '? scroll for more';
 					position: fixed;
 					bottom: 0;
 					left: 5%;
@@ -772,14 +776,16 @@ function getAncestors(name: string): string[] {
 				.sidebar-children .sidebar-btn::before {
 					display: none;
 				}
-				.sidebar-btn .collection-img,
+				.sidebar-btn .collection-img-wrap,
 				.sidebar-btn .all-icon {
-					width: 32px;
-					height: 32px;
+					--size: var(--wiki-icon-mobile-size);
+					width: var(--size);
+					height: var(--size);
 				}
-				.sidebar-children .sidebar-btn .collection-img {
-					width: 26px;
-					height: 26px;
+				.sidebar-children .sidebar-btn .collection-img-wrap {
+					--size: calc(var(--wiki-icon-mobile-size) * var(--wiki-icon-mobile-nested-ratio));
+					width: var(--size);
+					height: var(--size);
 				}
 				.sidebar-btn .collection-count {
 					display: inline;
@@ -829,8 +835,8 @@ function getAncestors(name: string): string[] {
 								<button class="sidebar-toggle" aria-label={`Expand ${root.name}`}>
 									<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 								</button>
-								<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}`}>
-									<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
+								<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
+									<span class="collection-img-wrap"><img class="collection-img" src={root.image.src} alt={root.name} loading="lazy" decoding="async" /></span>
 									<span class="collection-info">
 										<span class="collection-name">{root.name}</span>
 										<span class="collection-count">{root.totalCount} {root.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -845,8 +851,8 @@ function getAncestors(name: string): string[] {
 												<button class="sidebar-toggle" aria-label={`Expand ${child.name}`}>
 													<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 												</button>
-												<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}`}>
-													<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
+												<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
+													<span class="collection-img-wrap"><img class="collection-img" src={child.image.src} alt={child.name} loading="lazy" decoding="async" /></span>
 													<span class="collection-info">
 														<span class="collection-name">{child.name}</span>
 														<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -855,8 +861,8 @@ function getAncestors(name: string): string[] {
 											</div>
 											<div class="sidebar-children">
 												{child.children.map((grandchild) => (
-													<button class="sidebar-btn" data-collection={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.name]}`}>
-														<Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={28} height={28} />
+													<button class="sidebar-btn" data-collection={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.name]}; --icon-scale: ${grandchild.imageScale}`}>
+														<span class="collection-img-wrap"><img class="collection-img" src={grandchild.image.src} alt={grandchild.name} loading="lazy" decoding="async" /></span>
 														<span class="collection-info">
 															<span class="collection-name">{grandchild.name}</span>
 															<span class="collection-count">{grandchild.totalCount} {grandchild.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -866,8 +872,8 @@ function getAncestors(name: string): string[] {
 											</div>
 										</div>
 									) : (
-										<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}`}>
-											<Image class="collection-img" src={child.image} alt={child.name} width={28} height={28} />
+										<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
+											<span class="collection-img-wrap"><img class="collection-img" src={child.image.src} alt={child.name} loading="lazy" decoding="async" /></span>
 											<span class="collection-info">
 												<span class="collection-name">{child.name}</span>
 												<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -878,8 +884,8 @@ function getAncestors(name: string): string[] {
 							</div>
 						</div>
 					) : (
-						<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}`}>
-							<Image class="collection-img" src={root.image} alt={root.name} width={36} height={36} />
+						<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
+							<span class="collection-img-wrap"><img class="collection-img" src={root.image.src} alt={root.name} loading="lazy" decoding="async" /></span>
 							<span class="collection-info">
 								<span class="collection-name">{root.name}</span>
 								<span class="collection-count">{root.count} {root.count === 1 ? 'entry' : 'entries'}</span>
@@ -890,7 +896,7 @@ function getAncestors(name: string): string[] {
 			</aside>
 			<main class="wiki-content">
 				<div class="search-sort-row">
-					<SearchBar placeholder="Search wiki entries…" items={wikiSearchItems} />
+					<SearchBar placeholder="Search wiki entries�" items={wikiSearchItems} />
 					<div class="sort-wrapper" id="sort-wrapper">
 						<button class="sort-btn" id="sort-btn" aria-label="Sort entries" aria-haspopup="true" aria-expanded="false">
 							<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -902,8 +908,8 @@ function getAncestors(name: string): string[] {
 						<ul class="sort-menu" id="sort-menu">
 							<li><button class="sort-option active" data-sort="newest">Newest</button></li>
 							<li><button class="sort-option" data-sort="oldest">Oldest</button></li>
-							<li><button class="sort-option" data-sort="a-z">A → Z</button></li>
-							<li><button class="sort-option" data-sort="z-a">Z → A</button></li>
+							<li><button class="sort-option" data-sort="a-z">A ? Z</button></li>
+							<li><button class="sort-option" data-sort="z-a">Z ? A</button></li>
 						</ul>
 					</div>
 				</div>
@@ -919,7 +925,7 @@ function getAncestors(name: string): string[] {
 								{entry.data.collection && (
 									<div class="badge-chain">
 										{getAncestors(entry.data.collection).map((name, idx, arr) => (
-											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
+											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">�</span>}</>
 										))}
 									</div>
 								)}
@@ -937,25 +943,20 @@ function getAncestors(name: string): string[] {
 		<Footer />
 		<script>
 			// Keep sidebar above the footer by updating --sidebar-max-h on scroll/resize
-			function initSidebarFooterClamp() {
-				const sidebar = document.querySelector<HTMLElement>('.sidebar');
-				const footer = document.querySelector<HTMLElement>('footer');
-				if (!sidebar || !footer) return;
-
-				function clamp() {
-					const footerTop = footer!.getBoundingClientRect().top;
-					const sidebarTop = sidebar!.getBoundingClientRect().top;
-					const gap = 85; // 1rem breathing room above footer
-					const available = footerTop - sidebarTop - gap;
-					sidebar!.style.setProperty('--sidebar-max-h', `${Math.max(available, 100)}px`);
-				}
-
-				clamp();
-				window.addEventListener('scroll', clamp, { passive: true });
-				window.addEventListener('resize', clamp, { passive: true });
-				new ResizeObserver(clamp).observe(footer);
+			const _sidebar = document.querySelector<HTMLElement>('.sidebar');
+			const _footer = document.querySelector<HTMLElement>('footer');
+			function clampSidebar() {
+				if (!_sidebar || !_footer) return;
+				const footerTop = _footer.getBoundingClientRect().top;
+				const sidebarTop = _sidebar.getBoundingClientRect().top;
+				const gap = 85;
+				const available = footerTop - sidebarTop - gap;
+				_sidebar.style.setProperty('--sidebar-max-h', `${Math.max(available, 100)}px`);
 			}
-			initSidebarFooterClamp();
+			clampSidebar();
+			window.addEventListener('scroll', clampSidebar, { passive: true });
+			window.addEventListener('resize', clampSidebar, { passive: true });
+			if (_footer) new ResizeObserver(clampSidebar).observe(_footer);
 
 			function initWikiFilter() {
 				const sidebar = document.querySelector<HTMLElement>('.sidebar');
@@ -1117,7 +1118,7 @@ function getAncestors(name: string): string[] {
 						b.classList.toggle('active', b.dataset.collection === selected);
 					});
 
-					// Filter cards — just toggle display + featured class, no DOM movement
+					// Filter cards � just toggle display + featured class, no DOM movement
 					// Use live DOM query so order reflects any active sort
 					const sortedCards = Array.from(grid?.querySelectorAll<HTMLElement>('.entry-card') || []);
 					let visibleCount = 0;
@@ -1142,6 +1143,8 @@ function getAncestors(name: string): string[] {
 					// Show/hide empty state and grid
 					if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
 					if (grid) grid.style.display = visibleCount > 0 ? '' : 'none';
+					// Recalculate sidebar height — content height changed
+					requestAnimationFrame(clampSidebar);
 				}
 
 				buttons.forEach((btn) => {

@@ -4,7 +4,7 @@ description: "The everfrost dark knight"
 pubDate: 2026-04-07
 heroImage: "../../../../assets/WikiImages/Karim.png"
 heroImagePosition: "0% 7%"    
-collection: "Dark Knights"
+collection: "Brightstriders"
 heroImageCredit: "Rudi Indra"
 tags: ["Karim"]
 ---
