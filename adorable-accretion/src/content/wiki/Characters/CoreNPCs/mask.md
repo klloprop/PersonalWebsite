@@ -6,8 +6,16 @@ heroImage: "../../../../assets/WikiImages/Mask.png"
 collection: "Core NPCs"
 ---
 
-Met party in the capacity as a whistleblower, is now considered family by Noon and Akira. 
-Girlfriend to Noon.
+**Pronouns:** He/**She**/They/who knows
+
+
+Party's (everyones) favourite snow leopard.
+The tabaxi the party met session 1 and who held the speech in Narthwith. Whistleblower of the Starwielder Dominion.
+
+Mask accompanied and guided party since their first meeting and after being saved by Reverie during the attack in Narthwith.
+Mask experienced many changes in her life for better and worse. She was assassinated by Merith in Raphia, but got revived due to the combined efforts of Ramira and Carmelio. Much later she saw her wish of transition be fulfilled by none other than Aliana Starwielder herself.
+Now Noon's partner and Akira's adoptive mom. She is growing closer to Merith and Nazira as part of the Sapphic Squad.
+
 
 # Mask (7) - Statblock
 Support Creation Bard

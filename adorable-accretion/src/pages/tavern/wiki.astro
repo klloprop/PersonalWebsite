@@ -1,6 +1,6 @@
 ﻿---
 /**
- * tavern/wiki.astro � Wiki entry listing page.
+ * tavern/wiki.astro — Wiki entry listing page.
  *
  * Features:
  *  - Hierarchical collection sidebar with tree-structured expand/collapse.
@@ -702,9 +702,9 @@ function getAncestors(name: string): string[] {
 				.sidebar.mobile-open {
 					display: flex;
 				}
-				/* Scroll indicator gradient at bottom � only shown when scrollable */
+				/* Scroll indicator gradient at bottom — only shown when scrollable */
 				.sidebar::after {
-					content: '? scroll for more';
+					content: '\2304  scroll for more  \2304';
 					position: fixed;
 					bottom: 0;
 					left: 5%;
@@ -836,7 +836,7 @@ function getAncestors(name: string): string[] {
 									<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 								</button>
 								<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
-									<span class="collection-img-wrap"><img class="collection-img" src={root.image.src} alt={root.name} loading="lazy" decoding="async" /></span>
+									<span class="collection-img-wrap"><Image class="collection-img" src={root.image} alt={root.name} width={72} height={72} fit="contain" /></span>
 									<span class="collection-info">
 										<span class="collection-name">{root.name}</span>
 										<span class="collection-count">{root.totalCount} {root.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -852,7 +852,7 @@ function getAncestors(name: string): string[] {
 													<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 												</button>
 												<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
-													<span class="collection-img-wrap"><img class="collection-img" src={child.image.src} alt={child.name} loading="lazy" decoding="async" /></span>
+													<span class="collection-img-wrap"><Image class="collection-img" src={child.image} alt={child.name} width={56} height={56} fit="contain" /></span>
 													<span class="collection-info">
 														<span class="collection-name">{child.name}</span>
 														<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -862,7 +862,7 @@ function getAncestors(name: string): string[] {
 											<div class="sidebar-children">
 												{child.children.map((grandchild) => (
 													<button class="sidebar-btn" data-collection={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.name]}; --icon-scale: ${grandchild.imageScale}`}>
-														<span class="collection-img-wrap"><img class="collection-img" src={grandchild.image.src} alt={grandchild.name} loading="lazy" decoding="async" /></span>
+														<span class="collection-img-wrap"><Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={56} height={56} fit="contain" /></span>
 														<span class="collection-info">
 															<span class="collection-name">{grandchild.name}</span>
 															<span class="collection-count">{grandchild.totalCount} {grandchild.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -873,7 +873,7 @@ function getAncestors(name: string): string[] {
 										</div>
 									) : (
 										<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
-											<span class="collection-img-wrap"><img class="collection-img" src={child.image.src} alt={child.name} loading="lazy" decoding="async" /></span>
+											<span class="collection-img-wrap"><Image class="collection-img" src={child.image} alt={child.name} width={56} height={56} fit="contain" /></span>
 											<span class="collection-info">
 												<span class="collection-name">{child.name}</span>
 												<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
@@ -885,7 +885,7 @@ function getAncestors(name: string): string[] {
 						</div>
 					) : (
 						<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
-							<span class="collection-img-wrap"><img class="collection-img" src={root.image.src} alt={root.name} loading="lazy" decoding="async" /></span>
+							<span class="collection-img-wrap"><Image class="collection-img" src={root.image} alt={root.name} width={72} height={72} fit="contain" /></span>
 							<span class="collection-info">
 								<span class="collection-name">{root.name}</span>
 								<span class="collection-count">{root.count} {root.count === 1 ? 'entry' : 'entries'}</span>
@@ -896,7 +896,7 @@ function getAncestors(name: string): string[] {
 			</aside>
 			<main class="wiki-content">
 				<div class="search-sort-row">
-					<SearchBar placeholder="Search wiki entries�" items={wikiSearchItems} />
+					<SearchBar placeholder="Search wiki entries…" items={wikiSearchItems} />
 					<div class="sort-wrapper" id="sort-wrapper">
 						<button class="sort-btn" id="sort-btn" aria-label="Sort entries" aria-haspopup="true" aria-expanded="false">
 							<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -925,7 +925,7 @@ function getAncestors(name: string): string[] {
 								{entry.data.collection && (
 									<div class="badge-chain">
 										{getAncestors(entry.data.collection).map((name, idx, arr) => (
-											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">�</span>}</>
+											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
 										))}
 									</div>
 								)}
@@ -1118,7 +1118,7 @@ function getAncestors(name: string): string[] {
 						b.classList.toggle('active', b.dataset.collection === selected);
 					});
 
-					// Filter cards � just toggle display + featured class, no DOM movement
+					// Filter cards — just toggle display + featured class, no DOM movement
 					// Use live DOM query so order reflects any active sort
 					const sortedCards = Array.from(grid?.querySelectorAll<HTMLElement>('.entry-card') || []);
 					let visibleCount = 0;
