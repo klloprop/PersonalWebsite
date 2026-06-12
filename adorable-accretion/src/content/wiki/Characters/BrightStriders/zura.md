@@ -4,7 +4,7 @@ description: "The leader of the Dark knights."
 pubDate: 2026-04-07
 heroImage: "../../../../assets/WikiImages/zura1.png"
 heroImagePosition: "0% 10%"    
-collection: "Dark Knights"
+collection: "Brightstriders"
 tags: ["Zura"]
 ---
 Leader of the Dark Knights of the Brightstrider Dominion

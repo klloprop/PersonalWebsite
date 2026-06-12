@@ -73,6 +73,7 @@ const wikiCollections = defineCollection({
 		z.object({
 			name: z.string(),
 			image: image(),
+			imageScale: z.number().optional().default(1),
 			description: z.string().optional(),
 			order: z.number().optional().default(0),
 			parent: z.string().optional(),

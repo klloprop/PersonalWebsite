@@ -3,6 +3,7 @@ title: "Carmelio"
 description: "Devoted Uniter"
 pubDate: 2026-04-07
 collection: "Player Characters"
+heroImage: "../../../../assets/WikiImages/Carmelio.png"
 tags: ["Carm"]
 ---
 
@@ -18,3 +19,6 @@ During this stay, Carmelio was mostly tasked with miscellaneous chores, but he o
 
 Later on, after Carmelio accidently destroyed their village he fled and lost consciousness in a dump yard near Raphia. There he was found by Arkus who brought him home and nursed him back to function.
 This is where the first of his many adventures begins as he sets out for Narthwith with his new friend. Despite all that he still remains unknowing of how much the world still has to offer. For the better and for worse.
+
+
+![Carm](../../../../assets/WikiImages/Carmelio.png)
