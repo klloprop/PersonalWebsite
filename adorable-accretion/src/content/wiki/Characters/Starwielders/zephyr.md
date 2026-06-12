@@ -1,6 +1,6 @@
 ---
 title: "Zephyr Crestfyre"
-description: "Starwielder; Book-keeper"
+description: "Starwielder; Teacher and Archmage"
 pubDate: 2026-06-12
 heroImage: "../../../../assets/WikiImages/Zephyr.png"
 heroImagePosition: "00% 55%"    
