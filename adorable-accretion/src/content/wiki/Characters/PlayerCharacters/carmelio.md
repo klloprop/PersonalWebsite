@@ -22,3 +22,23 @@ This is where the first of his many adventures begins as he sets out for Narthwi
 
 
 ![Carm](../../../../assets/WikiImages/Carmelio.png)
+
+Carmelio possesses two chambers or "hearts" as part of his engine, allowing him to wield both Arcane and Primordial magic.
+
+His faceplate is a latter gift from the combined efforts of Percival, Ana and Zephyr, a precious memento and irreplacable part of his identity.
+
+
+His soul is composed of the following fragments :
+- **Percival Mourningbloom** : Strive, Love, Envy, Disappointment
+- **Zephyr Crestfyre** : Happiness, Anger, Anxiety, Sadness, Excitement
+- **Ana Mechalistus** : Passion, Calmness, Anticipation, Pride
+- **Flynster Blightwing** : Fear, Awe, Suprise, Frustration
+- **Edwin Strongfern** : Disgust, Contentment, Doubt, Shame
+
+
+(Formely but not integral part of him) 
+- **Aliana** : Ambition, Courage, Determination, Aspiration
+
+
+(Defining traits of his being) 
+- **Carmelio** : Hope, Devotion, Resilience, Adoration
