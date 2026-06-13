@@ -2,7 +2,7 @@
 title: "Ramira"
 description: "A promising student of the primordial, specifically the Aspect of Taeyar."
 pubDate: 2026-06-12
-heroImage: "../../../../assets/WikiImages/Lionell.png"
+heroImage: "../../../../assets/WikiImages/Ramira.jpg"
 heroImagePosition: "00% 20%"    
 collection: "Brightstriders"
 tags: [""]
@@ -21,5 +21,5 @@ Has met party in Raphia and helped save Mask.
 Has been seen again during the heist in the Brightstrider HQ.
 
 
-![Ramira](../../../../assets/WikiImages/Lionell.png)
+![Ramira](../../../../assets/WikiImages/Ramira.jpg)
 > Ramira.

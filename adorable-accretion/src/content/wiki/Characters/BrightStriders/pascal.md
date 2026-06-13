@@ -2,8 +2,8 @@
 title: "Pascal-Felipe"
 description: "A former golden knight fallen from grace"
 pubDate: 2026-06-12
-heroImage: "../../../../assets/WikiImages/Lionell.png"
-heroImagePosition: "00% 20%"    
+heroImage: "../../../../assets/WikiImages/Pascal.jpg"
+heroImagePosition: "00% 10%"    
 collection: "Brightstriders"
 tags: ["Pascal, Felipe"]
 ---
@@ -22,5 +22,5 @@ Has now fallen from grace and lost his powers, replaced by Zura, the New Pride.
 He now resides in Menzo and is the bodyguard of Clara.
 
 
-![Lionell](../../../../assets/WikiImages/Lionell.png)
+![Lionell](../../../../assets/WikiImages/Pascal.jpg)
 > Pascal-Felipe, a knight fallen from grace.
