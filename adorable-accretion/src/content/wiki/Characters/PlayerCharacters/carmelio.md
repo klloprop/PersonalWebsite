@@ -22,6 +22,7 @@ This is where the first of his many adventures begins as he sets out for Narthwi
 
 
 ![Carm](../../../../assets/WikiImages/Carmelio.png)
+> Art by the player of Carmelio, our very own Xan
 
 Carmelio possesses two chambers or "hearts" as part of his engine, allowing him to wield both Arcane and Primordial magic.
 
