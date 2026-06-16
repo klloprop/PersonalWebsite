@@ -5,9 +5,9 @@ pubDate: 2026-06-12
 heroImage: "../../../../assets/WikiImages/Ramira.jpg"
 heroImagePosition: "00% 20%"    
 collection: "Brightstriders"
-tags: [""]
 ---
 **Pronouns:** She/Her
+Ramira "Reverance" Dakharos
 
 A young blue tiefling girl living in Marren's Eve with her older sister Mavari. With no parent left she started helping around the small village alongside her sister.
 
