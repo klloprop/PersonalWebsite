@@ -4,6 +4,6 @@ description: "The fey stand ready to cull the mirrorworld, anchors need to be de
 date: "2026-06-28"
 time: "16:30"
 duration: 240
-cancelled: true
+cancelled: false
 sessionType: main
 ---
