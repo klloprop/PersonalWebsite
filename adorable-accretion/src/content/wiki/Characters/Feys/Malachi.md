@@ -1,6 +1,6 @@
 ---
 title: "Malachi"
-description: "Alchemist Dryad"
+description: "Fey Mage"
 pubDate: 2026-06-12
 collection: "Fey"
 heroImage: "../../../../assets/WikiImages/Malachi2.png"
@@ -9,6 +9,8 @@ tags: [""]
 ---
 
 **Pronouns:** He/Him
+
+Studied under Alecto, has met Faena several times in his early life.
 
 Teacher, supervisor and librarian, Malachi is a dashing yet cunning fairy who took Aaron under his wing and seems greatly interested in both him and Rêverie.
 He has taught Aaron dream magic.
