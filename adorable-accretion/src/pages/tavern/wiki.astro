@@ -277,11 +277,16 @@ function getAncestors(name: string): string[] {
 				border-radius: 8px;
 				flex-shrink: 0;
 				border: 1px solid #C4A35A;
-				background: var(--icon-bg);
+				background: #FFDA88;
 				display: inline-flex;
 				align-items: center;
 				justify-content: center;
 				overflow: hidden;
+			}
+
+			:global(html.dark) .sidebar-btn .collection-img-wrap {
+				border-color: #ffe09d;
+				background: #ecc268;
 			}
 			.sidebar-btn :global(.collection-img) {
 				width: 100%;
