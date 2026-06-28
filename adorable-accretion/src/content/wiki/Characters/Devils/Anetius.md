@@ -2,7 +2,7 @@
 title: "Anetius"
 description: "Archdevil and dubbed 'The Destroyer of the Burning Legion'"
 pubDate: 2026-06-16
-collection: "Penumbrans"
+collection: "Devils"
 heroImage: "../../../../assets/WikiImages/Anetius.png"
 heroImagePosition: "00% 10%"    
 tags: [""]
