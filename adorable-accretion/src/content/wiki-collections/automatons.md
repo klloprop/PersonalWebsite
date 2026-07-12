@@ -1,7 +1,8 @@
 ---
 name: "Automatons"
-image: "../../assets/D20_Icon.png"
-description: "The dark order of the Brightstriders"
+image: "../../assets/WikiIcons/AutomatonIcon.png"
+imageScale: 0.9   # zoom in; use < 1 to zoom out
+description: ""
 order: 2
-parent: "Abaron"
+parent: "Technology"
 ---
