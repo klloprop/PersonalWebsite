@@ -1,6 +1,5 @@
 ---
 title: "Sessions 57"
-description: ""
 pubDate: 2026-07-13
 collection: "The Story so Far"
 ---
@@ -10,7 +9,7 @@ collection: "The Story so Far"
 - Nailo and Carmelio "bump" into each other and have a long talk about
     - Nailo is miffed about the fact that he is largely excluded from the interparty-tea (aka the hot goss)
     - Nailo learns about Carmelio-Arneal and Carmelios attraction to Naphim
-    - Carmelio leans about Nailos attraction to Kraz
+    - Carmelio learns about Nailos attraction to Kraz
     - Carmelio asks about how polyamourous realtionships work (aka asking advice from Nailo)
     - They talk about the short lived ness about their current predicament and their plans for the immediate future
 - Reverie has a short moment with Aaron and Malachi, before they return to the feywild
