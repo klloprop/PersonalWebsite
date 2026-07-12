@@ -16,7 +16,7 @@ A terrifying archdevil. The party met Anetius in session 32. Later in session 33
 
 Later party learns this orb is a powerful blood orb capable of opening a portal to the hells. 
 
-Is armed with a large brimstone spear that can tear the worse pain out of a being before killing it.
+Is armed with a large brimstone spear that can tear cause the worst pain imaginable before binding your soul to his resevoir.
 Has several eldritch eyes all over his body and a giant maw that can open on his chest.
 Owns Kraz's soul and can cast his influence over him, but lately his infulence over Kraz has been weirdly tame. Has been banished back into the Hells thanks to the combined effort of the devils and Party.
 
