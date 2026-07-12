@@ -7,7 +7,14 @@ collection: "Core NPCs"
 tags: ["Vhaerun","Vhae"]
 ---
 
-Nailo's boyfriend.
+Nailo's roguish boyfriend.
+
+Born in a Penumbrian noble family (insert name?) and rather antagonistic to the royal family, Vhaeraun betrayed Nailo at the crossroad and turned out to be a traitor to his own people. (Lead the Brighstriders to Penumbra's door? An explosion happened?)
+
+Vhaeraun started out as a mysterious character seen in Narthwith hunted by down Nailo. He followed the prince and Party to the tavern in Oakheart but properly met Party at Raphia where he busted everyone out of prison following the events of session 9.
+It is quickly discovered that Vhaeraun was both hunted by Merith the Ivory might in Raphia and was also afflicted by a Forget-Me-Not curse (erasing one's memories progressively), a handcrafted affliction by Maleth, the Cursemaster of Starwielder Dominion. Curse that has been neutralised by party in session 48.
+Master of lies, Vhaeraun knows how to both weave and detect lies whether from party or enemies. His silver tongue and razor sharp wits will know how to stir up emotions or deescalate an argument in the blink of an eye.
+He also plays violin.
 
 
 # Vhaerun (7) - Statblock
