@@ -1,11 +1,10 @@
 ---
 title: "Merith"
-description: "The Hunt and Daughter of Nature"
+description: "The Ivory Might, a shapeshifter"
 pubDate: 2026-06-12
 collection: "Fey"
 heroImage: "../../../../assets/WikiImages/Merith.png"
 heroImagePosition: "00% 20%"    
-tags: [""]
 ---
 
 **Pronouns:** She/They
