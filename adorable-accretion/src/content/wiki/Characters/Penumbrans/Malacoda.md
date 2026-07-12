@@ -3,7 +3,7 @@ title: "Malacoda"
 description: "Demon; Father of the Penumbran Royal Family"
 pubDate: 2026-06-16
 collection: "Penumbrans"
-#heroImage: "../../../../assets/WikiImages/.png"
+heroImage: "../../../../assets/WikiImages/Mala.png"
 heroImagePosition: "00% 10%"    
 tags: ["Mala"]
 ---
@@ -16,4 +16,4 @@ The curse decreed that Malas firstborn child, despite not being a full demon, ca
 Mala sought ways to dispel the curse, but in the end could only make a deal with a witch, namely the witch Alecto, to split that curse so both Nailo and Mala would bare halve.
 
 
-
+![Fin](../../../../assets/WikiImages/Mala.png)
