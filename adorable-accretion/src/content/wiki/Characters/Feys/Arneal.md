@@ -3,7 +3,7 @@ title: "Arneal Gleamlight"
 description: "Keeper of Information and one of the last Great Owls"
 pubDate: 2026-06-12
 collection: "Fey"
-heroImage: "../../../../assets/WikiImages/Arneal2.png"
+heroImage: "../../../../assets/WikiImages/ArnealOwl.png"
 heroImagePosition: "00% 10%"    
 ---
 
@@ -25,6 +25,11 @@ Arneals ancient fey artifact is called "Hunters Trophy" and is a legendary claw 
 He is one of Carmelio's love interests alongside Naphim.
 Has grown considerably closer to both.
 
+![Dor](../../../../assets/WikiImages/ArnealOwl.png)
+> Artwork created by our very own Xan, Arneal in his usualy 3 piece suit
+
+![Dor](../../../../assets/WikiImages/ArnealOwl2.png)
+> Arneal without his clothes
 
 ![Dor](../../../../assets/WikiImages/Arneal2.png)
 > Artwork created by our very own Xan, an reimagined illustration as Arneal in a more humanoid form.
