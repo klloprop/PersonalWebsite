@@ -4,7 +4,7 @@ description: "Keeper of Information and one of the last Great Owls"
 pubDate: 2026-06-12
 collection: "Fey"
 heroImage: "../../../../assets/WikiImages/ArnealOwl.png"
-heroImagePosition: "00% 10%"    
+heroImagePosition: "00% 50%"    
 ---
 
 **Pronouns:** He/Him
