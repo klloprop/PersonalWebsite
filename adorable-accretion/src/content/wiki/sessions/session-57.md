@@ -11,7 +11,7 @@ collection: "The Story so Far"
     - Nailo is miffed about the fact that he is largely excluded from the interparty-tea (aka the hot goss)
     - Nailo learns about Carmelio-Arneal and Carmelios attraction to Naphim
     - Carmelio learns about Nailos attraction to Kraz
-    - Carmelio asks about how polyamourous realtionships work (aka asking advice from Nailo)
+    - Carmelio asks about how polyamourous relationships work (aka asking advice from Nailo)
     - They talk about the short lived ness about their current predicament and their plans for the immediate future
 - Reverie has a short moment with Aaron and Malachi, before they return to the feywild
 - Party seeks out Aliana, who reveals that she is fighting depression and that she has decided to do everything in her power to prepare this world for the separation, even if that means sacrificing parts of herself along the way
