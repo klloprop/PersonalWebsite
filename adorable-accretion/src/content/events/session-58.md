@@ -4,6 +4,6 @@ description: "The world awaits, but the anchors wont hold forever, how will our 
 date: "2026-07-19"
 time: "16:30"
 duration: 210
-cancelled: false
+cancelled: true
 sessionType: optional
 ---
