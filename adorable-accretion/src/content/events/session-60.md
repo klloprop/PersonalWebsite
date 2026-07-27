@@ -1,7 +1,7 @@
 ---
-title: "Session 59 - Abaron"
+title: "Session 60 - Abaron"
 description: "The world awaits, but the anchors wont hold forever, how will our heroes spend their time?"
-date: "2026-08-02"
+date: "2026-08-16"
 time: "16:30"
 duration: 210
 cancelled: false

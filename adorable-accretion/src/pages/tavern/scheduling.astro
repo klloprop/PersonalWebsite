@@ -1496,42 +1496,39 @@ const events = allEvents.map((event) => {
 						dateMap.set(ev.date, existing);
 					}
 
-					// Determine session day-of-week from actual events
-					const allDates = [...dateMap.keys()].sort();
-					if (allDates.length === 0) return;
-					const dowTally = new Array(7).fill(0);
-					for (const ds of allDates) {
-						const d = new Date(ds + 'T12:00:00Z');
-						dowTally[d.getUTCDay()]++;
+					// Developer-configured manual prediction pattern.
+					// DOW: 0=Sun, 1=Mon, ... 6=Sat
+					const PREDICTION_PATTERN = {
+						extrapolate: true,
+						primary: {
+							dow: 0,
+							anchorDate: '2026-07-12', //anchor date for the cycle start
+							cycle: ['optional', 'main'] as Array<'main' | 'optional'>,
+						},
+						secondary: {
+							enabled: false, //Wether it is shown
+							dow: 3, //Weekday: 0 is sunday 3 is wednesday etc
+							type: 'optional' as 'main' | 'optional', //pattern
+						},
+					};
+
+					function isManualSessionDay(dow: number): boolean {
+						return dow === PREDICTION_PATTERN.primary.dow
+							|| (PREDICTION_PATTERN.secondary.enabled && dow === PREDICTION_PATTERN.secondary.dow);
 					}
-					const autoDOW = dowTally.indexOf(Math.max(...dowTally));
 
-					// Anchor for main/optional alternation
-					const mainEvents = parsed.filter(e => e.sessionType === 'main' && !e.cancelled);
-					if (mainEvents.length === 0) return;
-					mainEvents.sort((a, b) => a.date.localeCompare(b.date));
-					const anchorDate = mainEvents[mainEvents.length - 1].date;
-
-					// Calendar display settings (fetched from server, admin-writable)
-					type CalSettings = { dowOverride: number | null; dow2: number | null; extrapolate: boolean };
-					const [settingsData, meData] = await Promise.all([
-						fetch('/api/admin/cal-settings').then(r => r.json()).catch(() => ({})),
-						fetch('/api/auth/me').then(r => r.json()).catch(() => ({})),
-					]);
-					const isAdmin: boolean = meData?.role === 'admin';
-					let calSettings: CalSettings = { dowOverride: null, dow2: null, extrapolate: true, ...settingsData };
-					function saveCalSettings(s: CalSettings): void {
-						fetch('/api/admin/cal-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
-					}
-					function effectiveDOW(): number { return calSettings.dowOverride !== null ? calSettings.dowOverride : autoDOW; }
-
-					function getExpectedType(dateStr: string): 'main' | 'optional' {
-						const anchor = new Date(anchorDate + 'T12:00:00Z');
-						const test = new Date(dateStr + 'T12:00:00Z');
-						const diffWeeks = Math.round(
-							(test.getTime() - anchor.getTime()) / (7 * 24 * 60 * 60 * 1000)
-						);
-						return diffWeeks % 2 === 0 ? 'main' : 'optional';
+					function getManualExpectedType(dateStr: string, dow: number): 'main' | 'optional' {
+						if (dow === PREDICTION_PATTERN.primary.dow) {
+							const anchor = new Date(PREDICTION_PATTERN.primary.anchorDate + 'T12:00:00Z');
+							const test = new Date(dateStr + 'T12:00:00Z');
+							const diffWeeks = Math.round(
+								(test.getTime() - anchor.getTime()) / (7 * 24 * 60 * 60 * 1000)
+							);
+							const cycle = PREDICTION_PATTERN.primary.cycle;
+							const idx = ((diffWeeks % cycle.length) + cycle.length) % cycle.length;
+							return cycle[idx];
+						}
+						return PREDICTION_PATTERN.secondary.type;
 					}
 
 					const todayMidnight = new Date();
@@ -1569,7 +1566,8 @@ const events = allEvents.map((event) => {
 							cellDate.setHours(0, 0, 0, 0);
 							const isToday = cellDate.getTime() === todayMidnight.getTime();
 							const isPast = cellDate < todayMidnight;
-							const isSessionDay = cellDate.getDay() === effectiveDOW() || (calSettings.dow2 !== null && cellDate.getDay() === calSettings.dow2);
+							const cellDOW = cellDate.getDay();
+							const isSessionDay = isManualSessionDay(cellDOW);
 							const todayClass = isToday ? ' today' : '';
 
 							const dayEvents = dateMap.get(dateStr);
@@ -1586,9 +1584,8 @@ const events = allEvents.map((event) => {
 								const cancelClass = isCancelled ? ' cancelled' : '';
                                                             const nextClass = (!isPast && !isCancelled && dateStr === nextSessionDate) ? ' next-session' : '';
 								html += `<div class="cal-day session ${typeClass}${cancelClass}${pastClass}${nextClass}${todayClass}"${scrollAttr}>${d}<span class="cal-tooltip">${tooltipText}</span></div>`;
-							} else if (isSessionDay && !isPast && calSettings.extrapolate) {
-								const isPrimary = cellDate.getDay() === effectiveDOW();
-								const expectedType = isPrimary ? getExpectedType(dateStr) : 'optional';
+							} else if (isSessionDay && !isPast && PREDICTION_PATTERN.extrapolate) {
+								const expectedType = getManualExpectedType(dateStr, cellDOW);
 								const typeClass = expectedType === 'main' ? 'main-session' : 'optional-session';
 								const typeLabel = expectedType === 'main' ? 'Main Session' : 'Optional Session';
 								html += `<div class="cal-day extrapolated ${typeClass}${todayClass}">${d}<span class="cal-tooltip">Not yet scheduled · ${typeLabel}</span></div>`;
@@ -1629,34 +1626,6 @@ const events = allEvents.map((event) => {
 					// Default: show current month (idx 2) + next month (idx 3)
 					let viewStart = CURRENT_IDX;
 
-					let settingsOpen = false;
-
-					const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-					function buildSettingsHTML(): string {
-						if (!isAdmin) return '';
-						const gearSVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54a7.37 7.37 0 0 0-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.47.47 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54a7.37 7.37 0 0 0 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>';
-						const dowOpts = DOW_NAMES.map((n, i) => '<option value="' + i + '"' + (calSettings.dowOverride === i ? ' selected' : '') + '>' + n + '</option>').join('');
-						const dow2Opts = DOW_NAMES.map((n, i) => '<option value="' + i + '"' + (calSettings.dow2 === i ? ' selected' : '') + '>' + n + '</option>').join('');
-						const openClass = settingsOpen ? ' open' : '';
-						const dowAutoSel = calSettings.dowOverride === null ? ' selected' : '';
-						const dow2Chk = calSettings.dow2 !== null ? ' checked' : '';
-						const dow2Dis = calSettings.dow2 === null ? ' disabled' : '';
-						const extChk = calSettings.extrapolate ? ' checked' : '';
-						return '<div class="cal-settings' + openClass + '">' +
-							'<button class="cal-settings-toggle" id="cal-settings-btn" type="button">' + gearSVG + ' Options</button>' +
-							'<div class="cal-settings-panel">' +
-							'<div class="cal-setting-row"><span class="cal-setting-label">Session day</span>' +
-							'<select class="cal-select" id="cal-dow-select">' +
-							'<option value=""' + dowAutoSel + '>Auto (' + DOW_NAMES[autoDOW] + ')</option>' +
-							dowOpts + '</select></div>' +
-							'<div class="cal-setting-row"><span class="cal-setting-label">Second session day</span>' +
-							'<input type="checkbox" id="cal-dow2-enable" class="cal-checkbox"' + dow2Chk + '>' +
-							'<select class="cal-select" id="cal-dow2-select"' + dow2Dis + '>' + dow2Opts + '</select></div>' +
-							'<div class="cal-setting-row"><span class="cal-setting-label">Show potential sessions</span>' +
-							'<input type="checkbox" id="cal-extrapolate" class="cal-checkbox"' + extChk + '></div>' +
-							'</div></div>';
-					}
 function wireScrollHandlers(): void {
 						calContainer!.querySelectorAll<HTMLElement>('[data-scroll-to]').forEach(cell => {
 							cell.addEventListener('click', () => {
@@ -1683,8 +1652,6 @@ function wireScrollHandlers(): void {
 							<div class="calendar-section">
 								<div class="session-calendar">
 									${legendHTML}
-
-									${buildSettingsHTML()}
 									<div class="cal-nav">
 										<button class="cal-nav-btn" id="cal-prev" ${canPrev ? '' : 'disabled'}>
 											${prevSVG} Earlier
@@ -1703,21 +1670,6 @@ function wireScrollHandlers(): void {
 						document.getElementById('cal-next')?.addEventListener('click', () => {
 							if (viewStart < MONTH_COUNT - 2) { viewStart++; render(); }
 						});
-						
-						document.getElementById('cal-settings-btn')?.addEventListener('click', () => { settingsOpen = !settingsOpen; render(); });
-						(document.getElementById('cal-dow-select') as HTMLSelectElement | null)?.addEventListener('change', function() {
-							calSettings.dowOverride = (this as HTMLSelectElement).value === '' ? null : parseInt((this as HTMLSelectElement).value);
-							saveCalSettings(calSettings); rebuildMonths(); render();
-						});
-						const _dow2En = document.getElementById('cal-dow2-enable') as HTMLInputElement | null;
-						const _dow2Sel = document.getElementById('cal-dow2-select') as HTMLSelectElement | null;
-						_dow2En?.addEventListener('change', () => {
-							if (_dow2En!.checked) { calSettings.dow2 = calSettings.dow2 ?? (effectiveDOW() + 3) % 7; if (_dow2Sel) { _dow2Sel.disabled = false; _dow2Sel.value = String(calSettings.dow2); } }
-							else { calSettings.dow2 = null; if (_dow2Sel) _dow2Sel.disabled = true; }
-							saveCalSettings(calSettings); rebuildMonths(); render();
-						});
-						_dow2Sel?.addEventListener('change', () => { calSettings.dow2 = parseInt(_dow2Sel!.value); saveCalSettings(calSettings); rebuildMonths(); render(); });
-						(document.getElementById('cal-extrapolate') as HTMLInputElement | null)?.addEventListener('change', function() { calSettings.extrapolate = (this as HTMLInputElement).checked; saveCalSettings(calSettings); rebuildMonths(); render(); });
 						wireScrollHandlers();
 					}
 
