@@ -1503,7 +1503,8 @@ const events = allEvents.map((event) => {
 						primary: {
 							dow: 0,
 							anchorDate: '2026-07-12', //anchor date for the cycle start
-							cycle: ['optional', 'main'] as Array<'main' | 'optional'>,
+							// Use 'off' for weeks with no session, e.g. bi-weekly: ['main', 'off']
+							cycle: ['optional', 'main'] as Array<'main' | 'optional' | 'off'>,
 						},
 						secondary: {
 							enabled: false, //Wether it is shown
@@ -1512,12 +1513,7 @@ const events = allEvents.map((event) => {
 						},
 					};
 
-					function isManualSessionDay(dow: number): boolean {
-						return dow === PREDICTION_PATTERN.primary.dow
-							|| (PREDICTION_PATTERN.secondary.enabled && dow === PREDICTION_PATTERN.secondary.dow);
-					}
-
-					function getManualExpectedType(dateStr: string, dow: number): 'main' | 'optional' {
+					function getManualExpectedType(dateStr: string, dow: number): 'main' | 'optional' | null {
 						if (dow === PREDICTION_PATTERN.primary.dow) {
 							const anchor = new Date(PREDICTION_PATTERN.primary.anchorDate + 'T12:00:00Z');
 							const test = new Date(dateStr + 'T12:00:00Z');
@@ -1526,9 +1522,13 @@ const events = allEvents.map((event) => {
 							);
 							const cycle = PREDICTION_PATTERN.primary.cycle;
 							const idx = ((diffWeeks % cycle.length) + cycle.length) % cycle.length;
-							return cycle[idx];
+							const token = cycle[idx];
+							return token === 'off' ? null : token;
 						}
-						return PREDICTION_PATTERN.secondary.type;
+						if (PREDICTION_PATTERN.secondary.enabled && dow === PREDICTION_PATTERN.secondary.dow) {
+							return PREDICTION_PATTERN.secondary.type;
+						}
+						return null;
 					}
 
 					const todayMidnight = new Date();
@@ -1567,7 +1567,7 @@ const events = allEvents.map((event) => {
 							const isToday = cellDate.getTime() === todayMidnight.getTime();
 							const isPast = cellDate < todayMidnight;
 							const cellDOW = cellDate.getDay();
-							const isSessionDay = isManualSessionDay(cellDOW);
+							const expectedType = getManualExpectedType(dateStr, cellDOW);
 							const todayClass = isToday ? ' today' : '';
 
 							const dayEvents = dateMap.get(dateStr);
@@ -1584,8 +1584,7 @@ const events = allEvents.map((event) => {
 								const cancelClass = isCancelled ? ' cancelled' : '';
                                                             const nextClass = (!isPast && !isCancelled && dateStr === nextSessionDate) ? ' next-session' : '';
 								html += `<div class="cal-day session ${typeClass}${cancelClass}${pastClass}${nextClass}${todayClass}"${scrollAttr}>${d}<span class="cal-tooltip">${tooltipText}</span></div>`;
-							} else if (isSessionDay && !isPast && PREDICTION_PATTERN.extrapolate) {
-								const expectedType = getManualExpectedType(dateStr, cellDOW);
+							} else if (expectedType && !isPast && PREDICTION_PATTERN.extrapolate) {
 								const typeClass = expectedType === 'main' ? 'main-session' : 'optional-session';
 								const typeLabel = expectedType === 'main' ? 'Main Session' : 'Optional Session';
 								html += `<div class="cal-day extrapolated ${typeClass}${todayClass}">${d}<span class="cal-tooltip">Not yet scheduled · ${typeLabel}</span></div>`;
