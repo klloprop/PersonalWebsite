@@ -52,7 +52,7 @@ const blogCollections = defineCollection({
 });
 
 const wiki = defineCollection({
-	loader: glob({ base: './src/content/wiki', pattern: '**/*.{md,mdx}' }),
+	loader: glob({ base: './src/content', pattern: 'wiki_*/**/*.{md,mdx}' }),
 	schema: ({ image }) =>
 		z.object({
 			title: z.string(),
@@ -63,6 +63,8 @@ const wiki = defineCollection({
 			heroImagePosition: z.string().optional().default('center'),
 			heroImageCredit: z.string().optional(),
 			collection: z.string().optional(),
+			collectionId: z.string().optional(),
+			visibility: z.enum(['user', 'admin']).optional().default('user'),
 			tags: z.array(z.string()).optional(),
 		}),
 });
@@ -77,6 +79,8 @@ const wikiCollections = defineCollection({
 			description: z.string().optional(),
 			order: z.number().optional().default(0),
 			parent: z.string().optional(),
+			parentId: z.string().optional(),
+			visibility: z.enum(['user', 'admin']).optional().default('user'),
 		}),
 });
 

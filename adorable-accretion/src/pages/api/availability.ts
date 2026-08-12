@@ -19,6 +19,10 @@ function getRedis() {
 	});
 }
 
+function hasRedisConfig(): boolean {
+	return Boolean(import.meta.env.UPSTASH_REDIS_REST_URL && import.meta.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
 type AvailabilityStatus =
 	| 'can-make-it'
 	| 'low-energy'
@@ -43,6 +47,20 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 	if (!eventId) {
 		return new Response(JSON.stringify({ error: 'eventId is required' }), {
 			status: 400,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
+
+	if (!hasRedisConfig()) {
+		return new Response(JSON.stringify({
+			votes: {
+				'can-make-it': 0,
+				'low-energy': 0,
+				'cannot-play-without': 0,
+				'cannot-do-not-play': 0,
+			},
+			myVote: null,
+		}), {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	}
@@ -114,6 +132,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 	if (!eventId || !status || (!validStatuses.includes(status as AvailabilityStatus) && status !== 'clear')) {
 		return new Response(JSON.stringify({ error: 'Invalid eventId or status' }), {
 			status: 400,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
+
+	if (!hasRedisConfig()) {
+		return new Response(JSON.stringify({ error: 'Availability storage is not configured' }), {
+			status: 503,
 			headers: { 'Content-Type': 'application/json' },
 		});
 	}

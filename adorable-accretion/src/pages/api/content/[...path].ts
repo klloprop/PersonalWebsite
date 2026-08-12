@@ -9,6 +9,15 @@ import {
 } from '../../../lib/github';
 
 const ALLOWED_TYPES = new Set(['wiki', 'blog']);
+const DEFAULT_WIKI_ROOT = 'wiki_abaron';
+
+function resolveWikiFilePath(slug: string): string {
+	const normalized = slug.replace(/^\/+/, '');
+	if (/^wiki_[a-z0-9_-]+\//i.test(normalized)) {
+		return `src/content/${normalized}.md`;
+	}
+	return `src/content/${DEFAULT_WIKI_ROOT}/${normalized}.md`;
+}
 
 /** Derive the public page URL for a content entry so we can revalidate its ISR cache. */
 function pageUrl(type: string, slug: string): string {
@@ -32,7 +41,12 @@ function parsePath(raw: string): {
 	// Prevent directory traversal
 	if (slug.includes('..') || slug.startsWith('/')) return null;
 
-	return { type, slug, filePath: `src/content/${type}/${slug}.md` };
+	const filePath =
+		type === 'wiki'
+			? resolveWikiFilePath(slug)
+			: `src/content/${type}/${slug}.md`;
+
+	return { type, slug, filePath };
 }
 
 function json(data: unknown, status = 200) {
@@ -147,7 +161,10 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
 		return json({ error: 'Invalid slug' }, 400);
 	}
 
-	const filePath = `src/content/${type}/${slug}.md`;
+	const filePath =
+		type === 'wiki'
+			? resolveWikiFilePath(slug)
+			: `src/content/${type}/${slug}.md`;
 
 	try {
 		// Check if file already exists

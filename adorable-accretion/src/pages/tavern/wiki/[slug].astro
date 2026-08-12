@@ -18,6 +18,20 @@ import Header from '../../../components/Header.astro';
 import WikiLinks from '../../../components/WikiLinks.astro';
 import { SITE_TITLE } from '../../../consts';
 import { renderFromGitHub } from '../../../lib/content-renderer';
+import {
+	canRoleViewCollection,
+	computeEffectiveCollectionVisibility,
+	getWikiCollectionVisibilityOverrides,
+	listWikiCollectionInfos,
+	resolveCollectionId,
+	type ViewerRole,
+} from '../../../lib/wiki-collection-visibility';
+import {
+	canRoleViewWikiEntry,
+	computeEffectiveWikiEntryVisibility,
+	getWikiEntryVisibilityOverrides,
+	type WikiEntryInfo,
+} from '../../../lib/wiki-entry-visibility';
 
 const slug = Astro.params.slug;
 if (!slug) return new Response(null, { status: 404, statusText: 'Not Found' });
@@ -35,19 +49,48 @@ if (!entry) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
+const viewerRole: ViewerRole = Astro.locals.user?.role === 'admin' ? 'admin' : 'user';
+const visibilityOverrides = await getWikiCollectionVisibilityOverrides();
+const collectionInfos = await listWikiCollectionInfos();
+const visibilityMap = computeEffectiveCollectionVisibility(collectionInfos, visibilityOverrides);
+const entryOverrides = await getWikiEntryVisibilityOverrides();
+
+function sanitizeEntryVisibility(value: unknown): 'user' | 'admin' {
+	return value === 'admin' ? 'admin' : 'user';
+}
+const entryInfos: WikiEntryInfo[] = entries.map((e) => ({
+	id: e.id,
+	title: e.data.title,
+	collectionRef: (e.data.collectionId as string | undefined) ?? e.data.collection,
+	defaultVisibility: sanitizeEntryVisibility((e.data as Record<string, unknown>).visibility),
+}));
+const entryVisibilityMap = computeEffectiveWikiEntryVisibility(
+	entryInfos,
+	entryOverrides,
+	visibilityMap,
+	collectionInfos,
+);
+const entryCollectionRef = (entry.data.collectionId as string | undefined) ?? entry.data.collection;
+if (!canRoleViewCollection(entryCollectionRef, viewerRole, visibilityMap, collectionInfos)) {
+	return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+if (!canRoleViewWikiEntry(entry.id, viewerRole, entryVisibilityMap)) {
+	return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
 // Derive a project-relative path with correct original casing.
 // entry.id is lowercased by Astro's glob loader, so Characters/CoreNPCs/mask
 // becomes characters/corenpcs/mask — wrong for the case-sensitive GitHub API.
 // entry.filePath preserves real casing but is an absolute filesystem path, so
-// we strip everything before the first occurrence of src/content/wiki/.
+// we strip everything before src/content/wiki_<root>/.
 function projectRelativePath(absPath: string): string {
 	const normalized = absPath.replace(/\\/g, '/');
-	const idx = normalized.indexOf('src/content/wiki/');
-	return idx >= 0 ? normalized.slice(idx) : `src/content/wiki/${entry!.id}.md`;
+	const match = normalized.match(/src\/content\/wiki_[^/]+\/.+$/);
+	return match ? match[0] : `src/content/${entry!.id}.md`;
 }
 const filePath = entry.filePath
 	? projectRelativePath(entry.filePath)
-	: `src/content/wiki/${entry.id}.md`;
+	: `src/content/${entry.id}.md`;
 
 // Fetch latest body from GitHub (instant updates, no rebuild needed)
 let rendered;
@@ -73,27 +116,28 @@ const updatedDate = rendered?.frontmatter.updatedDate
 	: entry.data.updatedDate;
 
 // Edit slug uses original-cased path
-const editSlug = filePath.replace(/^src\/content\/wiki\//, '').replace(/\.\w+$/, '');
+const editSlug = filePath.replace(/^src\/content\//, '').replace(/\.\w+$/, '');
 
 // Always serve fresh runtime content for live edits.
 Astro.response.headers.set('Cache-Control', 'no-store, max-age=0');
 
 // Build ancestor chain for collection chips
 const collectionEntries = await getCollection('wikiCollections');
-const colParentMap = new Map<string, string>();
-for (const col of collectionEntries) {
-	if (col.data.parent) colParentMap.set(col.data.name, col.data.parent);
-}
-function getAncestors(name: string): string[] {
+const colById = new Map(collectionEntries.map((col) => [col.id, col] as const));
+const colInfosById = new Map(collectionInfos.map((col) => [col.id, col] as const));
+function getAncestors(collectionId: string): string[] {
 	const chain: string[] = [];
-	let current: string | undefined = name;
+	let current: string | undefined = collectionId;
 	while (current) {
-		chain.unshift(current);
-		current = colParentMap.get(current);
+		const col = colById.get(current);
+		if (!col) break;
+		chain.unshift(col.data.name);
+		current = colInfosById.get(current)?.parentId;
 	}
 	return chain;
 }
-const collectionChain = collection ? getAncestors(collection) : [];
+const collectionId = resolveCollectionId(entryCollectionRef, collectionInfos);
+const collectionChain = collectionId ? getAncestors(collectionId) : (collection ? [collection] : []);
 ---
 
 <html lang="en">
