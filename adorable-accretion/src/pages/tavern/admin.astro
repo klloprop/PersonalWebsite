@@ -165,6 +165,66 @@ const user = Astro.locals.user!;
 		display: grid;
 		gap: 0.5rem;
 	}
+	.visibility-table-wrap {
+		overflow-x: auto;
+		border: 1px solid rgba(201, 144, 38, 0.35);
+		border-radius: 6px;
+		background: rgba(255, 255, 255, 0.18);
+	}
+	.visibility-table {
+		width: 100%;
+		min-width: 720px;
+		border-collapse: collapse;
+		font-size: 0.88rem;
+	}
+	.visibility-table th,
+	.visibility-table td {
+		padding: 0.7rem 0.85rem;
+		text-align: left;
+		vertical-align: middle;
+		border-bottom: 1px solid rgba(201, 144, 38, 0.2);
+	}
+	.visibility-table th {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: #f5e4c4;
+		color: #744908;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.visibility-table tbody tr:last-child td {
+		border-bottom: none;
+	}
+	.visibility-table tbody tr:hover {
+		background: rgba(201, 144, 38, 0.08);
+	}
+	.visibility-table td:first-child {
+		min-width: 190px;
+	}
+	.visibility-table td strong,
+	.visibility-table td small {
+		display: block;
+	}
+	.visibility-value {
+		display: inline-block;
+		padding: 0.18rem 0.5rem;
+		border-radius: 999px;
+		background: rgba(116, 73, 8, 0.1);
+		color: #744908;
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-transform: capitalize;
+	}
+	.visibility-value.admin {
+		background: rgba(160, 39, 39, 0.12);
+		color: #8c2929;
+	}
+	.muted {
+		opacity: 0.62;
+	}
 	.card {
 		display: flex;
 		justify-content: space-between;
@@ -275,6 +335,29 @@ const user = Astro.locals.user!;
 	}
 	:global(html.dark) .card {
 		border-color: rgba(107, 71, 16, 0.4);
+	}
+	:global(html.dark) .visibility-table-wrap {
+		border-color: rgba(107, 71, 16, 0.55);
+		background: rgba(30, 20, 10, 0.28);
+	}
+	:global(html.dark) .visibility-table th {
+		background: #33200b;
+		color: #DEB96E;
+	}
+	:global(html.dark) .visibility-table th,
+	:global(html.dark) .visibility-table td {
+		border-bottom-color: rgba(107, 71, 16, 0.45);
+	}
+	:global(html.dark) .visibility-table tbody tr:hover {
+		background: rgba(222, 185, 110, 0.08);
+	}
+	:global(html.dark) .visibility-value {
+		background: rgba(222, 185, 110, 0.12);
+		color: #DEB96E;
+	}
+	:global(html.dark) .visibility-value.admin {
+		background: rgba(255, 128, 128, 0.12);
+		color: #ffaaaa;
 	}
 	:global(html.dark) .btn-reset {
 		color: #DEB96E;
@@ -433,26 +516,30 @@ const user = Astro.locals.user!;
 				return;
 			}
 
-			container.innerHTML = cols.map((col) => {
+				container.innerHTML = `
+				<div class="visibility-table-wrap">
+				<table class="visibility-table">
+					<thead>
+						<tr><th scope="col">Collection</th><th scope="col">Parent</th><th scope="col">Default</th><th scope="col">Effective</th><th scope="col">Override</th></tr>
+					</thead>
+					<tbody>${cols.map((col) => {
 				const selected = col.overrideVisibility ?? 'default';
-				const parentText = col.parentName ? `Parent: ${escapeHtml(col.parentName)}` : 'Root collection';
 				return `
-				<div class="card">
-					<div class="card-info">
-						<strong>${escapeHtml(col.name)}</strong>
-						<small class="collection-path">${parentText}</small>
-						<small class="entry-id">ID: ${escapeHtml(col.id)}</small>
-						<small>Effective visibility: <strong>${escapeHtml(col.effectiveVisibility)}</strong> (default: ${escapeHtml(col.defaultVisibility)})</small>
-					</div>
-					<div class="card-actions">
-						<select class="card-select" data-wiki-collection-id="${escapeAttr(col.id)}">
+						<tr>
+							<td><strong>${escapeHtml(col.name)}</strong><small class="entry-id">${escapeHtml(col.id)}</small></td>
+							<td>${col.parentName ? escapeHtml(col.parentName) : '<span class="muted">Root collection</span>'}</td>
+							<td><span class="visibility-value">${escapeHtml(col.defaultVisibility)}</span></td>
+							<td><span class="visibility-value ${col.effectiveVisibility === 'admin' ? 'admin' : 'user'}">${escapeHtml(col.effectiveVisibility)}</span></td>
+							<td><select class="card-select" data-wiki-collection-id="${escapeAttr(col.id)}" aria-label="Override visibility for ${escapeAttr(col.name)}">
 							<option value="default" ${selected === 'default' ? 'selected' : ''}>Default (${escapeHtml(col.defaultVisibility)})</option>
 							<option value="user" ${selected === 'user' ? 'selected' : ''}>user</option>
 							<option value="admin" ${selected === 'admin' ? 'selected' : ''}>admin</option>
 						</select>
-					</div>
+							</td>
+						</tr>`;
+					}).join('')}</tbody>
+				</table>
 				</div>`;
-			}).join('');
 
 			attachWikiVisibilityActions();
 		} catch {
@@ -517,26 +604,30 @@ const user = Astro.locals.user!;
 				return;
 			}
 
-			container.innerHTML = entries.map((entry) => {
+			container.innerHTML = `
+			<div class="visibility-table-wrap">
+			<table class="visibility-table">
+				<thead>
+					<tr><th scope="col">Entry</th><th scope="col">Collection</th><th scope="col">Default</th><th scope="col">Effective</th><th scope="col">Override</th></tr>
+				</thead>
+				<tbody>${entries.map((entry) => {
 				const selected = entry.overrideVisibility ?? 'default';
-				const collectionText = entry.collectionRef ? `Collection ref: ${escapeHtml(entry.collectionRef)}` : 'No collection';
 				return `
-				<div class="card">
-					<div class="card-info">
-						<strong>${escapeHtml(entry.title)}</strong>
-						<small class="collection-path">${collectionText}</small>
-						<small class="entry-id">ID: ${escapeHtml(entry.id)}</small>
-						<small>Effective visibility: <strong>${escapeHtml(entry.effectiveVisibility)}</strong> (default: ${escapeHtml(entry.defaultVisibility)})</small>
-					</div>
-					<div class="card-actions">
-						<select class="card-select" data-wiki-entry-id="${escapeAttr(entry.id)}">
+					<tr>
+						<td><strong>${escapeHtml(entry.title)}</strong><small class="entry-id">${escapeHtml(entry.id)}</small></td>
+						<td>${entry.collectionRef ? escapeHtml(entry.collectionRef) : '<span class="muted">No collection</span>'}</td>
+						<td><span class="visibility-value">${escapeHtml(entry.defaultVisibility)}</span></td>
+						<td><span class="visibility-value ${entry.effectiveVisibility === 'admin' ? 'admin' : 'user'}">${escapeHtml(entry.effectiveVisibility)}</span></td>
+						<td><select class="card-select" data-wiki-entry-id="${escapeAttr(entry.id)}" aria-label="Override visibility for ${escapeAttr(entry.title)}">
 							<option value="default" ${selected === 'default' ? 'selected' : ''}>Default (${escapeHtml(entry.defaultVisibility)})</option>
 							<option value="user" ${selected === 'user' ? 'selected' : ''}>user</option>
 							<option value="admin" ${selected === 'admin' ? 'selected' : ''}>admin</option>
 						</select>
-					</div>
-				</div>`;
-			}).join('');
+						</td>
+					</tr>`;
+				}).join('')}</tbody>
+			</table>
+			</div>`;
 
 			attachWikiEntryVisibilityActions();
 		} catch {

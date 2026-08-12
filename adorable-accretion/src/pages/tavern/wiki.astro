@@ -36,6 +36,8 @@ import {
 } from '../../lib/wiki-entry-visibility';
 
 const viewerRole: ViewerRole = Astro.locals.user?.role === 'admin' ? 'admin' : 'user';
+Astro.response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+
 const allEntries = await getCollection('wiki');
 const collectionInfos = await listWikiCollectionInfos();
 const visibilityOverrides = await getWikiCollectionVisibilityOverrides();
