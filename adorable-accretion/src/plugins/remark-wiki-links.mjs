@@ -12,10 +12,16 @@ let titleRegexCache = null;
 function buildTitleMap() {
 	if (titleMapCache) return { titleMap: titleMapCache, titleRegex: titleRegexCache };
 
-	const wikiDir = path.resolve('./src/content/wiki');
+	const contentDir = path.resolve('./src/content');
+	const wikiDirs = fs.existsSync(contentDir)
+		? fs
+			.readdirSync(contentDir, { withFileTypes: true })
+			.filter((entry) => entry.isDirectory() && /^wiki_/i.test(entry.name))
+			.map((entry) => path.join(contentDir, entry.name))
+		: [];
 	const map = new Map(); // lowercase title → { title, slug }
 
-	if (!fs.existsSync(wikiDir)) return { titleMap: map, titleRegex: null };
+	if (wikiDirs.length === 0) return { titleMap: map, titleRegex: null };
 
 	function scanDir(dir) {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -61,7 +67,9 @@ function buildTitleMap() {
 		}
 	}
 
-	scanDir(wikiDir);
+	for (const wikiDir of wikiDirs) {
+		scanDir(wikiDir);
+	}
 
 	titleMapCache = map;
 

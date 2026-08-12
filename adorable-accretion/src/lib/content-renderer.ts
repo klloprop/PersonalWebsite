@@ -17,6 +17,11 @@ import { getCollection } from 'astro:content';
 import { readFile as readGitHubFile } from './github';
 import fs from 'node:fs/promises';
 import nodePath from 'node:path';
+import {
+	listWikiCollectionInfos,
+	resolveCollectionId,
+	type CollectionInfo,
+} from './wiki-collection-visibility';
 
 // ── Build-time image map (baked into the bundle by Vite) ──
 
@@ -92,7 +97,7 @@ export function parseFrontmatter(raw: string): ParsedContent {
 interface WikiEntry {
 	title: string;
 	slug: string;
-	collection?: string;
+	collectionRef?: string;
 }
 
 let titleMapPromise: Promise<Map<string, WikiEntry>> | null = null;
@@ -107,8 +112,10 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 			for (const entry of entries) {
 				const title = entry.data.title;
 				const slug = entry.id.split('/').pop()!;
-				const collection = entry.data.collection as string | undefined;
-				map.set(title.toLowerCase(), { title, slug, collection });
+				const collectionRef =
+					((entry.data as Record<string, unknown>).collectionId as string | undefined)
+					?? (entry.data.collection as string | undefined);
+				map.set(title.toLowerCase(), { title, slug, collectionRef });
 
 				// For "Firstname, Title" patterns (e.g. "Mevrosal, Dean of Enchantment"),
 				// also index the name before the comma as an alias.
@@ -118,7 +125,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 					titleBeforeComma !== title &&
 					!map.has(titleBeforeComma.toLowerCase())
 				) {
-					map.set(titleBeforeComma.toLowerCase(), { title: titleBeforeComma, slug, collection });
+					map.set(titleBeforeComma.toLowerCase(), { title: titleBeforeComma, slug, collectionRef });
 				}
 
 				// Also index tags as aliases
@@ -127,7 +134,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 					for (const tag of tags) {
 						if (typeof tag === 'string') {
 							if (!map.has(tag.toLowerCase())) {
-								map.set(tag.toLowerCase(), { title: tag, slug, collection });
+								map.set(tag.toLowerCase(), { title: tag, slug, collectionRef });
 							}
 							// Same comma-split alias for tags (e.g. "Mevrosal, Mage of ice" → "Mevrosal")
 							const tagBeforeComma = tag.split(',')[0].trim();
@@ -136,7 +143,7 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 								tagBeforeComma !== tag &&
 								!map.has(tagBeforeComma.toLowerCase())
 							) {
-							map.set(tagBeforeComma.toLowerCase(), { title: tagBeforeComma, slug, collection });
+							map.set(tagBeforeComma.toLowerCase(), { title: tagBeforeComma, slug, collectionRef });
 							}
 						}
 					}
@@ -153,31 +160,30 @@ async function getTitleMap(): Promise<Map<string, WikiEntry>> {
 
 // ── Collection parent map (for root-collection scoping) ──
 
-let colParentMapPromise: Promise<Map<string, string>> | null = null;
+let colInfosPromise: Promise<CollectionInfo[]> | null = null;
 
-async function getColParentMap(): Promise<Map<string, string>> {
-	if (colParentMapPromise) return colParentMapPromise;
-	colParentMapPromise = (async () => {
-		const map = new Map<string, string>();
-		try {
-			const cols = await getCollection('wikiCollections');
-			for (const col of cols) {
-				if (col.data.parent) map.set(col.data.name, col.data.parent);
-			}
-		} catch { /* collection may not be available */ }
-		return map;
-	})();
-	return colParentMapPromise;
+async function getColInfos(): Promise<CollectionInfo[]> {
+	if (colInfosPromise) return colInfosPromise;
+	colInfosPromise = listWikiCollectionInfos().catch(() => []);
+	return colInfosPromise;
 }
 
-/** Walk the parent chain to find the root (base) collection. */
-function getBaseCollection(
-	collection: string | undefined,
-	parentMap: Map<string, string>,
+/** Walk the parent chain to find the root (base) collection ID. */
+function getBaseCollectionId(
+	collectionRef: string | undefined,
+	collections: CollectionInfo[],
 ): string | undefined {
-	if (!collection) return undefined;
-	let current = collection;
-	while (parentMap.has(current)) current = parentMap.get(current)!;
+	const start = resolveCollectionId(collectionRef, collections);
+	if (!start) return undefined;
+	const byId = new Map(collections.map((col) => [col.id, col] as const));
+	let current = start;
+	const seen = new Set<string>();
+	while (!seen.has(current)) {
+		seen.add(current);
+		const node = byId.get(current);
+		if (!node?.parentId) break;
+		current = node.parentId;
+	}
 	return current;
 }
 
@@ -274,7 +280,7 @@ export interface RenderedContent {
  *
  * @param type - 'wiki' or 'blog'
  * @param filePath - Original-cased file path relative to project root
- *                   e.g. "src/content/wiki/Characters/CoreNPCs/vhaeraun.md"
+ *                   e.g. "src/content/wiki_abaron/Characters/CoreNPCs/vhaeraun.md"
  * @param currentSlug - The current page slug (to avoid self-linking)
  */
 export async function renderFromGitHub(
@@ -294,12 +300,13 @@ export async function renderFromGitHub(
 	// e.g. QuickStart entries don't accidentally link into Abaron character pages.
 	let autoLinkMap = titleMap;
 	if (type === 'wiki') {
-		const colParentMap = await getColParentMap();
-		const currentBase = getBaseCollection(frontmatter.collection, colParentMap);
+		const colInfos = await getColInfos();
+		const currentRef = frontmatter.collectionId || frontmatter.collection;
+		const currentBase = getBaseCollectionId(currentRef, colInfos);
 		if (currentBase) {
 			autoLinkMap = new Map(
 				[...titleMap].filter(([, entry]) =>
-					getBaseCollection(entry.collection, colParentMap) === currentBase,
+					getBaseCollectionId(entry.collectionRef, colInfos) === currentBase,
 				),
 			);
 		}

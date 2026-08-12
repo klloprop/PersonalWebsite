@@ -57,6 +57,31 @@ const user = Astro.locals.user!;
 				</form>
 				<div id="votes-result" class="result-box" hidden></div>
 			</section>
+
+			<!-- ============ WIKI COLLECTION VISIBILITY ============ -->
+			<section>
+				<h2>Wiki Collection Visibility</h2>
+				<p style="font-size:0.9rem;opacity:0.75;margin:0 0 0.75rem;">Set collections to <strong>user</strong> or <strong>admin</strong>. Changes are live immediately. Child collections inherit <strong>admin</strong> visibility from admin-only parents.</p>
+				<div class="visibility-legend" role="note" aria-label="Visibility inheritance legend">
+					<p><strong>How inheritance works</strong></p>
+					<p><span class="legend-badge">Parent: admin</span> + <span class="legend-badge">Child: user</span> => <span class="legend-badge effective">Child effective: admin</span></p>
+					<p><span class="legend-badge">Parent: user</span> + <span class="legend-badge">Child: admin</span> => <span class="legend-badge effective">Child effective: admin</span></p>
+					<p class="legend-note">"Default" uses frontmatter visibility from the collection file.</p>
+				</div>
+				<div id="wiki-visibility-result" class="result-box" hidden></div>
+				<div id="wiki-visibility-list" class="card-list">
+					<p class="loading">Loading…</p>
+				</div>
+			</section>
+
+			<section>
+				<h2>Wiki Entry Visibility</h2>
+				<p style="font-size:0.9rem;opacity:0.75;margin:0 0 0.75rem;">Set individual wiki entries to <strong>user</strong> or <strong>admin</strong>. Collection-level admin visibility still applies and can force effective admin visibility.</p>
+				<div id="wiki-entry-visibility-result" class="result-box" hidden></div>
+				<div id="wiki-entry-visibility-list" class="card-list">
+					<p class="loading">Loading…</p>
+				</div>
+			</section>
 		</main>
 		<Footer />
 	</body>
@@ -184,6 +209,48 @@ const user = Astro.locals.user!;
 	.btn-delete:hover {
 		background: rgba(170, 0, 0, 0.1);
 	}
+	.card-select {
+		padding: 0.35rem 0.5rem;
+		border: 1px solid #c99026;
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.85);
+		color: #744908;
+	}
+	.visibility-legend {
+		margin: 0 0 0.85rem;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid rgba(201, 144, 38, 0.35);
+		border-radius: 6px;
+		background: rgba(245, 228, 196, 0.28);
+		font-size: 0.85rem;
+	}
+	.visibility-legend p {
+		margin: 0.2rem 0;
+	}
+	.legend-badge {
+		display: inline-block;
+		padding: 0.1rem 0.45rem;
+		border-radius: 999px;
+		border: 1px solid rgba(201, 144, 38, 0.55);
+		background: rgba(255, 255, 255, 0.7);
+	}
+	.legend-badge.effective {
+		border-color: rgba(160, 39, 39, 0.6);
+		background: rgba(160, 39, 39, 0.08);
+	}
+	.legend-note {
+		opacity: 0.8;
+	}
+	.collection-path {
+		opacity: 0.7;
+		font-size: 0.8rem;
+	}
+	.entry-id {
+		opacity: 0.6;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+		font-size: 0.75rem;
+		word-break: break-all;
+	}
 	.loading {
 		color: #888;
 		font-style: italic;
@@ -216,6 +283,23 @@ const user = Astro.locals.user!;
 	:global(html.dark) .btn-delete {
 		color: #ff8080;
 		border-color: #ff8080;
+	}
+	:global(html.dark) .card-select {
+		background: rgba(30, 20, 10, 0.6);
+		color: #F5E4C4;
+		border-color: #6B4710;
+	}
+	:global(html.dark) .visibility-legend {
+		border-color: rgba(107, 71, 16, 0.55);
+		background: rgba(30, 20, 10, 0.5);
+	}
+	:global(html.dark) .legend-badge {
+		border-color: rgba(222, 185, 110, 0.45);
+		background: rgba(30, 20, 10, 0.55);
+	}
+	:global(html.dark) .legend-badge.effective {
+		border-color: rgba(255, 128, 128, 0.55);
+		background: rgba(255, 128, 128, 0.12);
 	}
 	:global(html.dark) .result-box.success {
 		color: #6bdf6b;
@@ -270,6 +354,10 @@ const user = Astro.locals.user!;
 		return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 	}
 
+	function escapeAttr(s: string) {
+		return escapeHtml(s).replace(/'/g, '&#39;');
+	}
+
 	function attachUserActions() {
 		document.querySelectorAll<HTMLButtonElement>('[data-action="reset"]').forEach((btn) => {
 			btn.addEventListener('click', async () => {
@@ -314,6 +402,176 @@ const user = Astro.locals.user!;
 					}
 				} catch {
 					showResult('create-result', 'Request failed', true);
+				}
+			});
+		});
+	}
+
+	// ----------- Wiki collection visibility -----------
+	async function loadWikiVisibility() {
+		const container = document.getElementById('wiki-visibility-list')!;
+		try {
+			const res = await fetch('/api/admin/wiki-collection-visibility');
+			const data = await res.json();
+			if (!res.ok) {
+				container.innerHTML = '<p class="loading">Failed to load collections.</p>';
+				return;
+			}
+
+			const cols = data.collections as Array<{
+				id: string;
+				name: string;
+				parentId: string | null;
+				parentName: string | null;
+				defaultVisibility: 'user' | 'admin';
+				overrideVisibility: 'user' | 'admin' | null;
+				effectiveVisibility: 'user' | 'admin';
+			}>;
+
+			if (!cols.length) {
+				container.innerHTML = '<p class="loading">No wiki collections found.</p>';
+				return;
+			}
+
+			container.innerHTML = cols.map((col) => {
+				const selected = col.overrideVisibility ?? 'default';
+				const parentText = col.parentName ? `Parent: ${escapeHtml(col.parentName)}` : 'Root collection';
+				return `
+				<div class="card">
+					<div class="card-info">
+						<strong>${escapeHtml(col.name)}</strong>
+						<small class="collection-path">${parentText}</small>
+						<small class="entry-id">ID: ${escapeHtml(col.id)}</small>
+						<small>Effective visibility: <strong>${escapeHtml(col.effectiveVisibility)}</strong> (default: ${escapeHtml(col.defaultVisibility)})</small>
+					</div>
+					<div class="card-actions">
+						<select class="card-select" data-wiki-collection-id="${escapeAttr(col.id)}">
+							<option value="default" ${selected === 'default' ? 'selected' : ''}>Default (${escapeHtml(col.defaultVisibility)})</option>
+							<option value="user" ${selected === 'user' ? 'selected' : ''}>user</option>
+							<option value="admin" ${selected === 'admin' ? 'selected' : ''}>admin</option>
+						</select>
+					</div>
+				</div>`;
+			}).join('');
+
+			attachWikiVisibilityActions();
+		} catch {
+			container.innerHTML = '<p class="loading">Failed to load collections.</p>';
+		}
+	}
+
+	function attachWikiVisibilityActions() {
+		document.querySelectorAll<HTMLSelectElement>('[data-wiki-collection-id]').forEach((select) => {
+			select.addEventListener('change', async () => {
+				const id = select.dataset.wikiCollectionId;
+				if (!id) return;
+				const value = select.value;
+				select.disabled = true;
+				try {
+					const body = value === 'default'
+						? { id, mode: 'default' }
+						: { id, visibility: value };
+					const res = await fetch('/api/admin/wiki-collection-visibility', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(body),
+					});
+					const data = await res.json();
+					if (!res.ok) {
+						showResult('wiki-visibility-result', data.error || 'Failed to update visibility', true);
+						await loadWikiVisibility();
+						return;
+					}
+					showResult('wiki-visibility-result', 'Updated collection visibility.');
+					await loadWikiVisibility();
+				} catch {
+					showResult('wiki-visibility-result', 'Request failed', true);
+				} finally {
+					select.disabled = false;
+				}
+			});
+		});
+	}
+
+	async function loadWikiEntryVisibility() {
+		const container = document.getElementById('wiki-entry-visibility-list')!;
+		try {
+			const res = await fetch('/api/admin/wiki-entry-visibility');
+			const data = await res.json();
+			if (!res.ok) {
+				container.innerHTML = '<p class="loading">Failed to load entries.</p>';
+				return;
+			}
+
+			const entries = data.entries as Array<{
+				id: string;
+				title: string;
+				collectionRef: string | null;
+				defaultVisibility: 'user' | 'admin';
+				overrideVisibility: 'user' | 'admin' | null;
+				effectiveVisibility: 'user' | 'admin';
+			}>;
+
+			if (!entries.length) {
+				container.innerHTML = '<p class="loading">No wiki entries found.</p>';
+				return;
+			}
+
+			container.innerHTML = entries.map((entry) => {
+				const selected = entry.overrideVisibility ?? 'default';
+				const collectionText = entry.collectionRef ? `Collection ref: ${escapeHtml(entry.collectionRef)}` : 'No collection';
+				return `
+				<div class="card">
+					<div class="card-info">
+						<strong>${escapeHtml(entry.title)}</strong>
+						<small class="collection-path">${collectionText}</small>
+						<small class="entry-id">ID: ${escapeHtml(entry.id)}</small>
+						<small>Effective visibility: <strong>${escapeHtml(entry.effectiveVisibility)}</strong> (default: ${escapeHtml(entry.defaultVisibility)})</small>
+					</div>
+					<div class="card-actions">
+						<select class="card-select" data-wiki-entry-id="${escapeAttr(entry.id)}">
+							<option value="default" ${selected === 'default' ? 'selected' : ''}>Default (${escapeHtml(entry.defaultVisibility)})</option>
+							<option value="user" ${selected === 'user' ? 'selected' : ''}>user</option>
+							<option value="admin" ${selected === 'admin' ? 'selected' : ''}>admin</option>
+						</select>
+					</div>
+				</div>`;
+			}).join('');
+
+			attachWikiEntryVisibilityActions();
+		} catch {
+			container.innerHTML = '<p class="loading">Failed to load entries.</p>';
+		}
+	}
+
+	function attachWikiEntryVisibilityActions() {
+		document.querySelectorAll<HTMLSelectElement>('[data-wiki-entry-id]').forEach((select) => {
+			select.addEventListener('change', async () => {
+				const id = select.dataset.wikiEntryId;
+				if (!id) return;
+				const value = select.value;
+				select.disabled = true;
+				try {
+					const body = value === 'default'
+						? { id, mode: 'default' }
+						: { id, visibility: value };
+					const res = await fetch('/api/admin/wiki-entry-visibility', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(body),
+					});
+					const data = await res.json();
+					if (!res.ok) {
+						showResult('wiki-entry-visibility-result', data.error || 'Failed to update entry visibility', true);
+						await loadWikiEntryVisibility();
+						return;
+					}
+					showResult('wiki-entry-visibility-result', 'Updated entry visibility.');
+					await loadWikiEntryVisibility();
+				} catch {
+					showResult('wiki-entry-visibility-result', 'Request failed', true);
+				} finally {
+					select.disabled = false;
 				}
 			});
 		});
@@ -378,4 +636,6 @@ const user = Astro.locals.user!;
 
 	// ----------- Init -----------
 	loadUsers();
+	loadWikiVisibility();
+	loadWikiEntryVisibility();
 </script>

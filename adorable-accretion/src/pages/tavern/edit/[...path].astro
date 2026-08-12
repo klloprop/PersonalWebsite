@@ -18,6 +18,13 @@ import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
 import Header from '../../../components/Header.astro';
 import { SITE_TITLE } from '../../../consts';
+import {
+	canRoleViewCollection,
+	computeEffectiveCollectionVisibility,
+	getWikiCollectionVisibilityOverrides,
+	listWikiCollectionInfos,
+	type ViewerRole,
+} from '../../../lib/wiki-collection-visibility';
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect('/tavern/login');
@@ -37,14 +44,44 @@ if (type === 'blog' && user.role !== 'admin') {
 	return Astro.redirect('/tavern');
 }
 
-let collections: string[] = [];
+let collections: Array<{ value: string; label: string; name: string }> = [];
 try {
 	if (type === 'wiki') {
-		const cols = await getCollection('wikiCollections');
-		collections = cols.map((c) => c.data.name).sort();
+		const viewerRole: ViewerRole = user.role === 'admin' ? 'admin' : 'user';
+		const [overrides, infos] = await Promise.all([
+			getWikiCollectionVisibilityOverrides(),
+			listWikiCollectionInfos(),
+		]);
+		const visibilityMap = computeEffectiveCollectionVisibility(infos, overrides);
+		const infoById = new Map(infos.map((info) => [info.id, info] as const));
+
+		function pathLabel(id: string): string {
+			const parts: string[] = [];
+			let current: string | undefined = id;
+			const seen = new Set<string>();
+			while (current && !seen.has(current)) {
+				seen.add(current);
+				const info = infoById.get(current);
+				if (!info) break;
+				parts.unshift(info.name);
+				current = info.parentId;
+			}
+			return parts.join(' > ');
+		}
+
+		collections = infos
+			.filter((info) => canRoleViewCollection(info.id, viewerRole, visibilityMap, infos))
+			.map((info) => ({
+				value: info.id,
+				label: pathLabel(info.id),
+				name: info.name,
+			}))
+			.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
 	} else {
 		const cols = await getCollection('blogCollections');
-		collections = cols.map((c) => c.data.name).sort();
+		collections = cols
+			.map((c) => ({ value: c.data.name, label: c.data.name, name: c.data.name }))
+			.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
 	}
 } catch {
 	/* collections may not be available in all environments */
@@ -313,7 +350,7 @@ const pageTitle = isNew
 							<label for="field-collection">Collection</label>
 							<select id="field-collection">
 								<option value="">— None —</option>
-								{collections.map((c) => <option value={c}>{c}</option>)}
+								{collections.map((c) => <option value={c.value} data-name={c.name}>{c.label}</option>)}
 							</select>
 						</div>
 					</div>
@@ -329,7 +366,7 @@ const pageTitle = isNew
 						<div class="field">
 							<label for="field-slug">
 								Slug
-								<span class="field-hint">(URL path, e.g. "my-entry" or "Characters/PlayerCharacters/new-char")</span>
+								<span class="field-hint">(URL path, e.g. "my-entry", "wiki_farside/Characters/new-char", or "wiki_abaron/Characters/new-char")</span>
 							</label>
 							<input
 								type="text"
@@ -541,8 +578,14 @@ const pageTitle = isNew
 			title: fTitle.value,
 			description: fDesc.value,
 			pubDate: fDate.value,
-			collection: fCollection.value || undefined,
 		};
+		if (TYPE === 'wiki') {
+			const selected = fCollection.selectedOptions[0] as HTMLOptionElement | undefined;
+			updates.collectionId = fCollection.value || undefined;
+			updates.collection = selected?.dataset.name || undefined;
+		} else {
+			updates.collection = fCollection.value || undefined;
+		}
 		if (fTags) {
 			const tags = fTags.value
 				.split(',')
@@ -570,7 +613,20 @@ const pageTitle = isNew
 		fTitle.value = fields.title || '';
 		fDesc.value = fields.description || '';
 		fDate.value = fields.pubDate || '';
-		fCollection.value = fields.collection || '';
+		if (TYPE === 'wiki') {
+			if (fields.collectionId) {
+				fCollection.value = fields.collectionId;
+			} else if (fields.collection) {
+				const matchingOption = Array.from(fCollection.options).find(
+					(opt) => (opt as HTMLOptionElement).dataset.name === fields.collection,
+				);
+				fCollection.value = matchingOption?.value || '';
+			} else {
+				fCollection.value = '';
+			}
+		} else {
+			fCollection.value = fields.collection || '';
+		}
 		if (fTags) {
 			const tags = Array.isArray(fields.tags) ? fields.tags : [];
 			fTags.value = tags.join(', ');

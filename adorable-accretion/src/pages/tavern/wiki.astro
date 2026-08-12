@@ -1,4 +1,6 @@
 ﻿---
+export const prerender = false;
+
 /**
  * tavern/wiki.astro — Wiki entry listing page.
  *
@@ -18,8 +20,56 @@ import Header from '../../components/Header.astro';
 import SearchBar from '../../components/SearchBar.astro';
 import type { SearchItem } from '../../components/SearchBar.astro';
 import { SITE_TITLE } from '../../consts';
+import {
+	canRoleViewCollection,
+	computeEffectiveCollectionVisibility,
+	getWikiCollectionVisibilityOverrides,
+	listWikiCollectionInfos,
+	resolveCollectionId,
+	type ViewerRole,
+} from '../../lib/wiki-collection-visibility';
+import {
+	canRoleViewWikiEntry,
+	computeEffectiveWikiEntryVisibility,
+	getWikiEntryVisibilityOverrides,
+	type WikiEntryInfo,
+} from '../../lib/wiki-entry-visibility';
 
-const entries = (await getCollection('wiki')).sort(
+const viewerRole: ViewerRole = Astro.locals.user?.role === 'admin' ? 'admin' : 'user';
+const allEntries = await getCollection('wiki');
+const collectionInfos = await listWikiCollectionInfos();
+const visibilityOverrides = await getWikiCollectionVisibilityOverrides();
+const effectiveVisibility = computeEffectiveCollectionVisibility(collectionInfos, visibilityOverrides);
+const entryOverrides = await getWikiEntryVisibilityOverrides();
+function sanitizeEntryVisibility(value: unknown): 'user' | 'admin' {
+	return value === 'admin' ? 'admin' : 'user';
+}
+const entryInfos: WikiEntryInfo[] = allEntries.map((entry) => ({
+	id: entry.id,
+	title: entry.data.title,
+	collectionRef: (entry.data.collectionId as string | undefined) ?? entry.data.collection,
+	defaultVisibility: sanitizeEntryVisibility((entry.data as Record<string, unknown>).visibility),
+}));
+const effectiveEntryVisibility = computeEffectiveWikiEntryVisibility(
+	entryInfos,
+	entryOverrides,
+	effectiveVisibility,
+	collectionInfos,
+);
+
+function entryCollectionRef(entry: any): string | undefined {
+	return (entry.data.collectionId as string | undefined) ?? (entry.data.collection as string | undefined);
+}
+
+const entryCollectionIdByEntryId = new Map<string, string | undefined>();
+for (const entry of allEntries) {
+	entryCollectionIdByEntryId.set(entry.id, resolveCollectionId(entryCollectionRef(entry), collectionInfos));
+}
+
+const entries = allEntries
+	.filter((entry) => canRoleViewCollection(entryCollectionRef(entry), viewerRole, effectiveVisibility, collectionInfos))
+	.filter((entry) => canRoleViewWikiEntry(entry.id, viewerRole, effectiveEntryVisibility))
+	.sort(
 	(a, b) => {
 		const dateDiff = b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
 		if (dateDiff !== 0) return dateDiff;
@@ -34,39 +84,43 @@ function flatSlug(entry: any) {
 	return (entry.slug ?? entry.id).split('/').pop();
 }
 
-const collectionEntries = (await getCollection('wikiCollections')).sort(
+const collectionEntries = (await getCollection('wikiCollections'))
+	.filter((col) => canRoleViewCollection(col.id, viewerRole, effectiveVisibility, collectionInfos))
+	.sort(
 	(a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 );
 
 // Build tree structure
 interface ColNode {
+	id: string;
 	name: string;
 	image: ImageMetadata;
 	imageScale: number;
 	description?: string;
-	parent?: string;
+	parentId?: string;
 	count: number;          // direct entries
 	totalCount: number;     // entries in this + all descendants
 	children: ColNode[];
 }
 
-function getDescendantNames(node: ColNode): string[] {
-	const names = [node.name];
+function getDescendantIds(node: ColNode): string[] {
+	const ids = [node.id];
 	for (const child of node.children) {
-		names.push(...getDescendantNames(child));
+		ids.push(...getDescendantIds(child));
 	}
-	return names;
+	return ids;
 }
 
 const colMap = new Map<string, ColNode>();
 for (const col of collectionEntries) {
-	colMap.set(col.data.name, {
+	colMap.set(col.id, {
+		id: col.id,
 		name: col.data.name,
 		image: col.data.image,
 		imageScale: col.data.imageScale ?? 1,
 		description: col.data.description,
-		parent: col.data.parent,
-		count: entries.filter((e) => e.data.collection === col.data.name).length,
+		parentId: (collectionInfos.find((info) => info.id === col.id)?.parentId),
+		count: entries.filter((e) => entryCollectionIdByEntryId.get(e.id) === col.id).length,
 		totalCount: 0,
 		children: [],
 	});
@@ -75,8 +129,8 @@ for (const col of collectionEntries) {
 // Wire parent-child
 const roots: ColNode[] = [];
 for (const node of colMap.values()) {
-	if (node.parent && colMap.has(node.parent)) {
-		colMap.get(node.parent)!.children.push(node);
+	if (node.parentId && colMap.has(node.parentId)) {
+		colMap.get(node.parentId)!.children.push(node);
 	} else {
 		roots.push(node);
 	}
@@ -95,20 +149,20 @@ roots.forEach(calcTotal);
 function flatOrder(nodes: ColNode[]): string[] {
 	const result: string[] = [];
 	for (const node of nodes) {
-		result.push(node.name);
+		result.push(node.id);
 		if (node.children.length) result.push(...flatOrder(node.children));
 	}
 	return result;
 }
 const colIconBg: Record<string, string> = {};
-flatOrder(roots).forEach((name) => {
-	colIconBg[name] = 'rgba(196, 163, 90, 0.8)';
+flatOrder(roots).forEach((id) => {
+	colIconBg[id] = 'rgba(196, 163, 90, 0.8)';
 });
 
-// Build a map: collection name ? array of all names it encompasses
+// Build a map: collection id -> all descendant ids
 const collectionDescendants: Record<string, string[]> = {};
 for (const node of colMap.values()) {
-	collectionDescendants[node.name] = getDescendantNames(node);
+	collectionDescendants[node.id] = getDescendantIds(node);
 }
 
 // Build search items for the search bar
@@ -116,18 +170,19 @@ const wikiSearchItems: SearchItem[] = entries.map((entry) => ({
 	name: entry.data.title,
 	tags: entry.data.tags || [],
 	url: `/tavern/wiki/${flatSlug(entry)}/`,
-	extra: entry.data.collection || '',
+	extra: entry.data.collection || (entryCollectionIdByEntryId.get(entry.id) ?? ''),
 }));
 
-// Build ancestor chain: collection name ? [topmost, ..., parent, self]
-function getAncestors(name: string): string[] {
+// Build ancestor chain by collection id -> [topmost, ..., parent, self] names
+function getAncestorsById(collectionId: string): string[] {
 	const chain: string[] = [];
-	let current = name;
+	let current: string | undefined = collectionId;
 	while (current) {
-		chain.unshift(current);
 		const node = colMap.get(current);
-		if (node?.parent && colMap.has(node.parent)) {
-			current = node.parent;
+		if (!node) break;
+		chain.unshift(node.name);
+		if (node.parentId && colMap.has(node.parentId)) {
+			current = node.parentId;
 		} else {
 			break;
 		}
@@ -335,6 +390,14 @@ function getAncestors(name: string): string[] {
 				align-items: center;
 				width: 100%;
 			}
+			.sidebar-toggle-slot {
+				width: 22px;
+				height: 22px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+			}
 			.sidebar-toggle {
 				width: 22px;
 				height: 22px;
@@ -499,8 +562,26 @@ function getAncestors(name: string): string[] {
 				font-size: 1.1rem;
 				font-style: italic;
 			}
+			.access-notice {
+				margin: 0.2rem 0 1rem;
+				padding: 0.65rem 0.8rem;
+				border: 1px solid rgba(196, 163, 90, 0.55);
+				border-radius: 8px;
+				background: rgba(245, 228, 196, 0.45);
+				color: #5D3A08;
+				font-family: Georgia, 'Times New Roman', serif;
+				font-size: 0.92rem;
+			}
+			.access-notice[hidden] {
+				display: none !important;
+			}
 			:global(html.dark) .empty-state {
 				color: #C4A35A;
+			}
+			:global(html.dark) .access-notice {
+				border-color: rgba(222, 185, 110, 0.4);
+				background: rgba(42, 27, 12, 0.6);
+				color: #E8C98A;
 			}
 			.section-heading {
 				font-family: Georgia, 'Times New Roman', serif;
@@ -755,6 +836,9 @@ function getAncestors(name: string): string[] {
 				.sidebar-group-header {
 					width: 100%;
 				}
+				.sidebar-toggle-slot {
+					display: inline-flex;
+				}
 				.sidebar-toggle {
 					display: flex;
 				}
@@ -823,15 +907,18 @@ function getAncestors(name: string): string[] {
 			</button>
 			<aside class="sidebar" data-descendants={JSON.stringify(collectionDescendants)}>
 				<p class="sidebar-title">Collections</p>
-				<button class="sidebar-btn active" data-collection="all">
-					<span class="all-icon">
-						<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
-					</span>
-					<span class="collection-info">
-						<span class="collection-name">All Entries</span>
-						<span class="collection-count">{entries.length} entries</span>
-					</span>
-				</button>
+				<div class="sidebar-group-header">
+					<span class="sidebar-toggle-slot" aria-hidden="true"></span>
+					<button class="sidebar-btn active" data-collection="all">
+						<span class="all-icon">
+							<svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+						</span>
+						<span class="collection-info">
+							<span class="collection-name">All Entries</span>
+							<span class="collection-count">{entries.length} entries</span>
+						</span>
+					</button>
+				</div>
 				<div class="sidebar-divider"></div>
 				{roots.map((root) => (
 					root.children.length > 0 ? (
@@ -840,7 +927,7 @@ function getAncestors(name: string): string[] {
 								<button class="sidebar-toggle" aria-label={`Expand ${root.name}`}>
 									<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 								</button>
-								<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
+								<button class="sidebar-btn" data-collection={root.id} data-collection-label={root.name} style={`--icon-bg: ${colIconBg[root.id]}; --icon-scale: ${root.imageScale}`}>
 									<span class="collection-img-wrap"><Image class="collection-img" src={root.image} alt={root.name} width={72} height={72} fit="contain" /></span>
 									<span class="collection-info">
 										<span class="collection-name">{root.name}</span>
@@ -856,7 +943,7 @@ function getAncestors(name: string): string[] {
 												<button class="sidebar-toggle" aria-label={`Expand ${child.name}`}>
 													<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l5 4-5 4V2z"/></svg>
 												</button>
-												<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
+												<button class="sidebar-btn" data-collection={child.id} data-collection-label={child.name} style={`--icon-bg: ${colIconBg[child.id]}; --icon-scale: ${child.imageScale}`}>
 													<span class="collection-img-wrap"><Image class="collection-img" src={child.image} alt={child.name} width={56} height={56} fit="contain" /></span>
 													<span class="collection-info">
 														<span class="collection-name">{child.name}</span>
@@ -866,36 +953,45 @@ function getAncestors(name: string): string[] {
 											</div>
 											<div class="sidebar-children">
 												{child.children.map((grandchild) => (
-													<button class="sidebar-btn" data-collection={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.name]}; --icon-scale: ${grandchild.imageScale}`}>
-														<span class="collection-img-wrap"><Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={56} height={56} fit="contain" /></span>
-														<span class="collection-info">
-															<span class="collection-name">{grandchild.name}</span>
-															<span class="collection-count">{grandchild.totalCount} {grandchild.totalCount === 1 ? 'entry' : 'entries'}</span>
-														</span>
-													</button>
+													<div class="sidebar-group-header">
+														<span class="sidebar-toggle-slot" aria-hidden="true"></span>
+														<button class="sidebar-btn" data-collection={grandchild.id} data-collection-label={grandchild.name} style={`--icon-bg: ${colIconBg[grandchild.id]}; --icon-scale: ${grandchild.imageScale}`}>
+															<span class="collection-img-wrap"><Image class="collection-img" src={grandchild.image} alt={grandchild.name} width={56} height={56} fit="contain" /></span>
+															<span class="collection-info">
+																<span class="collection-name">{grandchild.name}</span>
+																<span class="collection-count">{grandchild.totalCount} {grandchild.totalCount === 1 ? 'entry' : 'entries'}</span>
+															</span>
+														</button>
+													</div>
 												))}
 											</div>
 										</div>
 									) : (
-										<button class="sidebar-btn" data-collection={child.name} style={`--icon-bg: ${colIconBg[child.name]}; --icon-scale: ${child.imageScale}`}>
-											<span class="collection-img-wrap"><Image class="collection-img" src={child.image} alt={child.name} width={56} height={56} fit="contain" /></span>
-											<span class="collection-info">
-												<span class="collection-name">{child.name}</span>
-												<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
-											</span>
-										</button>
+										<div class="sidebar-group-header">
+											<span class="sidebar-toggle-slot" aria-hidden="true"></span>
+											<button class="sidebar-btn" data-collection={child.id} data-collection-label={child.name} style={`--icon-bg: ${colIconBg[child.id]}; --icon-scale: ${child.imageScale}`}>
+												<span class="collection-img-wrap"><Image class="collection-img" src={child.image} alt={child.name} width={56} height={56} fit="contain" /></span>
+												<span class="collection-info">
+													<span class="collection-name">{child.name}</span>
+													<span class="collection-count">{child.totalCount} {child.totalCount === 1 ? 'entry' : 'entries'}</span>
+												</span>
+											</button>
+										</div>
 									)
 								))}
 							</div>
 						</div>
 					) : (
-						<button class="sidebar-btn" data-collection={root.name} style={`--icon-bg: ${colIconBg[root.name]}; --icon-scale: ${root.imageScale}`}>
-							<span class="collection-img-wrap"><Image class="collection-img" src={root.image} alt={root.name} width={72} height={72} fit="contain" /></span>
-							<span class="collection-info">
-								<span class="collection-name">{root.name}</span>
-								<span class="collection-count">{root.count} {root.count === 1 ? 'entry' : 'entries'}</span>
-							</span>
-						</button>
+						<div class="sidebar-group-header">
+							<span class="sidebar-toggle-slot" aria-hidden="true"></span>
+							<button class="sidebar-btn" data-collection={root.id} data-collection-label={root.name} style={`--icon-bg: ${colIconBg[root.id]}; --icon-scale: ${root.imageScale}`}>
+								<span class="collection-img-wrap"><Image class="collection-img" src={root.image} alt={root.name} width={72} height={72} fit="contain" /></span>
+								<span class="collection-info">
+									<span class="collection-name">{root.name}</span>
+									<span class="collection-count">{root.count} {root.count === 1 ? 'entry' : 'entries'}</span>
+								</span>
+							</button>
+						</div>
 					)
 				))}
 			</aside>
@@ -921,15 +1017,16 @@ function getAncestors(name: string): string[] {
 				<section>
 					<h2 class="section-heading">Most Recent Entry</h2>
 					<p class="empty-state">No entries in this collection yet.</p>
+					<p class="access-notice" id="collection-access-notice" hidden></p>
 					<ul class="entry-grid">
 						{entries.map((entry, i) => (
-							<li class={`entry-card${i === 0 ? ' featured' : ''}`} data-collection={entry.data.collection || ''} data-title={entry.data.title} data-date={entry.data.pubDate.toISOString()}>
+							<li class={`entry-card${i === 0 ? ' featured' : ''}`} data-collection={entryCollectionIdByEntryId.get(entry.id) || ''} data-title={entry.data.title} data-date={entry.data.pubDate.toISOString()}>
 								<a class="card-link" href={`/tavern/wiki/${flatSlug(entry)}/`}>
 									{entry.data.heroImage && <Image src={entry.data.heroImage} alt={entry.data.title} width={680} densities={[1]} style={`object-position: ${entry.data.heroImagePosition}`} />}
 									<div class="card-content">
-								{entry.data.collection && (
+								{entryCollectionIdByEntryId.get(entry.id) && (
 									<div class="badge-chain">
-										{getAncestors(entry.data.collection).map((name, idx, arr) => (
+										{getAncestorsById(entryCollectionIdByEntryId.get(entry.id)!).map((name, idx, arr) => (
 											<><span class="collection-badge">{name}</span>{idx < arr.length - 1 && <span class="badge-sep">›</span>}</>
 										))}
 									</div>
@@ -970,6 +1067,7 @@ function getAncestors(name: string): string[] {
 				const toggles = document.querySelectorAll<HTMLButtonElement>('.sidebar-toggle');
 				const heading = document.querySelector<HTMLElement>('.section-heading');
 				const emptyState = document.querySelector<HTMLElement>('.empty-state');
+				const accessNotice = document.getElementById('collection-access-notice') as HTMLElement | null;
 				const grid = document.querySelector<HTMLElement>('.entry-grid');
 				const sortBtn = document.getElementById('sort-btn');
 				const sortLabel = sortBtn?.querySelector('.sort-label');
@@ -1106,10 +1204,6 @@ function getAncestors(name: string): string[] {
 					});
 				});
 
-				// Start with all collections expanded
-				document.querySelectorAll('.sidebar-children').forEach(c => c.classList.add('open'));
-				document.querySelectorAll('.sidebar-toggle').forEach(t => t.classList.add('expanded'));
-
 				function filterTo(selected: string) {
 					// Determine which collection names match
 					let matchNames: Set<string>;
@@ -1143,13 +1237,35 @@ function getAncestors(name: string): string[] {
 					// Update heading text
 					if (heading) {
 						heading.style.display = visibleCount > 0 ? '' : 'none';
-						heading.textContent = selected === 'all' ? 'Most Recent Entry' : selected;
+						if (selected === 'all') {
+							heading.textContent = 'Most Recent Entry';
+						} else {
+							const activeBtn = Array.from(buttons).find((b) => b.dataset.collection === selected);
+							heading.textContent = activeBtn?.dataset.collectionLabel || selected;
+						}
 					}
 					// Show/hide empty state and grid
 					if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
 					if (grid) grid.style.display = visibleCount > 0 ? '' : 'none';
+					if (accessNotice) accessNotice.hidden = true;
 					// Recalculate sidebar height — content height changed
 					requestAnimationFrame(clampSidebar);
+				}
+
+				function hasCollectionButton(name: string): boolean {
+					return Array.from(buttons).some((btn) => btn.dataset.collection === name);
+				}
+
+				function resolveCollectionSelection(value: string): string | null {
+					if (value === 'all') return 'all';
+					const direct = Array.from(buttons).find((btn) => btn.dataset.collection === value);
+					if (direct?.dataset.collection) return direct.dataset.collection;
+
+					const byLabel = Array.from(buttons).filter((btn) =>
+						(btn.dataset.collectionLabel || '').toLowerCase() === value.toLowerCase(),
+					);
+					if (byLabel.length === 1) return byLabel[0].dataset.collection || null;
+					return null;
 				}
 
 				buttons.forEach((btn) => {
@@ -1161,7 +1277,7 @@ function getAncestors(name: string): string[] {
 						if (toggleLabel) {
 							toggleLabel.textContent = btn.dataset.collection === 'all'
 								? 'Browse Collections'
-								: btn.dataset.collection!;
+								: (btn.dataset.collectionLabel || btn.dataset.collection!);
 						}
 						// Auto-expand parent group when clicking its button
 						const group = btn.closest('.sidebar-group');
@@ -1182,12 +1298,29 @@ function getAncestors(name: string): string[] {
 
 				const params = new URLSearchParams(window.location.search);
 				const urlCol = params.get('collection');
-				const col = urlCol || sessionStorage.getItem('wiki-collection');
+				const rawSelection = urlCol || sessionStorage.getItem('wiki-collection');
+				const requestedByUrl = !!urlCol;
 				if (urlCol) sessionStorage.setItem('wiki-collection', urlCol);
+				const col = rawSelection ? resolveCollectionSelection(rawSelection) : null;
 				if (col) {
+					const selectable = col === 'all' || hasCollectionButton(col);
+					if (!selectable) {
+						filterTo('all');
+						sessionStorage.removeItem('wiki-collection');
+						if (toggleLabel) toggleLabel.textContent = 'Browse Collections';
+						if (requestedByUrl && accessNotice) {
+							accessNotice.textContent = 'The requested collection is not available for your account or does not exist.';
+							accessNotice.hidden = false;
+							if (emptyState) emptyState.style.display = 'none';
+							if (heading) heading.textContent = 'Most Recent Entry';
+						}
+						return;
+					}
+
 					filterTo(col);
 					if (toggleLabel) {
-						toggleLabel.textContent = col === 'all' ? 'Browse Collections' : col;
+						const activeBtn = Array.from(buttons).find((btn) => btn.dataset.collection === col);
+						toggleLabel.textContent = col === 'all' ? 'Browse Collections' : (activeBtn?.dataset.collectionLabel || col);
 					}
 					// Auto-expand the group containing this collection
 					buttons.forEach((btn) => {

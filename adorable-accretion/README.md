@@ -29,7 +29,8 @@ src/
 ├── content/
 │   ├── blog/            # Blog posts (Markdown/MDX)
 │   ├── collections/     # Blog collection metadata
-│   ├── wiki/            # Wiki entries (Markdown/MDX)
+│   ├── wiki_abaron/     # Wiki entries for Abaron (Markdown/MDX)
+│   ├── wiki_farside/    # Wiki entries for Farside (Markdown/MDX)
 │   ├── wiki-collections/# Wiki collection metadata (supports parent hierarchy)
 │   └── events/          # Session events (date/time in Berlin timezone)
 ├── layouts/
@@ -64,7 +65,7 @@ src/
 | :----------------- | :------------------------- | :----------------------------------- |
 | `blog`             | `src/content/blog/`        | Studio blog posts                    |
 | `blogCollections`  | `src/content/collections/` | Blog category metadata               |
-| `wiki`             | `src/content/wiki/`        | Tavern wiki entries                  |
+| `wiki`             | `src/content/wiki_*/`      | Tavern wiki entries across all worlds |
 | `wikiCollections`  | `src/content/wiki-collections/` | Wiki categories (tree hierarchy) |
 | `events`           | `src/content/events/`      | Session scheduling events            |
 
