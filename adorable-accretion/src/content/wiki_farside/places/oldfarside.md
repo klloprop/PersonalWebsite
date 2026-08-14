@@ -4,7 +4,6 @@ description: "The primary town center. Easily identifiable by the enourmous anci
 pubDate: 2026-08-12
 heroImage: "../../../assets/WikiImages/OldFarside.png"
 heroImagePosition: "00% 50%"    
-
 collection: "Places"
 collectionId: "Farside/places_farside"
 visibility: "user"
