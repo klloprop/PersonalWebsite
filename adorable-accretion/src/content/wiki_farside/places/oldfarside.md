@@ -6,6 +6,7 @@ heroImage: "../../../assets/WikiImages/OldFarside.png"
 heroImagePosition: "00% 50%"    
 collection: "Places"
 collectionId: "Farside/places_farside"
+visibility: "user"
 tags: [""]
 ---
 

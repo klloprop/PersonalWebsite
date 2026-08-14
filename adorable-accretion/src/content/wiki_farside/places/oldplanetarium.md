@@ -1,6 +1,6 @@
 ---
-title: ""
-description: "A secondary town center, located in a nearby mountain, protected from the elements."
+title: "Old Stargazer Spot"
+description: "The old stargazer spot, before Everwinter and now replaced by the new planetarium."
 pubDate: 2026-08-12
 heroImage: "../../../assets/WikiImages/Planetarium.png"
 heroImagePosition: "00% 50%"    
@@ -10,5 +10,7 @@ visibility: "admin"
 tags: [""]
 ---
 
+
+The old stargazer spot, before Everwinter and now replaced by the new planetarium.
 
 ![Rootbeard](../../../assets/WikiImages/Planetarium.png)
