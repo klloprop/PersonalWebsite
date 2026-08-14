@@ -6,7 +6,7 @@ heroImage: "../../../assets/WikiImages/Planetarium.png"
 heroImagePosition: "00% 50%"    
 collection: "Places"
 collectionId: "Farside/places_farside"
-tags: [""]
+tags: ["Planetarium"]
 ---
 
 This planetarium is located in New Farside. Erin, the Star Seeker presides over the divination druids and this new planetarium. 

@@ -6,4 +6,5 @@ description: "-"
 order: 1
 parent: "Characters"
 parentId: "Farside/Characters"
+visibility: "admin"
 ---
