@@ -9,7 +9,7 @@ collectionId: "Farside/places_farside"
 visibility: "admin"
 tags: ["Tree Spirit"]
 ---
-The tree has been frozen as the druids retreated to New Farside in the first years of the Everwinter. It has been reclaimed in time for the tree to survive, but it is heavily damaged. The druids have since begun to reinforce the tree with metal, to mend and repair what they can. Their hope is that this tree and the spirit that lives within will survive many more centuries. 
+The tree has been frozen as the druids retreated to New Farside in the first years of the Everwinter. It has been reclaimed in time for the tree to survive, but it is heavily damaged. The druids have since begun to reinforce the tree with metal, to mend and repair what they can. Depite the cold that remains dep within the wood, their hope is that this tree and the spirit that lives within will survive many more centuries. 
 
 ![Rootbeard](../../../assets/WikiImages/WorldTree.png)
 > The ancient tree before the Everwinter befell Farside
