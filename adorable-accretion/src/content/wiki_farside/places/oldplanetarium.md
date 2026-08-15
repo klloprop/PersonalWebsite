@@ -4,6 +4,8 @@ description: "The old stargazer spot, before Everwinter and now replaced by the 
 pubDate: 2026-08-12
 heroImage: "../../../assets/WikiImages/StargazingSpot.png"
 heroImagePosition: "00% 50%"    
+collection: "Places"
+collectionId: "Farside/places_farside"
 visibility: "admin"
 ---
 
