@@ -45,6 +45,13 @@ function headers(): Record<string, string> {
 	};
 }
 
+export class GitHubApiError extends Error {
+	constructor(public readonly status: number, message: string) {
+		super(message);
+		this.name = 'GitHubApiError';
+	}
+}
+
 /**
  * Read a file from the repository.
  * Returns the UTF-8 content and the SHA (needed for updates).
@@ -60,7 +67,7 @@ export async function readFile(
 	if (res.status === 404) return null;
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(`GitHub API error ${res.status}: ${text}`);
+		throw new GitHubApiError(res.status, `GitHub API error ${res.status}: ${text}`);
 	}
 
 	const data = await res.json();
@@ -95,7 +102,7 @@ export async function writeFile(
 
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(`GitHub API error ${res.status}: ${text}`);
+		throw new GitHubApiError(res.status, `GitHub API error ${res.status}: ${text}`);
 	}
 
 	const data = await res.json();
@@ -120,7 +127,7 @@ export async function deleteFile(
 
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(`GitHub API error ${res.status}: ${text}`);
+		throw new GitHubApiError(res.status, `GitHub API error ${res.status}: ${text}`);
 	}
 }
 

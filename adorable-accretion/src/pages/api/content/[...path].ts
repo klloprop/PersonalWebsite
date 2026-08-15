@@ -6,6 +6,8 @@ import {
 	writeFile,
 	deleteFile,
 	revalidatePath,
+	triggerDeploy,
+	GitHubApiError,
 } from '../../../lib/github';
 
 const ALLOWED_TYPES = new Set(['wiki', 'blog']);
@@ -75,7 +77,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
 		if (!file) return json({ error: 'Not found' }, 404);
 		return json({ content: file.content, sha: file.sha, path: parsed.filePath });
 	} catch (err) {
-		return json({ error: String(err) }, 502);
+		const status = err instanceof GitHubApiError ? err.status : 502;
+		return json({ error: status === 409 ? 'This file was modified elsewhere. Refresh and try again.' : String(err) }, status);
 	}
 };
 
@@ -115,7 +118,8 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
 		await revalidatePath(pageUrl(parsed.type, parsed.slug));
 		return json({ success: true, sha: result.sha });
 	} catch (err) {
-		return json({ error: String(err) }, 502);
+		const status = err instanceof GitHubApiError ? err.status : 502;
+		return json({ error: status === 409 ? 'This entry was created by someone else. Choose a different slug.' : String(err) }, status);
 	}
 };
 
