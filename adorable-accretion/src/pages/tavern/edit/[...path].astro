@@ -614,6 +614,20 @@ const pageTitle = isNew
 		fDesc.value = fields.description || '';
 		fDate.value = fields.pubDate || '';
 		if (TYPE === 'wiki') {
+			const collectionId = fields.collectionId || '';
+			const collectionName = fields.collection || '';
+			const hasCollectionOption = collectionId
+				? Array.from(fCollection.options).some((option) => option.value === collectionId)
+				: Array.from(fCollection.options).some(
+					(option) => (option as HTMLOptionElement).dataset.name === collectionName,
+				);
+			if ((collectionId || collectionName) && !hasCollectionOption) {
+				const option = document.createElement('option');
+				option.value = collectionId || collectionName;
+				option.dataset.name = collectionName;
+				option.textContent = `${collectionName || collectionId} (current collection)`;
+				fCollection.appendChild(option);
+			}
 			if (fields.collectionId) {
 				fCollection.value = fields.collectionId;
 			} else if (fields.collection) {

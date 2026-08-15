@@ -1,0 +1,88 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="de">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Impressum`} description="Impressum und Anbieterkennzeichnung" />
+	</head>
+	<body>
+		<Header />
+		<main class="legal-page">
+			<h1>Impressum</h1>
+
+			<div class="address-warning" role="note">
+				<strong>Wichtig:</strong> Bitte ersetzen Sie die markierten Platzhalter vor der Veroeffentlichung durch die vollstaendige ladungsfaehige Anschrift.
+			</div>
+
+			<h2>Angaben gemaess § 5 DDG</h2>
+			<p>
+				Julie Lucia Hildebrandt<br>
+				Zwickauer Straße 79 <br>
+				01187 Dresden<br>
+				Deutschland
+			</p>
+
+			<h2>Kontakt</h2>
+			<p>
+				E-Mail: <a href="mailto:julie.lucia.hildebrandt@gmail.com">julie.lucia.hildebrandt@gmail.com</a>
+			</p>
+
+			<h2>Verantwortlich fuer den Inhalt</h2>
+			<p>
+				Julie Lucia Hildebrandt<br>
+				Anschrift wie oben
+			</p>
+
+			<h2>Hinweis</h2>
+			<p>
+				Dieses Impressum wurde als technische Vorlage angelegt und ersetzt keine rechtliche Beratung. Bitte pruefen und vervollstaendigen Sie die Angaben vor dem oeffentlichen Betrieb der Website.
+			</p>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.legal-page {
+		max-width: 760px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+		line-height: 1.7;
+	}
+
+	.legal-page h1 {
+		margin-bottom: 2rem;
+	}
+
+	.legal-page h2 {
+		margin-top: 2rem;
+		font-size: 1.25rem;
+	}
+
+	.address-warning {
+		padding: 1rem 1.1rem;
+		border: 1px solid #a00;
+		border-radius: 6px;
+		background: rgba(170, 0, 0, 0.08);
+		color: #7a0000;
+	}
+
+	.legal-page a {
+		color: #744908;
+	}
+
+	:global(html.dark) .address-warning {
+		color: #ffb0b0;
+		border-color: #cc6666;
+		background: rgba(170, 0, 0, 0.16);
+	}
+
+	:global(html.dark) .legal-page a {
+		color: #DEB96E;
+	}
+</style>

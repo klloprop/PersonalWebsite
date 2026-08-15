@@ -14,6 +14,11 @@ const today = new Date();
 	<br> <br>
 	All content on this website is created <strong>by hand by humans,</strong> without the use of any kind of AI. <br><strong>Note:</strong> Images in the Taverns wiki are taken from the internet and may have been created by AI, but I try to use those created by humans.
 	<br><br>
+	<nav class="legal-links" aria-label="Legal information">
+		<a href="/impressum/">Impressum</a>
+		<a href="/kontakt/">Kontakt</a>
+	</nav>
+	<br>
 	<button class="summon-bunny-btn" onclick="window.summonBunny && window.summonBunny()" aria-label="Summon the bunny">
 		🐇 Summon the bunny
 	</button>
@@ -42,6 +47,18 @@ const today = new Date();
 		opacity: 0.6;
 		padding: 0.3em 0.9em;
 		transition: opacity 0.2s;
+	}
+
+	.legal-links {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.legal-links a {
+		color: inherit;
+		font-size: 0.85rem;
 	}
 
 	.summon-bunny-btn:hover {

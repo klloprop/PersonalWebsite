@@ -1,0 +1,57 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="de">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Kontakt`} description="Kontaktmoeglichkeiten" />
+	</head>
+	<body>
+		<Header />
+		<main class="legal-page">
+			<h1>Kontakt</h1>
+			<p>
+				Fragen zur Website, zum Wiki oder zu den geteilten Inhalten koennen Sie gerne per E-Mail senden.
+			</p>
+
+			<p class="contact-address">
+				<a href="mailto:julie.lucia.hildebrandt@gmail.com">julie.lucia.hildebrandt@gmail.com</a>
+			</p>
+
+			<p>
+				Bitte beschreiben Sie Ihr Anliegen moeglichst genau. Bei Fragen zu einem Wiki-Eintrag geben Sie bitte den Titel oder die URL des Eintrags an.
+			</p>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.legal-page {
+		max-width: 760px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+		line-height: 1.7;
+	}
+
+	.legal-page h1 {
+		margin-bottom: 2rem;
+	}
+
+	.contact-address {
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+
+	.legal-page a {
+		color: #744908;
+	}
+
+	:global(html.dark) .legal-page a {
+		color: #DEB96E;
+	}
+</style>
