@@ -15,4 +15,4 @@ The old stargazer spot, before Everwinter and now replaced by the new planetariu
 This is where the Chimera has build its nest, on hallowed ground of old. 
 The ground here is forever frozen.
 
-![Rootbeard](../../../assets/WikiImages/Planetarium.png)
+![Rootbeard](../../../assets/WikiImages/StargazingSpot.png)
