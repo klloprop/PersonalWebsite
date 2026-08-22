@@ -7,6 +7,7 @@ heroImagePosition: "00% 10%"
 collection: "History"
 collectionId: "Farside/history"
 tags: ["Industrialisation"]
+visibility: "admin"
 ---
 The Everwinter is a powerful spirit of unknown origin that some 60 years ago has arrived in the region around Farside. The druids that called Farside their home where suddenly faced with attacks from monsters conjured by the Everwinter, as well as an eternal winter. 
 

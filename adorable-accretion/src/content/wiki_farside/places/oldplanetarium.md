@@ -8,7 +8,7 @@ collection: "Places"
 collectionId: "Farside/places_farside"
 visibility: "admin"
 ---
-
+**Location:** On top of a mountain next to Farside
 
 The old stargazer spot, before Everwinter and now replaced by the new planetarium.
 

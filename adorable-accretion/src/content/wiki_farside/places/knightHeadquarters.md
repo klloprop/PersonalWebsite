@@ -10,6 +10,8 @@ visibility: "admin"
 tags: [""]
 ---
 
+**Location:** New Farside
+
 The new headquarters of the Emerald knights. From here they conduct safekeeping and operations to uphold the law of Farside and ensure the safety of the city.
 
 ![Rootbeard](../../../assets/WikiImages/KnightsHeadquarters.png)

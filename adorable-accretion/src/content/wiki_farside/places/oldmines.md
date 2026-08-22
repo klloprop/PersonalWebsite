@@ -8,6 +8,8 @@ collection: "Places"
 collectionId: "Farside/places_farside"
 visibility: "admin"
 ---
+**Location:** Outside of New Farside
+
 Old Badgermole automata can be found here that have been left by prior mining efforts. The automata are broken but still contain potentially valuable materials and parts. 
 
 
