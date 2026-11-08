@@ -8,6 +8,6 @@ heroImagePosition: "00% 10%"
 tags: [""]
 ---
 
-**Pronouns:** He/Him
+**Pronouns:** She/Her
 
 A adolescent drow, around 11 years old.
