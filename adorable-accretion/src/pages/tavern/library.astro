@@ -174,21 +174,24 @@ function fileIcon(ext: string): string {
 			#library-files[hidden], #library-nimble[hidden] { display: none; }
 			#library-nimble {
 				box-sizing: border-box;
-				width: min(100% - 2rem, 1200px);
+				width: min(100% - 2rem, 1172px);
+				max-width: none;
 				margin: 1.5rem auto;
 				padding: 0 !important;
 			}
 			#library-nimble .library-header { margin-bottom: 0.5rem; }
+			#library-nimble > :is(.library-header, p) { padding-inline: 6px; }
 			.nimble-reference {
 				display: block;
 				width: 100%;
-				height: calc(var(--nimble-content-height, 80dvh) + 2px);
+				height: var(--nimble-content-height, 80dvh);
 				box-sizing: border-box;
-				border: 1px solid #c4a35a;
-				border-radius: 14px;
-				background: #fdf6ec;
+				border: 0;
+				background: transparent;
+				color-scheme: light;
 			}
-			:global(html.dark) .nimble-reference { background: #2a1c0a; border-color: #7a5c2e; }
+			/* A scheme mismatch makes browsers paint an opaque iframe canvas. */
+			:global(html.dark) .nimble-reference { color-scheme: dark; }
 			.library-layout {
 				position: relative;
 				width: 100%;
@@ -995,6 +998,10 @@ function fileIcon(ext: string): string {
 			function showLibraryView() {
 				if (!filesPanel || !nimblePanel || !nimbleFrame) return;
 				const showNimble = new URLSearchParams(location.search).get('view') === 'nimble';
+				if (!showNimble && !nimblePanel.hidden) {
+					const focused = nimbleFrame.contentDocument?.activeElement;
+					if (focused && 'blur' in focused && typeof focused.blur === 'function') focused.blur();
+				}
 				filesPanel.hidden = showNimble;
 				nimblePanel.hidden = !showNimble;
 				if (showNimble && !nimbleFrame.hasAttribute('src') && nimbleFrame.dataset.src) {

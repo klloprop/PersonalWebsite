@@ -43,15 +43,16 @@
           <ul class="character-feature-list" id="my-extra-choices"></ul>
         </form>
       </details>
-      <details class="character-options">
-        <summary>Save or load a character (optional)</summary>
+      <details class="character-options" id="my-character-profiles">
+        <summary>Saved characters</summary>
         <div class="character-fields profile-fields">
           <label><span>SAVED CHARACTERS</span><select id="my-profiles"><option value="">New character</option></select></label>
           <label><span>CHARACTER NAME</span><input id="my-name" maxlength="80" placeholder="Enter a name to save"></label>
           <button type="button" class="school-button" id="my-save">Save</button>
+          <button type="button" class="school-button" id="my-delete" hidden>Delete character</button>
         </div>
-        <p id="my-status" class="character-note" role="status">Saved on this browser only.</p>
       </details>
+      <p id="my-status" class="character-note" role="status">Create a character to start saving changes.</p>
       <details class="character-options" id="my-notes-panel">
         <summary>Character Notes</summary>
         <div class="note-page-controls">
@@ -63,7 +64,7 @@
         <input id="my-note-title" maxlength="80">
         <label for="my-notes">Page notes</label>
         <textarea id="my-notes" rows="8" maxlength="16000"></textarea>
-        <p class="character-note">Use Save in the character profile to keep these pages.</p>
+        <p class="character-note">Notes on a saved character are saved when you leave the field.</p>
       </details>
     </section>
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>

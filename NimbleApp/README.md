@@ -36,8 +36,11 @@ Core Rules. Their ability summaries appear in separate groups with PDF citations
 Academy Dropout also lets you choose a Utility Spell. Use **Add ability** for
 items, boons, and other custom rules, including custom ancestries or backgrounds.
 Existing freeform abilities load under **Other abilities** and can be edited
-and recategorized. Save a named profile to keep these choices in the same
-browser where local file storage is supported. Selections are tracking aids;
+and recategorized. Under **Saved characters**, choose a class and name, then
+select **Create character**. Changes to a saved character are automatic;
+edited names and note fields save when you leave them. Use **Delete character**
+to remove the selected character and its notes. The standalone edition stores
+profiles in the same browser where local file storage is supported. Selections are tracking aids;
 the app does not enforce every choice limit or prerequisite.
 
 To refresh the offline file after changing the app or spell database, install

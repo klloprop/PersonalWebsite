@@ -31,7 +31,13 @@
   const storageKey = "nimble-offline-characters-v1";
   const accountStore = window.NimbleProfileStore;
   const saveButton = byId("my-save");
+  const deleteButton = byId("my-delete");
+  const editor = byId("my-character-title").closest(".library");
   let profiles = {};
+  let activeName = "";
+  let savedSnapshot = "";
+  let writes = Promise.resolve(true);
+  let profileBusy = false;
   let picks = {};
   let manaStats = {};
   let notePages = [{ title: "General", text: "" }];
@@ -69,13 +75,20 @@
     renderNotePages();
   });
   noteTitle.addEventListener("input", () => {
-    notePages[activeNotePage].title = noteTitle.value;
     notePagesSelect.options[activeNotePage].text = noteTitle.value.trim() || `Untitled page ${activeNotePage + 1}`;
   });
-  notesInput.addEventListener("input", () => { notePages[activeNotePage].text = notesInput.value; });
+  noteTitle.addEventListener("blur", () => {
+    notePages[activeNotePage].title = noteTitle.value;
+    autosave();
+  });
+  notesInput.addEventListener("blur", () => {
+    notePages[activeNotePage].text = notesInput.value;
+    autosave();
+  });
   byId("my-note-add").addEventListener("click", () => {
     activeNotePage = notePages.push({ title: "New page", text: "" }) - 1;
     renderNotePages();
+    autosave();
     noteTitle.focus();
     noteTitle.select();
   });
@@ -86,6 +99,7 @@
     if (!notePages.length) notePages.push({ title: "General", text: "" });
     activeNotePage = Math.min(activeNotePage, notePages.length - 1);
     renderNotePages();
+    autosave();
     notePagesSelect.focus();
   });
 
@@ -263,6 +277,7 @@
         else if (editingExtra > index) editingExtra--;
         renderExtraChoices();
         renderOrigins();
+        autosave();
         extraKind.focus();
       });
       controls.append(edit, remove);
@@ -287,6 +302,7 @@
     resetExtraForm();
     renderExtraChoices();
     renderOrigins();
+    autosave();
     extraKind.focus();
   });
   for (const select of [ancestrySelect, backgroundSelect, secondBackground, backgroundSpell]) {
@@ -296,6 +312,7 @@
         extraName.focus();
       }
       renderOrigins();
+      autosave();
     });
   }
 
@@ -534,7 +551,7 @@
                 const input = node("input");
                 input.maxLength = 120;
                 input.value = featurePicks[storedKey] ?? "";
-                input.addEventListener("input", () => { featurePicks[storedKey] = input.value; });
+                input.addEventListener("change", () => { featurePicks[storedKey] = input.value; autosave(); });
                 label.append(input);
                 item.append(label);
                 continue;
@@ -552,6 +569,7 @@
               };
               select.addEventListener("change", () => {
                 featurePicks[storedKey] = select.value;
+                autosave();
                 if (/^Wind Spellcasting/.test(f.name)) {
                   render();
                   featureChoices.querySelector("select")?.focus();
@@ -648,6 +666,7 @@
               for (const slot of slots) if (chosenIn(spell, slot)) delete featurePicks[slot.storedKey];
             }
             render();
+            autosave();
             const replacement = [...spellOutput.querySelectorAll(".character-pick input")].find((input) =>
               input.value === keyFor(spell) && !input.disabled);
             const panel = replacement?.closest("#my-selectable-spells");
@@ -680,17 +699,21 @@
     }
   }
 
-  classSelect.addEventListener("change", () => { updateSubclass(); render(); });
-  subclassSelect.addEventListener("change", render);
-  levelSelect.addEventListener("change", () => { updateLevel(); render(); });
+  classSelect.addEventListener("change", () => { updateSubclass(); render(); autosave(); });
+  subclassSelect.addEventListener("change", () => { render(); autosave(); });
+  levelSelect.addEventListener("change", () => { updateLevel(); render(); autosave(); });
   manaInput.addEventListener("input", () => {
     const resource = rules.castingResource(character());
     if (!resource.stat) return;
     manaStats[resource.stat] = manaInput.value;
     updateMana(resource);
   });
-  profileSelect.addEventListener("change", () => {
-    const name = profileSelect.value;
+  manaInput.addEventListener("change", () => autosave());
+
+  function showProfile(name) {
+    activeName = name;
+    refreshProfiles(name);
+    updateProfileControls();
     const saved = Object.hasOwn(profiles, name) ? profiles[name] : null;
     nameInput.value = name;
     classSelect.value = saved?.className || "";
@@ -720,12 +743,24 @@
       : [{ title: "General", text: saved?.notes ?? legacyNotes.join("\n\n") }];
     activeNotePage = 0;
     renderNotePages();
-    status.textContent = saved ? `Loaded ${name}.` : "New character. Nothing is saved until you choose Save.";
     render();
-  });
+    savedSnapshot = saved ? JSON.stringify(currentProfile()) : "";
+    status.textContent = saved ? `Loaded ${name}. Changes save automatically.`
+      : "Choose a class and name, then select Create character.";
+  }
+
+  function updateProfileControls() {
+    saveButton.disabled = profileBusy;
+    saveButton.textContent = activeName ? "Save now" : "Create character";
+    profileSelect.disabled = profileBusy;
+    deleteButton.hidden = !activeName;
+    deleteButton.disabled = profileBusy;
+    classSelect.options[0].disabled = Boolean(activeName);
+  }
+
   function setProfileBusy(busy) {
-    saveButton.disabled = busy;
-    profileSelect.disabled = busy;
+    profileBusy = busy;
+    updateProfileControls();
   }
 
   async function loadAccountProfiles() {
@@ -733,8 +768,8 @@
     status.textContent = "Loading your Tavern characters…";
     try {
       profiles = await accountStore.load();
-      refreshProfiles(profileSelect.value);
-      status.textContent = "Save to keep this character and its notes in your Tavern account.";
+      refreshProfiles(activeName);
+      status.textContent = "Create or select a character to save changes to your Tavern account.";
     } catch (error) {
       status.textContent = error.message;
     } finally {
@@ -742,39 +777,118 @@
     }
   }
 
-  saveButton.addEventListener("click", async () => {
-    const name = nameInput.value.trim();
-    if (!name || !classSelect.value) {
-      status.textContent = "Choose a class and enter a name to save.";
-      return;
-    }
-    if (Object.hasOwn(profiles, name) && profileSelect.value !== name) {
-      status.textContent = "That name already exists. Load it to edit it, or use a different name.";
-      return;
-    }
-    const profile = { ...character(), notePages: notePages.map((page) => ({ ...page })),
+  function currentProfile() {
+    return { ...character(), notePages: notePages.map((page) => ({ ...page })),
       ancestry: ancestrySelect.value, background: backgroundSelect.value, secondBackground: secondBackground.value,
       backgroundSpell: backgroundSpell.value, extraAbilities: extraAbilities.map((entry) => ({ ...entry })),
       picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats } };
-    const next = { ...profiles, [name]: profile };
-    if (accountStore) setProfileBusy(true);
-    try {
-      if (accountStore) {
-        await accountStore.save(name, profile, profileSelect.value === name);
-      } else {
-        localStorage.setItem(storageKey, JSON.stringify(next));
+  }
+
+  function queueSave(requestedName) {
+    const profile = currentProfile();
+    const snapshot = JSON.stringify(profile);
+    writes = writes.then(async () => {
+      const previousName = activeName;
+      const name = requestedName ?? previousName;
+      if (!name || !profile.className) {
+        status.textContent = "Choose a class and enter a name to save.";
+        return false;
       }
-    } catch (error) {
-      status.textContent = accountStore ? error.message
-        : "This browser does not allow saving this file’s profiles. Your current choices are still visible.";
-      return;
-    } finally {
-      if (accountStore) setProfileBusy(false);
-    }
-    profiles = next;
-    refreshProfiles(name);
-    status.textContent = `Saved ${name} to ${accountStore ? "your Tavern account" : "this browser"}.`;
+      if (name === previousName && snapshot === savedSnapshot) return true;
+      if (name !== previousName && Object.hasOwn(profiles, name)) {
+        status.textContent = "That name already exists. Choose a different name.";
+        return false;
+      }
+
+      status.textContent = `Saving ${name}…`;
+      try {
+        const next = { ...profiles };
+        if (previousName) delete next[previousName];
+        const updated = { ...next, [name]: profile };
+        if (accountStore) await accountStore.save(name, profile, previousName || null);
+        else localStorage.setItem(storageKey, JSON.stringify(updated));
+        profiles = updated;
+        savedSnapshot = snapshot;
+        activeName = name;
+        if (name !== previousName) refreshProfiles(name);
+        updateProfileControls();
+        status.textContent = `Saved ${name} to ${accountStore ? "your Tavern account" : "this browser"}.`;
+        return true;
+      } catch (error) {
+        status.textContent = accountStore ? error.message
+          : "This browser does not allow saving profiles. Your changes are still on screen.";
+        return false;
+      }
+    });
+    return writes;
+  }
+
+  function autosave() {
+    if (activeName) queueSave();
+  }
+
+  nameInput.addEventListener("blur", () => {
+    const name = nameInput.value.trim();
+    nameInput.value = name;
+    if (activeName && name !== activeName && !profileBusy) queueSave(name);
   });
+  saveButton.addEventListener("click", async () => {
+    if (activeName) {
+      queueSave(nameInput.value.trim());
+      return;
+    }
+    setProfileBusy(true);
+    const name = nameInput.value.trim();
+    nameInput.value = name;
+    if (await queueSave(name)) autosave();
+    setProfileBusy(false);
+  });
+
+  profileSelect.addEventListener("change", async () => {
+    const nextName = profileSelect.value;
+    if (nextName === activeName) return;
+    profileSelect.value = activeName;
+    setProfileBusy(true);
+    if (!activeName) {
+      showProfile(nextName);
+      setProfileBusy(false);
+      profileSelect.focus();
+      return;
+    }
+    let pending = queueSave(nameInput.value.trim());
+    let saved = await pending;
+    while (pending !== writes) {
+      pending = writes;
+      saved = await pending;
+    }
+    if (saved) showProfile(nextName);
+    setProfileBusy(false);
+    profileSelect.focus();
+  });
+
+  deleteButton.addEventListener("click", async () => {
+    if (!activeName || !window.confirm(`Delete “${activeName}” and all its notes? This cannot be undone.`)) return;
+    setProfileBusy(true);
+    editor.inert = true;
+    try {
+      await writes;
+      const name = activeName;
+      const next = { ...profiles };
+      delete next[name];
+      if (accountStore) await accountStore.remove(name);
+      else localStorage.setItem(storageKey, JSON.stringify(next));
+      profiles = next;
+      showProfile("");
+      status.textContent = `Deleted ${name}.`;
+    } catch (error) {
+      status.textContent = accountStore ? error.message : "This browser does not allow deleting profiles.";
+    } finally {
+      editor.inert = false;
+      setProfileBusy(false);
+      profileSelect.focus();
+    }
+  });
+  updateProfileControls();
   updateSubclass();
   renderNotePages();
   renderOrigins();

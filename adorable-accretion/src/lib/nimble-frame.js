@@ -23,12 +23,20 @@
 			const { profiles } = await request({}, 'Could not load your Tavern characters. Reload the Library to try again.');
 			return profiles;
 		},
-		async save(name, profile, overwrite) {
+		async save(name, profile, previousName) {
 			await request({
 				method: 'PUT',
+				keepalive: true,
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, profile, overwrite }),
+				body: JSON.stringify({ name, profile, previousName }),
 			}, 'Could not save your character. Your changes are still on screen; try again.');
+		},
+		async remove(name) {
+			await request({
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name }),
+			}, 'Could not delete your character. Try again.');
 		},
 	};
 

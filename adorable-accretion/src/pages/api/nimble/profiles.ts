@@ -13,6 +13,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function validName(value: unknown): value is string {
+	return typeof value === 'string' && value.length > 0 && value.length <= 120 && value === value.trim();
+}
+
 function validProfile(profile: unknown): boolean {
 	if (!isRecord(profile)) return false;
 	const { className, level, notePages, extraAbilities, picks, featurePicks, manaStats } = profile;
@@ -55,20 +59,26 @@ export const GET: APIRoute = async ({ locals }) => {
 	}
 };
 
-// Check the account and write only the affected character in one operation.
-const saveProfile = `
+// Validate the account and update, rename, or delete one character atomically.
+const mutateProfile = `
 	local account = redis.call('GET', KEYS[1])
-	if not account or cjson.decode(account).createdAt ~= tonumber(ARGV[4]) then return -1 end
-	local exists = redis.call('HEXISTS', KEYS[2], ARGV[1])
-	if exists ~= tonumber(ARGV[3]) then return 0 end
-	redis.call('HSET', KEYS[2], ARGV[1], ARGV[2])
+	if not account or cjson.decode(account).createdAt ~= tonumber(ARGV[1]) then return -1 end
+	local source, target = ARGV[2], ARGV[3]
+	if source ~= '' and redis.call('HEXISTS', KEYS[2], source) == 0 then return 0 end
+	if target == '' then
+		return redis.call('HDEL', KEYS[2], source)
+	end
+	if target ~= source and redis.call('HEXISTS', KEYS[2], target) == 1 then return -2 end
+	redis.call('HSET', KEYS[2], target, ARGV[4])
+	if source ~= '' and source ~= target then redis.call('HDEL', KEYS[2], source) end
 	return 1
 `;
 
-export const PUT: APIRoute = async ({ request, url, locals }) => {
+const mutate: APIRoute = async ({ request, url, locals }) => {
 	if (!locals.user) return unauthorized();
+	const deleting = request.method === 'DELETE';
 	if (request.headers.get('Origin') !== url.origin) {
-		return json({ error: 'Save characters from the Tavern Library.' }, 403);
+		return json({ error: 'Manage characters from the Tavern Library.' }, 403);
 	}
 	if (request.headers.get('Content-Type')?.split(';')[0] !== 'application/json') {
 		return json({ error: 'Expected a JSON character profile.' }, 415);
@@ -84,25 +94,31 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 	} catch {
 		return json({ error: 'Could not read the character profile.' }, 400);
 	}
-	if (!isRecord(data) || typeof data.name !== 'string' || !data.name ||
-		data.name !== data.name.trim() || data.name.length > 120 || typeof data.overwrite !== 'boolean' ||
-		!validProfile(data.profile)) {
+	if (!isRecord(data) || !validName(data.name) || (!deleting &&
+		((data.previousName !== null && !validName(data.previousName)) || !validProfile(data.profile)))) {
 		return json({ error: 'Invalid character profile. Check that the name is 1–120 characters and a class is selected.' }, 400);
 	}
 
 	try {
 		const account = await getUser(locals.user.username);
 		if (!account || locals.user.sessionStartedAt < account.createdAt) return unauthorized();
-		const result = await getRedis().eval<[string, string, number, number], number>(
-			saveProfile,
+		const source = deleting ? data.name : data.previousName;
+		const result = await getRedis().eval<[number, string, string, string], number>(
+			mutateProfile,
 			[`user:${account.username}`, nimbleProfilesKey(account)],
-			[`:${data.name}`, JSON.stringify(data.profile), data.overwrite ? 1 : 0, account.createdAt],
+			[account.createdAt, source === null ? '' : `:${source}`, deleting ? '' : `:${data.name}`,
+				deleting ? '' : JSON.stringify(data.profile)],
 		);
 		if (result === -1) return unauthorized();
-		if (result === 0) return json({ error: 'Your saved characters have changed. Use a different name or reload the Library to see the latest list.' }, 409);
-		return json({ saved: true });
+		if (result === -2) return json({ error: 'A character with that name already exists. Choose a different name.' }, 409);
+		if (result === 0) return json({ error: 'This character no longer exists in your account. Reload the Library to refresh the list.' }, 409);
+		return deleting ? json({ deleted: true }) : json({ saved: true });
 	} catch (error) {
-		console.error('Failed to save a Nimble profile:', error instanceof Error ? error.name : 'Unknown error');
-		return json({ error: 'Could not save your character. Your changes are still on screen; try again.' }, 503);
+		console.error(`Failed to ${deleting ? 'delete' : 'save'} a Nimble profile:`, error instanceof Error ? error.name : 'Unknown error');
+		return json({ error: deleting ? 'Could not delete your character. Try again.'
+			: 'Could not save your character. Your changes are still on screen; try again.' }, 503);
 	}
 };
+
+export const PUT = mutate;
+export const DELETE = mutate;

@@ -83,14 +83,20 @@ in the deployment's source tree. If Vercel's Root Directory is
 `adorable-accretion`, enable **Include source files outside of the Root Directory
 in the Build Step**. Confirm publication rights before deploying.
 
-The hosted **Save** button stores characters and note pages in the Tavern's
-existing Upstash Redis database, scoped to the signed-in account. No new
+The hosted **Create character** button stores the initial profile in the
+Tavern's existing Upstash Redis database, scoped to the signed-in account.
+Further edits (including renames) save automatically, with note titles and
+body text saved on blur. **Delete character** removes the profile and all
+its notes after confirmation. No new
 environment variables or database migration are needed. The standalone
 download still uses local browser storage, and its profiles are not
 automatically imported into Tavern accounts.
 
 Unlike the fixed-height example above, the Tavern iframe grows and shrinks
-with the reference so users scroll the Library page, not the iframe. It also
-follows the Tavern's light/dark toggle while preserving distinct school
+with the reference so users scroll the Library page, not the iframe. The
+frame is borderless and transparent so the Library supplies the background.
+Keep the iframe element's `color-scheme` in sync with the embedded document
+so the browser does not paint an opaque background in dark mode.
+Nimble follows the Tavern's light/dark toggle while preserving distinct school
 colors in dark mode. When testing updates, switch tabs, filter the spell
 list, and expand notes to check that the frame resizes in both directions.

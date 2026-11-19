@@ -28,7 +28,14 @@
 .tavern-reference body { background: var(--shell); }
 .tavern-reference .page-frame { padding-inline: clamp(12px, 3vw, 36px); box-shadow: none; }
 .tavern-reference.tavern-autosize { overflow: hidden; }
-.tavern-autosize .page-frame { min-height: 0; }
+.tavern-autosize body,
+.tavern-reference.tavern-autosize .page-frame {
+	background: transparent;
+}
+.tavern-reference.tavern-autosize .page-frame {
+	min-height: 0;
+	padding: 6px 6px 0;
+}
 .tavern-reference .section-intro { margin-bottom: 16px; }
 .tavern-reference .page-nav a,
 .tavern-reference .school-button,
