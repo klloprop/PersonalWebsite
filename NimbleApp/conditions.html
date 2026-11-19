@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eee4d3">
+  <title>Nimble Conditions</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/conditions.js" defer></script>
+</head>
+<body>
+  <div class="page-frame">
+    <main>
+      <section class="library" aria-labelledby="library-title">
+        <div class="section-intro">
+          <h1 id="library-title">Conditions</h1>
+          <nav class="page-nav" aria-label="Reference pages">
+            <a href="/">Spells</a>
+            <a href="/conditions" aria-current="page">Conditions</a>
+          </nav>
+        </div>
+        <div class="filters">
+          <label class="search-field"><span>SEARCH CONDITIONS</span><span class="search-input"><span aria-hidden="true">⌕</span><input id="condition-query" type="search" placeholder="Search conditions and effects..." autocomplete="off"></span></label>
+        </div>
+        <div class="school-filter" role="group" aria-label="Filter by condition group">
+          <span class="filter-label">GROUP</span>
+          <div id="condition-filters" class="school-buttons">
+            <button type="button" class="school-button active" data-group="" aria-pressed="true">All conditions</button>
+            <button type="button" class="school-button" data-group="Core" aria-pressed="false">Core conditions</button>
+            <button type="button" class="school-button" data-group="Special" aria-pressed="false">Special statuses</button>
+          </div>
+        </div>
+        <div class="results-bar"><p id="condition-count" role="status" aria-live="polite"></p></div>
+        <p id="condition-empty" class="notice" hidden>No conditions found. Try another search or group.</p>
+        <div id="condition-results"></div>
+      </section>
+    </main>
+    <footer><span>NIMBLE <b>✦</b> CONDITIONS</span><span>CHECK THE ORIGINAL PDF FOR DETAILS</span></footer>
+  </div>
+</body>
+</html>

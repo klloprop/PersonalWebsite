@@ -13,6 +13,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			context.locals.user = {
 				username: session.username,
 				role: session.role,
+				sessionStartedAt: session.createdAt,
 			};
 		}
 	}
@@ -21,6 +22,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	const needsAuth =
 		pathname.startsWith('/tavern/library') ||
 		pathname.startsWith('/tavern/edit') ||
+		pathname.startsWith('/api/nimble/') ||
 		pathname.startsWith('/api/content');
 
 	if (needsAuth && !context.locals.user) {

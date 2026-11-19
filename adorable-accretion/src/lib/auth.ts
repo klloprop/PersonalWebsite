@@ -11,7 +11,7 @@ import { Redis } from '@upstash/redis';
 // Redis
 // ---------------------------------------------------------------------------
 
-function getRedis() {
+export function getRedis() {
 	return new Redis({
 		url: import.meta.env.UPSTASH_REDIS_REST_URL,
 		token: import.meta.env.UPSTASH_REDIS_REST_TOKEN,
@@ -115,8 +115,13 @@ export async function listUsers(): Promise<string[]> {
 
 export async function deleteUser(username: string): Promise<void> {
 	const redis = getRedis();
-	await redis.del(`user:${username}`);
+	const user = await getUser(username);
+	if (user) await redis.del(`user:${username}`, nimbleProfilesKey(user));
 	await redis.srem('users:index', username);
+}
+
+export function nimbleProfilesKey(user: Pick<User, 'username' | 'createdAt'>): string {
+	return `nimble:profiles:v1:${user.createdAt}:${user.username}`;
 }
 
 export async function setUserPassword(

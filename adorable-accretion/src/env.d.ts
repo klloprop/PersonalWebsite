@@ -5,6 +5,7 @@ declare namespace App {
 		user?: {
 			username: string;
 			role: string;
+			sessionStartedAt: number;
 		};
 	}
 }

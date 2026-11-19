@@ -1,0 +1,69 @@
+.tavern-reference {
+	--ink: #3e2703;
+	--muted: #715326;
+	--rule: #c4a35a;
+	--paper: #fdf6ec;
+	--red: #785415;
+	--shell: #f4e7d2;
+	--card: #fffaf1;
+	--inset: #f3e5cd;
+	--active: #694710;
+	--focus: #8b6914;
+}
+
+.tavern-reference.dark {
+	color-scheme: dark;
+	--ink: #f5e4c4;
+	--muted: #dfc59a;
+	--rule: #967244;
+	--paper: #25190e;
+	--red: #deb96e;
+	--shell: #1e150d;
+	--card: #312216;
+	--inset: #3a2818;
+	--active: #775320;
+	--focus: #efc979;
+}
+
+.tavern-reference body { background: var(--shell); }
+.tavern-reference .page-frame { padding-inline: clamp(12px, 3vw, 36px); box-shadow: none; }
+.tavern-reference .section-intro { margin-bottom: 16px; }
+.tavern-reference .page-nav a,
+.tavern-reference .school-button,
+.tavern-reference .tier-button {
+	color: var(--ink);
+	border: 1px solid var(--rule);
+	border-radius: 6px;
+}
+.tavern-reference .page-nav a[aria-current="page"],
+.tavern-reference .school-button.active,
+.tavern-reference .tier-button.active,
+.tavern-reference #my-save:not(:disabled) {
+	color: #fffaf1;
+	background: var(--active);
+}
+.tavern-reference button:disabled { opacity: .65; cursor: not-allowed; }
+.tavern-reference :focus-visible,
+.tavern-reference .search-input:focus-within { outline-color: var(--focus); }
+
+.tavern-reference :is(select, .search-input, .spell-card, .character-options,
+	.ability-category, .casting-summary > div, .condition-card, .character-options input:not([type="checkbox"]),
+	.character-options textarea, #my-mana-stat) {
+	border-color: var(--rule);
+	border-radius: 8px;
+	background: var(--card);
+	color: var(--ink);
+	box-shadow: none;
+}
+.tavern-reference :is(.character-filter, .ability-category h3, .ability-progression,
+	.arsenal-feature, .class-sheet-note, .school-notes, .legend-entry, .glossary-tooltip) {
+	background: var(--inset);
+	color: var(--ink);
+	border-color: var(--rule);
+}
+.tavern-reference :is(.character-note, .character-fields label > span, .filters label > span:first-child,
+	.filter-label, .filter-hint, .school-count, .results-bar p, footer) { color: var(--muted); }
+.tavern-reference :is(.character-choice-panel > summary, .availability-badge, .ability-progression summary,
+	.legend-name, .glossary-term, .search-input > span) { color: var(--red); }
+.tavern-reference.dark .school-section { --school-color: #b08a54; }
+.tavern-reference.dark .spell-label { color: #22170c; }

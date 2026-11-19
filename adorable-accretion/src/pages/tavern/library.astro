@@ -17,6 +17,11 @@ import type { SearchItem } from '../../components/SearchBar.astro';
 import { SITE_TITLE } from '../../consts';
 
 const user = Astro.locals.user!;
+const libraryPath = '/tavern/library';
+const nimblePath = `${libraryPath}?view=nimble`;
+const showNimble = Astro.url.searchParams.get('view') === 'nimble';
+const referenceSrc = `${libraryPath}/reference.html?embed=1#spells`;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 
 // Import all files from Ressources — PDFs, PNGs, etc.
 const fileModules = import.meta.glob(
@@ -141,6 +146,50 @@ function fileIcon(ext: string): string {
 			:global(body) {
 				overflow-x: hidden;
 			}
+			.library-nav {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.75rem 1rem;
+				background: #fdf6ec;
+				border-bottom: 1px solid #c4a35a;
+				font-family: Georgia, 'Times New Roman', serif;
+			}
+			.library-nav a {
+				border: 1px solid transparent;
+				border-radius: 8px;
+				padding: 0.4rem 1rem;
+				color: #5c3d0e;
+				font-weight: 700;
+				text-decoration: none;
+			}
+			.library-nav a:hover,
+			.library-nav a:focus-visible { border-color: #c4a35a; }
+			.library-nav a[aria-current="page"] { background: #694710; color: #fffaf1; }
+			:global(html.dark) .library-nav { background: #2a1c0a; border-color: #7a5c2e; }
+			:global(html.dark) .library-nav a { color: #f5e4c4; }
+			:global(html.dark) .library-nav a[aria-current="page"] { background: #775320; }
+			#library-files[hidden], #library-nimble[hidden] { display: none; }
+			#library-nimble {
+				box-sizing: border-box;
+				width: min(100% - 2rem, 1200px);
+				margin: 1.5rem auto;
+				padding: 0 !important;
+			}
+			#library-nimble .library-header { margin-bottom: 0.5rem; }
+			.nimble-reference {
+				display: block;
+				width: 100%;
+				min-height: 65vh;
+				height: 80dvh;
+				box-sizing: border-box;
+				border: 1px solid #c4a35a;
+				border-radius: 14px;
+				background: #fdf6ec;
+			}
+			:global(html.dark) .nimble-reference { background: #2a1c0a; border-color: #7a5c2e; }
 			.library-layout {
 				position: relative;
 				width: 100%;
@@ -162,20 +211,20 @@ function fileIcon(ext: string): string {
 			.sidebar {
 				width: 240px;
 				position: fixed;
-				top: 10rem;
+				top: 14rem;
 				left: max(1rem, calc((100vw - 1260px) / 2 + 1rem));
-				max-height: calc(100vh - 10rem);
+				max-height: calc(100vh - 14rem);
 			}
 			@media (max-width: 1500px) {
 				.sidebar {
-					top: 8rem;
-					max-height: calc(100vh - 8rem);
+					top: 12rem;
+					max-height: calc(100vh - 12rem);
 				}
 			}
 			@media (max-width: 1100px) {
 				.sidebar {
-					top: 6.5rem;
-					max-height: calc(100vh - 6.5rem);
+					top: 10.5rem;
+					max-height: calc(100vh - 10.5rem);
 				}
 			}
 			.sidebar {
@@ -747,7 +796,23 @@ function fileIcon(ext: string): string {
 	</head>
 	<body>
 		<Header />
-		<div class="library-layout">
+		<nav class="library-nav" id="library-nav" aria-label="Library views">
+			<a href={libraryPath} aria-current={showNimble ? undefined : 'page'}>Files</a>
+			<a href={nimblePath} aria-current={showNimble ? 'page' : undefined}>Nimble</a>
+		</nav>
+		<main id="library-nimble" hidden={!showNimble}>
+			<div class="library-header">
+				<h1>Nimble Player Reference</h1>
+				<div class="library-meta">
+					<span>Logged in as <strong>{user.username}</strong></span>
+					<button type="button" class="btn-secondary" data-library-logout>Log Out</button>
+				</div>
+			</div>
+			<p>Browse spells and conditions, or save characters and notes to your Tavern account.</p>
+			<iframe class="nimble-reference" title="Nimble player reference"
+				src={showNimble ? referenceSrc : undefined} data-src={referenceSrc}></iframe>
+		</main>
+		<div class="library-layout" id="library-files" hidden={showNimble}>
 			<button class="sidebar-mobile-toggle" id="sidebar-mobile-toggle">
 				<span class="toggle-label">Browse Collections</span>
 				<svg class="toggle-chevron" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
@@ -874,7 +939,7 @@ function fileIcon(ext: string): string {
 					<h1>Library</h1>
 					<div class="library-meta">
 						<span>Logged in as <strong>{user.username}</strong></span>
-						<button id="logout-btn" class="btn-secondary">Log Out</button>
+						<button type="button" class="btn-secondary" data-library-logout>Log Out</button>
 					</div>
 				</div>
 
@@ -923,6 +988,37 @@ function fileIcon(ext: string): string {
 		<Footer />
 
 		<script>
+			const libraryNav = document.getElementById('library-nav');
+			const filesPanel = document.getElementById('library-files');
+			const nimblePanel = document.getElementById('library-nimble');
+			const nimbleFrame = nimblePanel?.querySelector('iframe');
+
+			function showLibraryView() {
+				if (!filesPanel || !nimblePanel || !nimbleFrame) return;
+				const showNimble = new URLSearchParams(location.search).get('view') === 'nimble';
+				filesPanel.hidden = showNimble;
+				nimblePanel.hidden = !showNimble;
+				if (showNimble && !nimbleFrame.hasAttribute('src') && nimbleFrame.dataset.src) {
+					nimbleFrame.src = nimbleFrame.dataset.src;
+				}
+				libraryNav?.querySelectorAll('a').forEach((link) => {
+					const isNimble = new URL(link.href).searchParams.get('view') === 'nimble';
+					if (isNimble === showNimble) link.setAttribute('aria-current', 'page');
+					else link.removeAttribute('aria-current');
+				});
+			}
+
+			libraryNav?.addEventListener('click', (event) => {
+				const link = event.target instanceof Element ? event.target.closest('a') : null;
+				if (!link || event.defaultPrevented || event.button !== 0 ||
+					event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+				event.preventDefault();
+				if (link.href !== location.href) history.pushState(null, '', link.href);
+				showLibraryView();
+				window.scrollTo(0, 0);
+			});
+			window.addEventListener('popstate', showLibraryView);
+
 			function initLibrary() {
 				const sidebar = document.querySelector<HTMLElement>('.sidebar');
 				const buttons = document.querySelectorAll<HTMLButtonElement>('.sidebar-btn');
@@ -1076,9 +1172,11 @@ function fileIcon(ext: string): string {
 				});
 			}
 
-			document.getElementById('logout-btn')?.addEventListener('click', async () => {
-				await fetch('/api/auth/logout', { method: 'POST' });
-				window.location.href = '/tavern/login';
+			document.querySelectorAll('[data-library-logout]').forEach((button) => {
+				button.addEventListener('click', async () => {
+					await fetch('/api/auth/logout', { method: 'POST' });
+					window.location.href = '/tavern/login';
+				});
 			});
 
 			initLibrary();

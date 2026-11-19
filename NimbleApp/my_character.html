@@ -1,0 +1,80 @@
+<main>
+  <section class="library" aria-labelledby="my-character-title">
+    <div class="section-intro">
+      <h1 id="my-character-title">My Character</h1>
+      <nav class="page-nav" aria-label="Reference pages">
+        <a href="#spells">Spells</a>
+        <a href="#conditions">Conditions</a>
+        <a href="#character" aria-current="page">My Character</a>
+      </nav>
+    </div>
+    <section class="character-filter" aria-label="Character setup">
+      <div class="character-fields character-setup-fields">
+        <label><span>CLASS</span><select id="my-class"><option value="">Choose a class</option></select></label>
+        <label><span>LEVEL</span><select id="my-level"></select></label>
+      </div>
+      <details class="character-options character-choice-panel" id="my-choices">
+        <summary id="my-choices-summary">Feature Choices</summary>
+        <label class="character-feature-note"><span>Subclass (optional)</span><select id="my-subclass" disabled><option value="">None selected</option></select></label>
+        <p id="my-choice-hint" class="character-note"></p>
+        <div id="my-feature-choices"></div>
+      </details>
+      <details class="character-options character-choice-panel" id="my-origins">
+        <summary>Origin & Other Ability Choices</summary>
+        <div class="origin-fields">
+          <label class="character-feature-note">Ancestry<select id="my-ancestry"></select></label>
+          <label class="character-feature-note">Background<select id="my-background"></select></label>
+          <label class="character-feature-note" id="my-second-background-field" hidden>Second background (GM approval)<select id="my-second-background"></select></label>
+          <label class="character-feature-note" id="my-background-spell-field" hidden>Background Utility Spell<select id="my-background-spell"></select></label>
+        </div>
+        <form id="my-extra-form">
+          <div class="origin-fields">
+            <label class="character-feature-note">Ability source
+              <select id="my-extra-kind">
+                <option>Item</option><option>Boon</option><option>Other</option>
+                <option>Ancestry</option><option>Background</option>
+              </select>
+            </label>
+            <label class="character-feature-note">Ability name<input id="my-extra-name" maxlength="120" required></label>
+          </div>
+          <label class="character-feature-note">Ability rules (optional)<textarea id="my-extra-rules" rows="2" maxlength="4000"></textarea></label>
+          <button type="submit" class="school-button">Add ability</button>
+          <button type="button" class="school-button" id="my-extra-cancel" hidden>Cancel edit</button>
+          <ul class="character-feature-list" id="my-extra-choices"></ul>
+        </form>
+      </details>
+      <details class="character-options">
+        <summary>Save or load a character (optional)</summary>
+        <div class="character-fields profile-fields">
+          <label><span>SAVED CHARACTERS</span><select id="my-profiles"><option value="">New character</option></select></label>
+          <label><span>CHARACTER NAME</span><input id="my-name" maxlength="80" placeholder="Enter a name to save"></label>
+          <button type="button" class="school-button" id="my-save">Save</button>
+        </div>
+        <p id="my-status" class="character-note" role="status">Saved on this browser only.</p>
+      </details>
+      <details class="character-options" id="my-notes-panel">
+        <summary>Character Notes</summary>
+        <div class="note-page-controls">
+          <label>Page <select id="my-note-pages"></select></label>
+          <button type="button" class="school-button" id="my-note-add">New page</button>
+          <button type="button" class="school-button" id="my-note-delete">Delete page</button>
+        </div>
+        <label for="my-note-title">Page title</label>
+        <input id="my-note-title" maxlength="80">
+        <label for="my-notes">Page notes</label>
+        <textarea id="my-notes" rows="8" maxlength="16000"></textarea>
+        <p class="character-note">Use Save in the character profile to keep these pages.</p>
+      </details>
+    </section>
+    <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
+    <div id="my-unlocks"></div>
+    <div id="my-origin-abilities"></div>
+    <div id="my-casting" class="casting-summary" hidden>
+      <div><span class="eyebrow">MANA</span><output id="my-mana"></output>
+        <label id="my-mana-stat-field" hidden><span id="my-mana-stat-label"></span><input id="my-mana-stat" type="number" step="1" placeholder="Optional"></label>
+      </div>
+      <div><span class="eyebrow">MAXIMUM SPELL TIER</span><output id="my-max-tier"></output></div>
+    </div>
+    <div id="my-spells"></div>
+  </section>
+</main>

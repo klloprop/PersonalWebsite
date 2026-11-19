@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eee4d3">
+  <title>Nimble Spellbook</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/character.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="page-frame">
+    <main>
+      <section class="library" aria-labelledby="library-title">
+        <div class="section-intro">
+          <h1 id="library-title">Spellbook</h1>
+          <nav class="page-nav" aria-label="Reference pages">
+            <a href="/" aria-current="page">Spells</a>
+            <a href="/conditions">Conditions</a>
+          </nav>
+        </div>
+
+        <div class="filters">
+          <label class="search-field"><span>SEARCH THE SPELLBOOK</span><span class="search-input"><span aria-hidden="true">⌕</span><input id="query" type="search" placeholder="Search spells, effects, and more..." autocomplete="off"></span></label>
+        </div>
+
+        <section class="character-filter" aria-labelledby="character-title">
+          <h2 id="character-title" class="eyebrow">YOUR CHARACTER</h2>
+          <div class="character-fields">
+            <label><span>CLASS</span><select id="character-class"><option value="">All classes</option></select></label>
+            <label><span>SUBCLASS</span><select id="character-subclass" disabled><option value="">Choose a class first</option></select></label>
+            <label><span>LEVEL</span><select id="character-level"></select></label>
+          </div>
+          <p id="character-note" class="character-note" hidden></p>
+        </section>
+
+        <div class="school-filter" aria-label="Filter by spell school">
+          <span class="filter-label">SCHOOL</span>
+          <div id="school-buttons" class="school-buttons">
+            <button type="button" class="school-button active" data-school="" aria-pressed="true">All spells</button>
+            <button type="button" class="school-button" data-school="Fire" aria-pressed="false">Fire</button>
+            <button type="button" class="school-button" data-school="Ice" aria-pressed="false">Ice</button>
+            <button type="button" class="school-button" data-school="Lightning" aria-pressed="false">Lightning</button>
+            <button type="button" class="school-button" data-school="Wind" aria-pressed="false">Wind</button>
+            <button type="button" class="school-button" data-school="Radiant" aria-pressed="false">Radiant</button>
+            <button type="button" class="school-button" data-school="Necrotic" aria-pressed="false">Necrotic</button>
+            <button type="button" class="school-button" data-school="Class spells" aria-pressed="false">Class spells</button>
+          </div>
+        </div>
+        <div class="tier-filter" role="group" aria-label="Filter by spell tier; select multiple tiers">
+          <span class="filter-label">TIER <span class="filter-hint">SELECT MULTIPLE</span></span>
+          <div id="tier-buttons" class="tier-buttons">
+            <button type="button" class="tier-button active" data-tier="" aria-pressed="true">All tiers</button>
+            <button type="button" class="tier-button" data-tier="0" aria-pressed="false">Cantrip</button>
+            <button type="button" class="tier-button" data-tier="1" aria-pressed="false">Tier 1</button>
+            <button type="button" class="tier-button" data-tier="2" aria-pressed="false">Tier 2</button>
+            <button type="button" class="tier-button" data-tier="3" aria-pressed="false">Tier 3</button>
+            <button type="button" class="tier-button" data-tier="4" aria-pressed="false">Tier 4</button>
+            <button type="button" class="tier-button" data-tier="5" aria-pressed="false">Tier 5</button>
+            <button type="button" class="tier-button" data-tier="6" aria-pressed="false">Tier 6</button>
+            <button type="button" class="tier-button" data-tier="7" aria-pressed="false">Tier 7</button>
+            <button type="button" class="tier-button" data-tier="8" aria-pressed="false">Tier 8</button>
+            <button type="button" class="tier-button" data-tier="9" aria-pressed="false">Tier 9</button>
+          </div>
+        </div>
+        <div class="results-bar">
+          <p id="count" role="status" aria-live="polite">Loading spells…</p>
+          <label class="secret-toggle"><input id="secrets" type="checkbox"> Include GM secret spells <span>(spoilers)</span></label>
+        </div>
+        <p id="error" class="notice error" role="alert" hidden></p>
+        <p id="empty" class="notice" hidden>No spells found. Try another search or filter.</p>
+        <div id="results"></div>
+      </section>
+    </main>
+    <footer><span>NIMBLE <b>✦</b> SPELLBOOK</span><span>For the stories still to be told.</span><span>CHECK THE ORIGINAL PDF FOR DETAILS</span></footer>
+  </div>
+</body>
+</html>
