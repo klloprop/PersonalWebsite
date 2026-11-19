@@ -27,6 +27,8 @@
 
 .tavern-reference body { background: var(--shell); }
 .tavern-reference .page-frame { padding-inline: clamp(12px, 3vw, 36px); box-shadow: none; }
+.tavern-reference.tavern-autosize { overflow: hidden; }
+.tavern-autosize .page-frame { min-height: 0; }
 .tavern-reference .section-intro { margin-bottom: 16px; }
 .tavern-reference .page-nav a,
 .tavern-reference .school-button,
@@ -65,5 +67,41 @@
 	.filter-label, .filter-hint, .school-count, .results-bar p, footer) { color: var(--muted); }
 .tavern-reference :is(.character-choice-panel > summary, .availability-badge, .ability-progression summary,
 	.legend-name, .glossary-term, .search-input > span) { color: var(--red); }
-.tavern-reference.dark .school-section { --school-color: #b08a54; }
+.tavern-reference.dark .school-section { --school-color: #f0a08d; }
+.tavern-reference.dark .school-ice { --school-color: #9bd5ed; }
+.tavern-reference.dark .school-lightning { --school-color: #f0d477; }
+.tavern-reference.dark .school-wind { --school-color: #99d3b6; }
+.tavern-reference.dark .school-radiant { --school-color: #ffbf83; }
+.tavern-reference.dark .school-necrotic { --school-color: #d3b3ec; }
+.tavern-reference.dark .school-heading h2 { color: var(--school-color); }
+.tavern-reference.dark .school-notes { border-inline-start-color: var(--school-color); }
 .tavern-reference.dark .spell-label { color: #22170c; }
+
+.tavern-reference.dark .keyword-badge {
+	background: #523a2a;
+	color: #ffe2cc;
+}
+.tavern-reference.dark .frequency-badge { background: #2f4739; color: #c1e9d1; }
+.tavern-reference.dark .alternative-badge { background: #514024; color: #f7dfa8; }
+.tavern-reference.dark .restriction-badge { background: #532c2c; color: #ffc9ba; }
+.tavern-reference.dark .arsenal-badge { background: #583823; color: #ffdaaa; }
+.tavern-reference.dark .availability-badge {
+	background: var(--inset);
+	color: var(--ink);
+	border-color: var(--rule);
+}
+.tavern-reference.dark .availability-badge.conditional {
+	background: #532c2c;
+	color: #ffc9ba;
+	border-color: #bd7970;
+}
+.tavern-reference.dark .spell-alternative {
+	background: var(--inset);
+	border-color: var(--rule);
+}
+.tavern-reference.dark :is(.source-link, .source-details, .notice, select:disabled) {
+	color: var(--muted);
+}
+.tavern-reference.dark :is(input, textarea)::placeholder { color: var(--muted); opacity: 1; }
+.tavern-reference.dark .notice.error { color: #ffc9ba; border-color: #bd7970; }
+.tavern-reference.dark :is(.ability-rule, .legend-exert) { border-color: var(--rule); }

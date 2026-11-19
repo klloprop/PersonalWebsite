@@ -182,8 +182,7 @@ function fileIcon(ext: string): string {
 			.nimble-reference {
 				display: block;
 				width: 100%;
-				min-height: 65vh;
-				height: 80dvh;
+				height: calc(var(--nimble-content-height, 80dvh) + 2px);
 				box-sizing: border-box;
 				border: 1px solid #c4a35a;
 				border-radius: 14px;

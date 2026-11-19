@@ -39,4 +39,19 @@
 		matchTheme();
 		new MutationObserver(matchTheme).observe(host, { attributes: true, attributeFilter: ['class'] });
 	}
+
+	const frame = window.frameElement;
+	if (frame?.matches('.nimble-reference')) {
+		document.addEventListener('DOMContentLoaded', () => {
+			const content = document.querySelector('.page-frame');
+			if (!content) return;
+			document.documentElement.classList.add('tavern-autosize');
+
+			// Measure the content, not the document viewport, so the iframe can shrink too.
+			new ResizeObserver(() => {
+				const height = Math.ceil(content.getBoundingClientRect().height);
+				if (height > 0) frame.style.setProperty('--nimble-content-height', `${height}px`);
+			}).observe(content, { box: 'border-box' });
+		});
+	}
 })();

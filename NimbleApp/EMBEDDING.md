@@ -88,3 +88,9 @@ existing Upstash Redis database, scoped to the signed-in account. No new
 environment variables or database migration are needed. The standalone
 download still uses local browser storage, and its profiles are not
 automatically imported into Tavern accounts.
+
+Unlike the fixed-height example above, the Tavern iframe grows and shrinks
+with the reference so users scroll the Library page, not the iframe. It also
+follows the Tavern's light/dark toggle while preserving distinct school
+colors in dark mode. When testing updates, switch tabs, filter the spell
+list, and expand notes to check that the frame resizes in both directions.
