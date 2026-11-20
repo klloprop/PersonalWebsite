@@ -2,6 +2,7 @@ import json
 import re
 import unittest
 from html import unescape
+from pathlib import Path
 
 from NimbleApp.build_offline import build
 
@@ -15,7 +16,7 @@ class OfflineCharacterTests(unittest.TestCase):
         self.assertEqual(len(features), 15)
         footer = unescape(re.search(r"<footer>(.*?)</footer>", html, re.S)[1])
         self.assertIn("Core Rules 3.3", footer)
-        self.assertIn("Game Master’s Guide 3.0 (cross-reference only)", footer)
+        self.assertIn("Game Master’s Guide 3.0", footer)
         class_sources = re.findall(r"<li>(.*?)</li>", footer)
         self.assertEqual({source.rsplit(" ", 1)[0] for source in class_sources}, set(features))
         self.assertIn("Hexbinder 3.0", class_sources)
@@ -76,3 +77,7 @@ class OfflineCharacterTests(unittest.TestCase):
         ooze = next(row for row in origins["ancestries"] if row["name"] == "Oozeling/Construct")
         self.assertIn("magical healing heals its minimum", ooze["description"])
         self.assertTrue(next(row for row in origins["backgrounds"] if row["name"] == "Academy Dropout")["utilitySpell"])
+
+    def test_published_bundle_matches_current_class_sheets_and_rules(self):
+        published = Path(__file__).with_name("Nimble-Spellbook-Offline.html").read_text(encoding="utf-8")
+        self.assertEqual(published, build(), "Rebuild the offline bundle after changing its inputs.")

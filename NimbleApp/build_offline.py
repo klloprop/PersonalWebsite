@@ -8,6 +8,7 @@ from html import escape
 from pathlib import Path
 
 from NimbleApp.class_features import feature_index
+from NimbleApp.extract_class_spells import CLASS_SHEETS
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "Nimble-Spellbook-Offline.html"
@@ -46,7 +47,7 @@ def build() -> str:
         raise ValueError("The database contains no player spells")
     # Do not let spell text terminate the script data element.
     payload = json.dumps(spells, ensure_ascii=False).replace("<", "\\u003c")
-    classes = feature_index(ROOT / "classes")
+    classes = feature_index(CLASS_SHEETS)
     features = json.dumps(classes, ensure_ascii=False).replace("<", "\\u003c")
     class_versions = "\n".join(
         f"<li>{escape(name)} {pdf_version(data['file'])}</li>"
@@ -82,7 +83,7 @@ def build() -> str:
       <span>NIMBLE <b>&#10022;</b> OFFLINE PLAYER REFERENCE</span>
       <span>PDF SOURCES ARE CITED, NOT INCLUDED</span>
       <div class="footer-sources">
-        <p>PDF versions: Core Rules 3.3 &middot; Game Master&rsquo;s Guide 3.0 (cross-reference only)</p>
+        <p>PDF versions: Core Rules 3.3 &middot; Game Master&rsquo;s Guide 3.0</p>
         <details>
           <summary>Class sheet versions ({len(classes)})</summary>
           <ul>{class_versions}</ul>

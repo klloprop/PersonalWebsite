@@ -2,13 +2,13 @@ import unittest
 
 import pymupdf
 
-from NimbleApp.extract_spells import CORE, GMG, ROOT, extract_core, extract_secret, join_text
+from NimbleApp.extract_spells import CORE, GMG, RULEBOOKS, extract_core, extract_secret, join_text
 
 
 class SpellExtractionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with pymupdf.open(ROOT / CORE) as core, pymupdf.open(ROOT / GMG) as gmg:
+        with pymupdf.open(RULEBOOKS / CORE) as core, pymupdf.open(RULEBOOKS / GMG) as gmg:
             cls.core = extract_core(core)
             cls.secret = extract_secret(gmg)
         cls.spells = {record[0]: record for record in cls.core + cls.secret}

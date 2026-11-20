@@ -9,6 +9,8 @@ import pymupdf
 
 
 ROOT = Path(__file__).resolve().parent
+RESOURCES = ROOT.parent / "adorable-accretion" / "src" / "assets" / "Ressources"
+RULEBOOKS = RESOURCES / "Rulebooks"
 CORE = "NimbleCoreRules3.3.pdf"
 GMG = "NimbleGMG3.0.pdf"
 SCHOOLS = {
@@ -170,7 +172,7 @@ def main():
     args = parser.parse_args()
     if args.output.exists():
         parser.error(f"output already exists: {args.output}")
-    with pymupdf.open(ROOT / CORE) as core, pymupdf.open(ROOT / GMG) as gmg:
+    with pymupdf.open(RULEBOOKS / CORE) as core, pymupdf.open(RULEBOOKS / GMG) as gmg:
         records = extract_core(core) + extract_secret(gmg)
     if len(records) != 84 or sum(record[4] for record in records) != 11:
         raise ValueError(f"Unexpected extraction count: {len(records)}; expected 73 core and 11 secret spells")

@@ -19,45 +19,47 @@
     Zephyr: ["Pain", "Iron", "Hurricanes", "Flame"]
   };
   const coreSchools = ["Fire", "Ice", "Lightning", "Wind", "Radiant", "Necrotic"];
+  const companionSource = { page: 7, sourceLabel: "Hunter 3.0" };
   const companionSizes = ["Small companion", "Medium companion", "Large companion"];
   const companionRules = {
     "Protect Me!": [
-      (level) => `When you Defend, turn the triggering attack into a miss and move away up to half your Speed. ${level >= 7 ? 2 : 1} use(s) per encounter.`,
-      () => "When you Defend, your companion can hit the attacker for 1d4 + LVL damage before you resolve the defense.",
+      (level) => `When you Defend, the attack misses. Move half your Speed. ${level >= 7 ? 2 : 1} use(s) per encounter.`,
+      () => "When you Defend, first attack the attacker for 1d8 + LVL damage. Once per encounter.",
       (level) => `Your companion moves you up to 12 spaces to safety ${level >= 7 ? "before you take a Wound" : "after you take a Wound"}. ${level >= 15 ? 2 : 1} use(s) per encounter.`
     ],
     "Go for the Throat!": [
-      (level) => `Spend 1 Thrill of the Hunt charge and no actions. Your companion hits your quarry for 1d4 + LVL damage, ignoring armor. ${level >= 15 ? "3 uses per encounter, once per round" : level >= 11 ? "2 uses per encounter, once per round" : "1 use per encounter"}.`,
+      (level) => `Spend 1 Thrill of the Hunt charge and no actions. Your companion hits your Quarry for 1d4 + LVL damage, ignoring armor. ${level >= 15 ? "3 uses" : level >= 11 ? "2 uses" : "1 use"} per encounter.`,
       (level) => `Spend 1 action and 1 Thrill of the Hunt charge. Your companion hits your quarry for 1d8 + (3 × LVL) damage, ignoring armor. ${level >= 11 ? 2 : 1} use(s) per encounter.`,
-      (level) => `Spend 2 actions and 2 Thrill of the Hunt charges. Your companion hits your quarry for 1d12 + (4 × LVL) damage, ignoring armor. If that kills the quarry, you can deal half that damage to another creature within Reach 4. ${level >= 11 ? 2 : 1} use(s) per encounter.`
+      (level) => `Spend 2 actions and 1 Thrill of the Hunt charge. Your companion hits your Quarry for 1d12 + (4 × LVL) damage, ignoring armor. If that kills the Quarry, you can deal half that damage to another creature within Reach 4. ${level >= 11 ? 2 : 1} use(s) per encounter.`
     ]
   };
   const companionTraits = [
     (level) => `Keen Eyes: Mark a target without spending an action. ${level >= 11 ? 3 : level >= 7 ? 2 : 1} use(s) per encounter.`,
-    (level) => `Ferocious: When you or your companion crit against your quarry, the companion deals another LVL damage to it, ignoring armor, and you can move up to ${level >= 15 ? 6 : level >= 7 ? 4 : 2} spaces for free.`,
+    (level) => `Ferocious: When you crit your Quarry, deal an extra LVL damage, ignoring armor, and move up to ${level >= 15 ? 6 : level >= 7 ? 4 : 2} spaces for free.`,
     () => "Alpha Protector: Halve the damage from the first attack against you each round."
   ];
 
   function companionOptions(level) {
     return companionSizes.map((name, index) => ({
-      name, description: companionTraits[index](level), page: 81, sourceLabel: "Heroes 2.0.3"
+      ...companionSource, name, description: companionTraits[index](level)
     }));
   }
 
+  const epicBoonSource = { page: 38, sourceLabel: "Game Master’s Guide 3.0" };
   const epicBoons = [
     ["Epic Agility", "Once per encounter, take one extra action."],
     ["Epic Criticals", "When rolling critical-hit damage, you can swap one of the dice for a d20."],
-    ["Epic Defense", "Add 3 Armor to your shields."],
+    ["Epic Defense", "Your shields grant 3 extra Defense."],
     ["Epic Foresight", "Add 5 to Initiative. Your first attack each encounter has advantage."],
-    ["Epic Knowledge", "Once a day, discover a hidden fact about a legendary person or object."],
+    ["Epic Knowledge", "Once per Safe Rest, gain hidden knowledge about a legendary being or object."],
     ["Epic Mana", "When healed, you may recover mana instead, at a rate of 1 mana per 5 HP of healing."],
-    ["Epic Mind", "Gain 8 mana."],
+    ["Epic Mind", "Increase your maximum mana by 8."],
     ["Epic Stamina", "During a Field Rest, a Hit Die roll of 4 or more also heals one Wound."],
     ["Epic Speed", "Add 4 to both Speed and Initiative."],
     ["Epic Stats", "Add 1 to each of three different stats."],
-    ["Epic Senses", "Choose Blindsight 6 or Darkvision 16."],
+    ["Epic Senses", "Gain Blindsight 6."],
     ["Epic Resistance", "Once per encounter, negate damage you would take or ignore a failed save."]
-  ].map(([name, description]) => ({ name, description, page: 23, sourceLabel: "GM Guide 2.0.3" }));
+  ].map(([name, description]) => ({ ...epicBoonSource, name, description }));
 
   const fixedReplacements = [
     ["BOUNDLESS FLAMES", "BOUNDLESS RAGE"],
@@ -77,11 +79,11 @@
     return available.flatMap((feature) => {
       const base = feature.name.replace(/ \(\d+\)$/, "");
       if (replaced.has(base)) return [];
-      if (base === "Epic Boon") return [{ ...feature, choice: true, description: "Choose an Epic Boon. Its effects are listed here." }];
+      if (base === "Epic Boon") return [{ ...feature, ...epicBoonSource, choice: true, description: "Choose an Epic Boon. Its effects are listed here." }];
       if (activeSubclass === "Beastmaster (story)") {
         if (!feature.subclass && feature.level === 2 && feature.name === "Thrill of the Hunt") return [];
         if (feature.subclass === activeSubclass && feature.name === "Beastmaster Companion") {
-          return [{ ...feature, page: 81, sourceLabel: "Heroes 2.0.3", description: "Choose your companion's size. Its HP and movement are abstracted, and it acts without being commanded for its listed abilities. With GM approval, it can perform actions natural to the animal; commanding a more involved action such as Grapple or Help costs 1 action.\n\nGo for the Throat! and Protect Me! replace your first two Thrill of the Hunt picks. Companion attacks normally count as yours for gaining charges. Abilities that spend charges always hit and never generate charges. Unspent charges expire at the end of combat." }];
+          return [{ ...feature, ...companionSource, description: "Choose your companion's size. Its HP and movement are abstracted, and it acts without being commanded for its listed abilities. With GM approval, it can perform actions natural to the animal; commanding a more involved action such as Grapple or Help costs 1 action.\n\nGo for the Throat! and Protect Me! replace your first two Thrill of the Hunt picks. Your companion's attacks count as yours when earning Thrill of the Hunt charges: gain one when you hit your Quarry in melee, crit it at range, or it dies. Abilities that spend charges cannot miss or generate new charges. Unspent charges expire at the end of combat." }];
         }
         const effects = companionRules[feature.name];
         if (feature.subclass === activeSubclass && effects) {
@@ -90,7 +92,7 @@
             ? effects.map((effect, i) => `${companionSizes[i]}: ${effect(level)}`).join("\n\n")
             : `${companionSizes[index]}: ${effects[index](level)}`;
           const category = feature.name === "Protect Me!" ? "Reactions" : "Attacks & combat actions";
-          return [{ ...feature, choice: false, description, category, page: 81, sourceLabel: "Heroes 2.0.3" }];
+          return [{ ...feature, ...companionSource, choice: false, description, category }];
         }
       }
       if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];

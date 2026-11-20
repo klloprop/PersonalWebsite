@@ -29,15 +29,19 @@ test("Beastmaster shows each size's playable rules and level upgrades", () => {
       .map(({ name, description }) => [name, description]));
   const attack = "Go for the Throat!";
   const defense = "Protect Me!";
-  assert.match(companion(3, "Small companion")[defense], /miss and move away up to half your Speed/);
-  assert.match(companion(15, "Small companion")[attack], /1d4.*3 uses per encounter, once per round/);
+  assert.match(companion(3, "Small companion")[defense], /misses\. Move half your Speed/);
+  assert.match(companion(7, "Small companion")[defense], /2 use/);
+  assert.match(companion(11, "Small companion")[attack], /1d4.*2 uses per encounter\.$/);
+  assert.match(companion(15, "Small companion")[attack], /1d4.*3 uses per encounter\.$/);
   assert.match(companion(11, "Medium companion")[attack], /1 action.*1d8.*2 use/);
-  assert.match(companion(3, "Medium companion")[defense], /1d4.*before you resolve/);
+  assert.match(companion(3, "Medium companion")[defense], /Defend, first attack.*1d8 \+ LVL.*Once per encounter/);
   assert.match(companion(3, "Large companion")[defense], /after you take a Wound/);
   assert.match(companion(15, "Large companion")[defense], /before you take a Wound.*2 use/);
-  assert.match(companion(11, "Large companion")[attack], /2 actions.*1d12.*Reach 4/);
+  assert.match(companion(11, "Large companion")[attack], /2 actions and 1 Thrill of the Hunt charge\..*1d12.*Reach 4.*2 use/);
   assert.match(companion(3)[attack], /Small companion:.*Medium companion:.*Large companion:/s);
   assert.match(companionOptions(15)[1].description, /move up to 6 spaces/);
+  assert.deepEqual(companionOptions(3).map(({ sourceLabel, page }) => [sourceLabel, page]),
+    Array(3).fill(["Hunter 3.0", 7]));
 });
 
 test("Epic Boon opens a playable picker for every class instead of referring to the GM guide", () => {
@@ -47,6 +51,11 @@ test("Epic Boon opens a playable picker for every class instead of referring to 
     assert.doesNotMatch(boon.description, /see|consult|refer to/i);
   }
   assert.match(epicBoons.find(({ name }) => name === "Epic Resistance").description, /once per encounter.*failed save/i);
+  const boons = Object.fromEntries(epicBoons.map(({ name, description }) => [name, description]));
+  assert.match(boons["Epic Defense"], /3 extra Defense/);
+  assert.match(boons["Epic Knowledge"], /Once per Safe Rest/);
+  assert.match(boons["Epic Mind"], /maximum mana by 8/);
+  assert.equal(boons["Epic Senses"], "Gain Blindsight 6.");
 });
 
 test("feature choices reserve learned abilities but allow repeatable bonuses", () => {

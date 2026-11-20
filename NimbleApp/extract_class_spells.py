@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pymupdf
 
-from NimbleApp.extract_spells import ROOT, clean, join_text, lines
+from NimbleApp.extract_spells import RESOURCES, ROOT, clean, join_text, lines
+
+
+CLASS_SHEETS = RESOURCES / "CharacterOptions"
 
 
 SOURCES = [
@@ -21,7 +24,7 @@ SOURCES = [
 def extract_class_spells():
     records = []
     for filename, page_number, school, pattern, regions in SOURCES:
-        with pymupdf.open(ROOT / "classes" / filename) as doc:
+        with pymupdf.open(CLASS_SHEETS / filename) as doc:
             page_lines = lines(doc[page_number - 1])
         for left, right, top, bottom in regions:
             region = [(bbox, spans, text) for bbox, spans, text in page_lines
@@ -59,7 +62,7 @@ def extract_class_spells():
                 records.append((name, school, tier, 0, 0, cast[0], tags, None, join_text(body),
                                 None, str(Path("classes") / filename), page_number))
     filename = "Songweaver3.1.pdf"
-    with pymupdf.open(ROOT / "classes" / filename) as doc:
+    with pymupdf.open(CLASS_SHEETS / filename) as doc:
         page_text = doc[6].get_text()
     start = page_text.index("Legend’s Tale. Cantrip, 1 Action")
     end = page_text.index("LEVEL 15", start)

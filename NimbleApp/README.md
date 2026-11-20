@@ -17,8 +17,8 @@ cannot be picked again. Repeatable bonuses, such as stat increases, are still
 selectable. With GM approval, Beastmaster automatically replaces the first
 two Thrill of the Hunt picks with **Go for the Throat!** and **Protect Me!**.
 Choose the companion's size to show its traits and both abilities at your
-current level. Later Hunt picks are unchanged. Epic Boon effects are shown
-in the picker, using the options from the bundled GM Guide 2.0.3. Fixed replacements take effect
+current level using Hunter 3.0. Later Hunt picks are unchanged. Epic Boon
+effects are shown in the picker using Game Master's Guide 3.0. Fixed replacements take effect
 when their new feature unlocks: Professional Skulker replaces Leave No Trace,
 and Captain of Legions replaces Unparalleled Tactics. The Forge swaps Necrotic
 for Fire, including utility spell picks. Legends lose Lyrical Weaponry, and
@@ -54,9 +54,9 @@ to remove the selected character and its notes. The standalone edition stores
 profiles in the same browser where local file storage is supported. Selections are tracking aids;
 the app does not enforce every choice limit or prerequisite.
 
-To refresh the offline file after changing the app or spell database, install
-PyMuPDF and keep the class PDFs in `classes/`, then run
-`py build_offline.py` on Windows (or `python3 build_offline.py` elsewhere).
+To refresh the offline file after changing the app, class sheets, or spell
+database, install PyMuPDF and run `py -m NimbleApp.build_offline` from the
+repository root. The build reads the Library's `CharacterOptions` PDFs directly.
 Only share the file if you have permission to share the included material.
 
 ## Spell browser
@@ -105,13 +105,13 @@ spell heading; check the description for individual effects.
 To regenerate the database with Python:
 
 ```powershell
-py -m pip install -r requirements.txt
-py extract_spells.py --output new-spells.sqlite3
+py -m pip install -r NimbleApp\requirements.txt
+py -m NimbleApp.extract_spells --output new-spells.sqlite3
 ```
 
 The Core Rules extractor refuses to overwrite an existing database. To add
-class-only spells, place the generated database at `spells.sqlite3` and run
-`py extract_class_spells.py`. This verifies existing class entries rather
+class-only spells, place the generated database at `NimbleApp\spells.sqlite3` and run
+`py -m NimbleApp.extract_class_spells`. This verifies existing class entries rather
 than overwriting differing ones. Both extractors are specific to the supplied
 PDF editions. Query the database with any SQLite client, for example:
 
