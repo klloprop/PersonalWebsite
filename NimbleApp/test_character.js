@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary,
-  unlockedFeatures, resolveFeaturePicks } = require("./character.js");
+  unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons } = require("./character.js");
 
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
@@ -21,6 +21,32 @@ test("Beastmaster automatically replaces the first two Hunt picks at level 3", (
     assert.ok(unlocked.some(({ name, level, choice }) => name === ability && level === 3 && !choice));
     assert.ok(!atLevel(4, "Pack").some(({ name }) => name === ability));
   }
+});
+
+test("Beastmaster shows each size's playable rules and level upgrades", () => {
+  const companion = (level, companionSize) => Object.fromEntries(
+    unlockedFeatures(classSheets.Hunter.features, { subclass: "Beastmaster (story)", level, companionSize })
+      .map(({ name, description }) => [name, description]));
+  const attack = "Go for the Throat!";
+  const defense = "Protect Me!";
+  assert.match(companion(3, "Small companion")[defense], /miss and move away up to half your Speed/);
+  assert.match(companion(15, "Small companion")[attack], /1d4.*3 uses per encounter, once per round/);
+  assert.match(companion(11, "Medium companion")[attack], /1 action.*1d8.*2 use/);
+  assert.match(companion(3, "Medium companion")[defense], /1d4.*before you resolve/);
+  assert.match(companion(3, "Large companion")[defense], /after you take a Wound/);
+  assert.match(companion(15, "Large companion")[defense], /before you take a Wound.*2 use/);
+  assert.match(companion(11, "Large companion")[attack], /2 actions.*1d12.*Reach 4/);
+  assert.match(companion(3)[attack], /Small companion:.*Medium companion:.*Large companion:/s);
+  assert.match(companionOptions(15)[1].description, /move up to 6 spaces/);
+});
+
+test("Epic Boon opens a playable picker for every class instead of referring to the GM guide", () => {
+  for (const { features } of Object.values(classSheets)) {
+    const boon = unlockedFeatures(features, { level: 20 }).find(({ name }) => name === "Epic Boon");
+    assert.ok(boon?.choice);
+    assert.doesNotMatch(boon.description, /see|consult|refer to/i);
+  }
+  assert.match(epicBoons.find(({ name }) => name === "Epic Resistance").description, /once per encounter.*failed save/i);
 });
 
 test("feature choices reserve learned abilities but allow repeatable bonuses", () => {

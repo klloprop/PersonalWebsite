@@ -316,7 +316,7 @@
     });
   }
 
-  function choiceOptions(feature, data, entries) {
+  function choiceOptions(feature, data, entries, current) {
     const name = feature.name.replace(/ \(\d+\)$/, "");
     const text = feature.description || "";
     const direct = (names) => names.map((value) => ({ name: value }));
@@ -329,7 +329,8 @@
       { name: "Piercing", description: "Once per turn, a piercing attack can also hit a creature behind the target and within Reach.", page: 4 },
       { name: "Bludgeoning", description: "Once per turn, deal +10 damage with a bludgeoning attack against a creature with Defense.", page: 4 }
     ];
-    if (name === "Beastmaster Companion") return direct(["Small companion", "Medium companion", "Large companion"]);
+    if (name === "Beastmaster Companion") return rules.companionOptions(current.level);
+    if (name === "Epic Boon") return rules.epicBoons;
     if (name === "Hexbinder Subclass") return direct(rules.classes.Hexbinder);
     if (name === "Fireshaper" || name === "Frostshaper") {
       const schools = name === "Fireshaper" ? ["Ice", "Lightning"] : ["Fire", "Lightning"];
@@ -421,7 +422,8 @@
         return state ? [{ spell, state }] : [];
       });
       renderCasting(current, entries);
-      const features = rules.unlockedFeatures(data.features, current);
+      const companionSize = featurePicks[JSON.stringify([className, subclass, 3, "Beastmaster Companion"])];
+      const features = rules.unlockedFeatures(data.features, { ...current, companionSize });
       const selectedOptions = [];
       const knownFeatures = features.filter((feature) => !feature.choice).map(({ name }) => name);
       function refreshFeaturePicks() {
@@ -486,7 +488,7 @@
               detail.append(node("span", "keyword-badge", `Level ${row.level}`));
               if (row.activation) detail.append(node("span", "keyword-badge", row.activation));
               if (consolidated || row.name !== name) detail.append(node("strong", "", ` ${row.name}`));
-              detail.append(node("small", "", ` · ${row.source || row.subclass || className} · PDF page ${row.page}`));
+              detail.append(node("small", "", ` · ${row.sourceLabel || row.source || row.subclass || className} · PDF page ${row.page}`));
               if (row.description) detail.append(node("p", "feature-description", row.description));
               progression.append(detail);
             }
@@ -503,10 +505,10 @@
       const makeFeatureList = (items) => {
         const list = node("ul", "character-feature-list");
         for (const f of items) {
-          const listed = choiceOptions(f, data, entries).some((option) => option.description);
+          const listed = choiceOptions(f, data, entries, current).some((option) => option.description);
           const item = node("li", listed ? "arsenal-feature" : "");
           item.append(node("span", "keyword-badge", `Level ${f.level}`), node("strong", "", ` ${f.name}`),
-            node("small", "", ` · ${f.subclass || className} · PDF page ${f.page}`));
+            node("small", "", ` · ${f.sourceLabel || f.subclass || className} · PDF page ${f.page}`));
           if (listed) item.append(document.createTextNode(" "), node("span", "keyword-badge arsenal-badge", "Ability choice"));
           if (f.description) item.append(node("p", "feature-description", f.description));
           // Reuse the old level-3 storage key for the first Gambit so saved picks survive.
@@ -514,7 +516,7 @@
           const key = JSON.stringify([className, f.subclass, pickLevel, f.name]);
           if (f.choice) {
             const text = f.description || "";
-            const availableOptions = choiceOptions(f, data, entries);
+            const availableOptions = choiceOptions(f, data, entries, current);
             const two = /(?:^|[.!?]\s+)Choose 2\b/i.test(text);
             const spellOptions = (filter) => spells.filter((spell) => !Object.hasOwn(rules.classes, spell.school) && filter(spell))
               .map((spell) => ({ name: spell.name, spell }));
@@ -585,7 +587,7 @@
                 featurePicks[storedKey] = value;
                 autosave();
                 if (value === "__custom") byId("my-notes-panel").open = true;
-                if (/^Wind Spellcasting/.test(f.name)) {
+                if (/^Wind Spellcasting/.test(f.name) || f.name === "Beastmaster Companion") {
                   render();
                   [...featureChoices.querySelectorAll("select")].find((item) => item.dataset.featurePick === storedKey)?.focus();
                   return;
@@ -628,8 +630,11 @@
       const notes = node("div", "class-sheet-notes");
       for (const note of data.notes) {
         const card = node("aside", "class-sheet-note");
+        const description = note.name === "Making Your Own People"
+          ? "With GM approval, create your own people in place of the defaults: one combat ally with damage that scales by level, one out-of-combat helper, one narrative contact, and one who provides occasional utility."
+          : note.description;
         card.append(node("span", "keyword-badge", "Class note"), node("strong", "", ` ${note.name}`),
-          node("p", "feature-description", note.description),
+          node("p", "feature-description", description),
           node("small", "", `PDF page ${note.page}`));
         notes.append(card);
       }
@@ -709,7 +714,7 @@
       } else {
         spellOutput.append(node("p", "character-note", "No spells are listed for this class, subclass, and level."));
       }
-      if (subclass.endsWith(" (story)")) output.append(node("p", "character-note", "Story-based subclasses require GM approval. Check the class sheet for any features they replace."));
+      if (subclass.endsWith(" (story)")) output.append(node("p", "character-note", "Story-based subclasses require GM approval."));
     }
   }
 

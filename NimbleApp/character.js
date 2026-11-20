@@ -19,10 +19,45 @@
     Zephyr: ["Pain", "Iron", "Hurricanes", "Flame"]
   };
   const coreSchools = ["Fire", "Ice", "Lightning", "Wind", "Radiant", "Necrotic"];
-  const companionAbilities = [
-    { name: "Go for the Throat!", description: "Use the attack for your companion's size. See the Hunter class sheet for the size-specific rules." },
-    { name: "Protect Me!", description: "Use the protection ability for your companion's size. See the Hunter class sheet for the size-specific rules." }
+  const companionSizes = ["Small companion", "Medium companion", "Large companion"];
+  const companionRules = {
+    "Protect Me!": [
+      (level) => `When you Defend, turn the triggering attack into a miss and move away up to half your Speed. ${level >= 7 ? 2 : 1} use(s) per encounter.`,
+      () => "When you Defend, your companion can hit the attacker for 1d4 + LVL damage before you resolve the defense.",
+      (level) => `Your companion moves you up to 12 spaces to safety ${level >= 7 ? "before you take a Wound" : "after you take a Wound"}. ${level >= 15 ? 2 : 1} use(s) per encounter.`
+    ],
+    "Go for the Throat!": [
+      (level) => `Spend 1 Thrill of the Hunt charge and no actions. Your companion hits your quarry for 1d4 + LVL damage, ignoring armor. ${level >= 15 ? "3 uses per encounter, once per round" : level >= 11 ? "2 uses per encounter, once per round" : "1 use per encounter"}.`,
+      (level) => `Spend 1 action and 1 Thrill of the Hunt charge. Your companion hits your quarry for 1d8 + (3 × LVL) damage, ignoring armor. ${level >= 11 ? 2 : 1} use(s) per encounter.`,
+      (level) => `Spend 2 actions and 2 Thrill of the Hunt charges. Your companion hits your quarry for 1d12 + (4 × LVL) damage, ignoring armor. If that kills the quarry, you can deal half that damage to another creature within Reach 4. ${level >= 11 ? 2 : 1} use(s) per encounter.`
+    ]
+  };
+  const companionTraits = [
+    (level) => `Keen Eyes: Mark a target without spending an action. ${level >= 11 ? 3 : level >= 7 ? 2 : 1} use(s) per encounter.`,
+    (level) => `Ferocious: When you or your companion crit against your quarry, the companion deals another LVL damage to it, ignoring armor, and you can move up to ${level >= 15 ? 6 : level >= 7 ? 4 : 2} spaces for free.`,
+    () => "Alpha Protector: Halve the damage from the first attack against you each round."
   ];
+
+  function companionOptions(level) {
+    return companionSizes.map((name, index) => ({
+      name, description: companionTraits[index](level), page: 81, sourceLabel: "Heroes 2.0.3"
+    }));
+  }
+
+  const epicBoons = [
+    ["Epic Agility", "Once per encounter, take one extra action."],
+    ["Epic Criticals", "When rolling critical-hit damage, you can swap one of the dice for a d20."],
+    ["Epic Defense", "Add 3 Armor to your shields."],
+    ["Epic Foresight", "Add 5 to Initiative. Your first attack each encounter has advantage."],
+    ["Epic Knowledge", "Once a day, discover a hidden fact about a legendary person or object."],
+    ["Epic Mana", "When healed, you may recover mana instead, at a rate of 1 mana per 5 HP of healing."],
+    ["Epic Mind", "Gain 8 mana."],
+    ["Epic Stamina", "During a Field Rest, a Hit Die roll of 4 or more also heals one Wound."],
+    ["Epic Speed", "Add 4 to both Speed and Initiative."],
+    ["Epic Stats", "Add 1 to each of three different stats."],
+    ["Epic Senses", "Choose Blindsight 6 or Darkvision 16."],
+    ["Epic Resistance", "Once per encounter, negate damage you would take or ignore a failed save."]
+  ].map(([name, description]) => ({ name, description, page: 23, sourceLabel: "GM Guide 2.0.3" }));
 
   const fixedReplacements = [
     ["BOUNDLESS FLAMES", "BOUNDLESS RAGE"],
@@ -32,7 +67,7 @@
     ["Supreme Underdog", "Supreme Execution"],
   ];
 
-  function unlockedFeatures(features, { subclass, level }) {
+  function unlockedFeatures(features, { subclass, level, companionSize }) {
     const activeSubclass = level >= 3 ? subclass : "";
     const available = features.filter((feature) =>
       feature.level <= level && (!feature.subclass || feature.subclass === activeSubclass));
@@ -42,14 +77,20 @@
     return available.flatMap((feature) => {
       const base = feature.name.replace(/ \(\d+\)$/, "");
       if (replaced.has(base)) return [];
+      if (base === "Epic Boon") return [{ ...feature, choice: true, description: "Choose an Epic Boon. Its effects are listed here." }];
       if (activeSubclass === "Beastmaster (story)") {
         if (!feature.subclass && feature.level === 2 && feature.name === "Thrill of the Hunt") return [];
         if (feature.subclass === activeSubclass && feature.name === "Beastmaster Companion") {
-          return [{ ...feature, description: "Choose your companion's size. Go for the Throat! and Protect Me! automatically replace your first two Thrill of the Hunt picks. Your companion's attacks count toward your Thrill of the Hunt charges." }];
+          return [{ ...feature, page: 81, sourceLabel: "Heroes 2.0.3", description: "Choose your companion's size. Its HP and movement are abstracted, and it acts without being commanded for its listed abilities. With GM approval, it can perform actions natural to the animal; commanding a more involved action such as Grapple or Help costs 1 action.\n\nGo for the Throat! and Protect Me! replace your first two Thrill of the Hunt picks. Companion attacks normally count as yours for gaining charges. Abilities that spend charges always hit and never generate charges. Unspent charges expire at the end of combat." }];
         }
-        const companionAbility = companionAbilities.find(({ name }) => name === feature.name);
-        if (feature.subclass === activeSubclass && companionAbility) {
-          return [{ ...feature, choice: false, description: feature.description || companionAbility.description }];
+        const effects = companionRules[feature.name];
+        if (feature.subclass === activeSubclass && effects) {
+          const index = companionSizes.indexOf(companionSize);
+          const description = index < 0
+            ? effects.map((effect, i) => `${companionSizes[i]}: ${effect(level)}`).join("\n\n")
+            : `${companionSizes[index]}: ${effects[index](level)}`;
+          const category = feature.name === "Protect Me!" ? "Reactions" : "Attacks & combat actions";
+          return [{ ...feature, choice: false, description, category, page: 81, sourceLabel: "Heroes 2.0.3" }];
         }
       }
       if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];
@@ -187,7 +228,7 @@
     if (character.className === "Commander" && character.subclass === "Spellblade (story)") notes.push("Spellblade chooses individual spells; Enchant Weapon is a special free casting.");
     if (character.className === "Revenant" && character.subclass === "Elemental Lord") notes.push("Choose individual spells; casting depends on Wounds. Earth spells are not in the supplied spell database.");
     if (character.className === "Berserker" && character.subclass === "Muscle Mage (story)") notes.push("Muscle spells require Fury Dice; level 11 reduces the requirement by 2. They are not cantrips.");
-    notes.push("Core spell text uses Core Rules 3.3; class sheets may contain different versions. Secret spells require GM approval.");
+    notes.push("Core spell data is based on Core Rules 3.3. Secret spells require GM approval.");
     return notes.join(" ");
   }
 
@@ -331,7 +372,7 @@
   }
 
   const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains,
-    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks };
+    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

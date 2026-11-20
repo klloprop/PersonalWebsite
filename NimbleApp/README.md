@@ -16,8 +16,9 @@ directly below the class selector. Already learned abilities stay visible but
 cannot be picked again. Repeatable bonuses, such as stat increases, are still
 selectable. With GM approval, Beastmaster automatically replaces the first
 two Thrill of the Hunt picks with **Go for the Throat!** and **Protect Me!**.
-You still choose the companion's size; later Hunt picks are unchanged. See
-the Hunter sheet for the size-specific effects. Fixed replacements take effect
+Choose the companion's size to show its traits and both abilities at your
+current level. Later Hunt picks are unchanged. Epic Boon effects are shown
+in the picker, using the options from the bundled GM Guide 2.0.3. Fixed replacements take effect
 when their new feature unlocks: Professional Skulker replaces Leave No Trace,
 and Captain of Legions replaces Unparalleled Tactics. The Forge swaps Necrotic
 for Fire, including utility spell picks. Legends lose Lyrical Weaponry, and
