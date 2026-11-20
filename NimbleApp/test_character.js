@@ -4,10 +4,66 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary,
   unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons,
-  artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource } = require("./character.js");
+  artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource,
+  abilityUpgradeSummary, characterSpellDescription, arcaneCommandOptions } = require("./character.js");
 
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
+
+test("Spellblade replaces tactic and mastery choices without granting a pick for automatic mastery", () => {
+  const { features } = classSheets.Commander;
+  const at = (level, subclass = "Spellblade (story)") => unlockedFeatures(features, { level, subclass });
+  const replacements = (level) => at(level).filter(({ replacement }) => replacement === "Arcane Command");
+  assert.ok(at(2).some(({ name }) => name === "Fit for Any Battlefield"));
+  assert.equal(replacements(3).length, 1);
+  assert.equal(replacements(3)[0].level, 3);
+  assert.equal(replacements(6).filter(({ level }) => level === 6).length, 2);
+  assert.deepEqual(replacements(20).map(({ level }) => level), [3, 6, 6, 8, 10, 10, 12, 16]);
+  assert.ok(!at(20).some(({ name }) => /^(?:Fit for Any Battlefield|Weapon Mastery)/.test(name)));
+  assert.ok(at(20).some(({ name }) => name === "Commander’s Orders"));
+  assert.ok(at(6, "Bulwark").some(({ name }) => name === "Weapon Mastery"));
+});
+
+test("Arcane Command offers orders and public tier 1 or lower spells, not tactics", () => {
+  const orders = classSheets.Commander.catalogs["Commander’s Orders"];
+  const spells = [{ name: "Cantrip", school: "Wind", tier: 0 }, { name: "Tier one", school: "Fire", tier: 1 },
+    { name: "Tier two", school: "Ice", tier: 2 }, { name: "Secret", school: "Radiant", tier: 1, is_secret: 1 },
+    { name: "Class exclusive", school: "Hexbinder", tier: 1 }];
+  const options = arcaneCommandOptions(orders, spells);
+  assert.ok(options.some((row) => row === orders.find(({ tactic }) => !tactic)));
+  assert.ok(!options.some(({ tactic }) => tactic));
+  assert.deepEqual(options.flatMap(({ spell }) => spell ? [spell.name] : []), ["Cantrip", "Tier one"]);
+});
+
+test("Hex and Misery cards show only the upgrades the Hexbinder has unlocked", () => {
+  const features = (level, subclass) => unlockedFeatures(classSheets.Hexbinder.features, { level, subclass });
+  const hex = (level, subclass) => abilityUpgradeSummary("Hexbinder", "Hex", features(level, subclass));
+  assert.equal(hex(4), null);
+  assert.match(Object.fromEntries(hex(5))["Blightwielder’s Touch"], /advantage.*Reach 1/);
+  assert.equal(Object.fromEntries(hex(7))["Cursed Fate"], undefined);
+  assert.match(Object.fromEntries(hex(7, "The Sight"))["Cursed Fate"], /Double.*Futuresight Die/);
+  assert.match(Object.fromEntries(hex(19))["On hit"], /LVL damage or apply 1 Affliction\./);
+  assert.match(Object.fromEntries(hex(20))["On hit"], /LVL damage or apply 2 Afflictions\./);
+  assert.match(Object.fromEntries(hex(20))["On crit"], /Afflictions and add LVL damage/);
+
+  const spells = JSON.parse(offlineHtml.match(/<script id="offline-spells" type="application\/json">(.*?)<\/script>/s)[1]);
+  const misery = spells.find(({ name, school }) => name === "Misery" && school === "Hexbinder");
+  const base = misery.description;
+  assert.equal(characterSpellDescription(misery, "Hexbinder", features(19)), base);
+  assert.match(characterSpellDescription(misery, "Hexbinder", features(20)), /On hit: apply 2 Afflictions\. On crit: apply 3 Afflictions instead\./);
+  assert.equal(characterSpellDescription(misery, "Mage", features(20)), base);
+  assert.equal(misery.description, base);
+});
+
+test("Singularity updates all three affected Gravity abilities at level 15", () => {
+  const summary = (name, level, subclass = "Gravity") => abilityUpgradeSummary("Psion", name,
+    unlockedFeatures(classSheets.Psion.features, { level, subclass }));
+  assert.equal(summary("Gravity Well", 14), null);
+  assert.equal(summary("Gravity Well", 15, "Bladestorm"), null);
+  assert.match(Object.fromEntries(summary("Gravity Well", 15)).Movement, /2 spaces per Strain Die.*2 Strain instead.*Large/);
+  assert.match(Object.fromEntries(summary("Catastrophic Release", 15))["When Concentration ends"], /2 spaces per Strain Die.*at least 2 spaces.*Prone/);
+  assert.match(Object.fromEntries(summary("Crushing Mass", 15))["Free reaction, once per round"], /1 Strain.*Weakened 10 or gain 2 Strain.*Weakened 20/);
+});
 
 test("Constant Tinkering offers unused upgrades only for items learned by that level", () => {
   const data = classSheets["Manawright (Artificer)"];

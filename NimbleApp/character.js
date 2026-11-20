@@ -197,7 +197,13 @@
           return [{ ...feature, ...companionSource, choice: false, description, category, source: "Beastmaster Companion" }];
         }
       }
-      if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];
+      if (activeSubclass === "Spellblade (story)" && ["Fit for Any Battlefield", "Weapon Mastery"].includes(base)) {
+        if (!feature.choice) return [];
+        const replaced = base === "Weapon Mastery" ? feature.name : feature.name.replace(base, "Combat Tactic");
+        return [{ ...feature, name: `Arcane Command — ${replaced}`, level: Math.max(3, feature.level),
+          subclass: activeSubclass, page: 9, replacement: "Arcane Command",
+          description: "Choose an additional Commander’s Order or a spell of tier 1 or lower." }];
+      }
       if (activeSubclass === "Legends (story)" && base === "Lyrical Weaponry") return [];
       if (activeSubclass === "The Forge (story)" && base === "Master of Twilight") {
         return [{ ...feature, description: feature.description.replace(/\bNecrotic\b/g, "Fire") }];
@@ -212,6 +218,12 @@
       if (activeSubclass === "Arena" && /^Commander’s Orders\b/.test(feature.name)) return [];
       return [feature];
     }).sort((a, b) => a.level - b.level);
+  }
+
+  function arcaneCommandOptions(orders, spells) {
+    return [...orders.filter((order) => !order.tactic),
+      ...spells.filter((spell) => coreSchools.includes(spell.school) && !spell.is_secret && spell.tier <= 1)
+        .map((spell) => ({ name: spell.name, spell }))];
   }
 
   function resolveFeaturePicks(slots, picks, knownFeatures) {
@@ -415,6 +427,45 @@
     ];
   }
 
+  function abilityUpgradeSummary(className, name, features) {
+    const has = (title) => features.some((feature) => feature.name === title);
+    if (className === "Hexbinder" && name === "Hex") {
+      const extra = Number(has("Sage of Banes"));
+      const touch = has("Blightwielder’s Touch");
+      const fate = has("Cursed Fate");
+      if (!extra && !touch && !fate) return null;
+      return [
+        ["Attack", "1 action, Reach 4: deal 1d4 damage."],
+        ["On hit", `Add LVL damage or apply ${1 + extra} Affliction${extra ? "s" : ""}.`],
+        ["On crit", "Apply the Afflictions and add LVL damage."],
+        ...(touch ? [["Blightwielder’s Touch", "Gain advantage when using Hex at Reach 1."]] : []),
+        ...(fate ? [["Cursed Fate", "Double the value of a Futuresight Die used with Hex."]] : [])
+      ];
+    }
+    if (className === "Psion" && has("Singularity")) {
+      switch (name) {
+        case "Gravity Well":
+          return [
+            ["Movement", "1 action, Reach 6, once per round: Gain 1 Strain to move a Medium or smaller creature up to 2 spaces per Strain Die you have. Gain 2 Strain instead to move a Large creature the same distance."],
+            ["Opportunity Attacks", "Opportunity Attacks against creatures in your Psionic Field have advantage instead of disadvantage."]
+          ];
+        case "Catastrophic Release":
+          return [["When Concentration ends", "Knock back all adjacent creatures 2 spaces per Strain Die you had. Creatures moved at least 2 spaces are also knocked Prone."]];
+        case "Crushing Mass":
+          return [["Free reaction, once per round", "When an enemy in your Psionic Field attacks, gain 1 Strain to apply Weakened 10 or gain 2 Strain to apply Weakened 20. Either lasts for this turn."]];
+      }
+    }
+    return null;
+  }
+
+  function characterSpellDescription(spell, className, features) {
+    if (className === "Hexbinder" && spell.school === "Hexbinder" && spell.name === "Misery" &&
+        features.some(({ name }) => name === "Sage of Banes")) {
+      return "Reach: 8. Damage: 1d8+LVL. On hit: apply 2 Afflictions. On crit: apply 3 Afflictions instead.";
+    }
+    return spell.description;
+  }
+
   const featureChains = {
     "Manawright (Artificer)": { "Mana Accumulator": ["Tuned Mana Condenser", "Mana Recovery Valve", "Optimized Mana Compression", "Prime Configuration", "Big Brained Inventor", "Grand Mechanist"] },
     Commander: { "Coordinated Strike!": ["Master Commander", "Unparalleled Tactics", "Captain of Legions"] },
@@ -504,7 +555,8 @@
 
   const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains,
     featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons,
-    artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource };
+    artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource,
+    abilityUpgradeSummary, characterSpellDescription, arcaneCommandOptions };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

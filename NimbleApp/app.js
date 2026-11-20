@@ -192,7 +192,7 @@
     return description;
   }
 
-  function spellCard(spell, availability) {
+  function spellCard(spell, availability, description = spell.description) {
     const card = element("article", "spell-card");
     const label = spell.school === "Muscle Mage" ? "MUSCLE SPELL" : spell.is_utility ? "UTILITY CANTRIP" : spell.tier === 0 ? "CANTRIP" : `TIER ${spell.tier}`;
     const tags = [label, spell.tags, spell.is_secret ? "SECRET" : null].filter(Boolean).join(" · ");
@@ -205,9 +205,9 @@
     if (availability === "option") card.append(element("span", "availability-badge", "CHOICE"));
     if (availability === "conditional") card.append(element("span", "availability-badge conditional", "CONDITIONAL"));
     if (spell.source_details) card.append(element("p", "source-details", spell.source_details));
-    const noteStart = referenceStart(spell);
+    const noteStart = description === spell.description ? referenceStart(spell) : -1;
     card.append(spellDescription(
-      noteStart < 0 ? spell.description : spell.description.slice(0, noteStart).trimEnd(),
+      noteStart < 0 ? description : description.slice(0, noteStart).trimEnd(),
       spell.tier === 0 && spell.school !== "Muscle Mage",
       spell.school === "Songweaver" && spell.name === "Legend’s Tale"
     ));
@@ -278,8 +278,8 @@
         if (notes.childElementCount) section.append(notes);
       }
       const grid = element("div", "spell-grid");
-      for (const { spell, availability } of group) {
-        const card = spellCard(spell, availability);
+      for (const { spell, availability, description } of group) {
+        const card = spellCard(spell, availability, description);
         decorateCard?.(card, spell);
         grid.append(card);
       }

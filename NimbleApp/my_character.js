@@ -328,6 +328,7 @@
     const name = feature.name.replace(/ \(\d+\)$/, "");
     const text = feature.description || "";
     const direct = (names) => names.map((value) => ({ name: value }));
+    if (feature.replacement === "Arcane Command") return rules.arcaneCommandOptions(data.catalogs["Commander’s Orders"], spells);
     if (/stat/i.test(name)) return direct([...new Set(text.match(/\b(?:STR|DEX|INT|WIL)\b/g) || [])])
       .map((option) => ({ ...option, repeatable: true }));
     if (/Wind Spellcasting/.test(name)) return direct(["Fire", "Ice", "Lightning", "Radiant", "Necrotic"]);
@@ -408,10 +409,10 @@
     return [...groups.values()];
   }
 
-  function spellList(entries, decorateCard) {
+  function spellList(entries, decorateCard, describeSpell) {
     const list = node("div", "character-spell-list");
     window.SpellbookCards.renderSpellGroups(list, entries.map(({ spell, state }) => ({
-      spell, availability: state
+      spell, availability: state, description: describeSpell?.(spell)
     })), decorateCard);
     return list;
   }
@@ -446,7 +447,7 @@
         return selectedOptions.flatMap(({ feature, storedKey, options }) => {
           const pick = options.get(featurePicks[storedKey]);
           return pick && feature.level <= beforeLevel && !duplicates.includes(storedKey)
-            ? [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.name }] : [];
+            ? [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.replacement || feature.name }] : [];
         });
       };
       function refreshFeaturePicks() {
@@ -456,11 +457,14 @@
             const option = options.get(item.value);
             if (!option) continue;
             item.disabled = !option.repeatable && claimed.has(option.name) && claimed.get(option.name) !== storedKey;
-            item.textContent = item.disabled ? `${option.name} (already learned)` : option.name;
+            const spell = option.spell;
+            const label = spell ? `${option.name} (${spell.tier ? "tier 1" : spell.is_utility ? "utility cantrip" : "cantrip"})` : option.name;
+            item.textContent = item.disabled ? `${label} (already learned)` : label;
           }
           const value = featurePicks[storedKey];
           select.value = !duplicates.includes(storedKey) && (options.has(value) || value === "__custom") ? value : "";
-          explanation.textContent = options.get(select.value)?.description || "";
+          const pick = options.get(select.value);
+          explanation.textContent = pick?.description || pick?.spell?.description || "";
           explanation.hidden = !explanation.textContent;
         }
       }
@@ -489,7 +493,8 @@
             const item = node("li", source ? "arsenal-feature" : "");
             item.append(node("strong", "ability-name", name));
             if (source) item.append(node("span", "keyword-badge arsenal-badge", source.replace(/ \(\d+\)$/, "")));
-            const summary = rows[0].subclass || source ? null : rules.featureSummary(current, name, rows);
+            const summary = rules.abilityUpgradeSummary(className, name, features) ||
+              (rows[0].subclass || source ? null : rules.featureSummary(current, name, rows));
             const consolidated = summary || (rows.length > 1
               ? [...new Set(rows.map((row) => row.description).filter(Boolean))].map((text) => ["", text])
               : null);
@@ -634,7 +639,7 @@
               select.dataset.featurePick = storedKey;
               select.add(new Option("Not selected", ""));
               for (const name of options.keys()) select.add(new Option(name, name));
-              select.add(new Option("Other — record in notes", "__custom"));
+              if (!f.replacement) select.add(new Option("Other — record in notes", "__custom"));
               const explanation = node("p", "feature-description");
               selectedOptions.push({ feature: f, options, storedKey, select, explanation });
               select.addEventListener("change", () => {
@@ -648,7 +653,7 @@
                 featurePicks[storedKey] = value;
                 autosave();
                 if (value === "__custom") byId("my-notes-panel").open = true;
-                if (/^(?:Wind Spellcasting|Eureka!|Powerful Mind)/.test(f.name) || f.name === "Beastmaster Companion") {
+                if (f.replacement || /^(?:Wind Spellcasting|Eureka!|Powerful Mind)/.test(f.name) || f.name === "Beastmaster Companion") {
                   rerenderPick(storedKey);
                   return;
                 }
@@ -687,6 +692,11 @@
       const subclassLabel = subclass || "Choose subclass";
       byId("my-choices-summary").textContent = `Feature Choices · ${choices.length} ${choices.length === 1 ? "option" : "options"}${subclassSelect.disabled ? "" : ` · ${subclassLabel}`}`;
       if (choices.length) featureChoices.append(makeFeatureList(choices));
+      if (subclass === "Spellblade (story)") {
+        for (const [spell, slots] of spellChoices) {
+          if (slots.some(({ storedKey }) => featurePicks[storedKey] === spell.name)) knownFeatures.push(spell.name);
+        }
+      }
       const appliedUpgrades = new Set(upgradeSlots.map(({ select }) => select.value).filter(Boolean));
       for (const { select } of upgradeSlots) {
         for (const option of select.options) {
@@ -712,6 +722,9 @@
         spellOutput.append(node("p", "character-note", rules.explanation(current)));
         const keyFor = (spell) => JSON.stringify([className, subclass, spell.school, spell.name]);
         const states = new Map(entries.map(({ spell, state }) => [spell, state]));
+        const arcaneSpells = new Map(optionRows().filter(({ spell, source }) => spell && source === "Arcane Command")
+          .map(({ spell, level }) => [spell, level]));
+        for (const spell of arcaneSpells.keys()) states.set(spell, "known");
         for (const spell of spellChoices.keys()) if (!states.has(spell)) states.set(spell, "option");
         const chosenIn = (spell, slot) => featurePicks[slot.storedKey] === spell.name;
         const occupied = (slot) => slot.spells.some((spell) => chosenIn(spell, slot));
@@ -725,6 +738,10 @@
         const selectable = cards.filter(isSelectable);
         const characterSpells = cards.filter((entry) => !isSelectable(entry));
         const decorateCard = (card, spell) => {
+          if (arcaneSpells.has(spell)) {
+            card.append(node("p", "character-note", `Learned via: Arcane Command (Level ${arcaneSpells.get(spell)}). Change this pick in Feature Choices.`));
+            return;
+          }
           const slots = spellChoices.get(spell) || [];
           const state = states.get(spell);
           if (state === "known" || (state !== "option" && !slots.length)) return;
@@ -768,14 +785,15 @@
           card.append(label);
           if (checkbox.disabled) card.append(node("p", "character-note", "All matching feature picks are in use."));
         };
+        const describeSpell = (spell) => rules.characterSpellDescription(spell, className, features);
         const section = heading("Character spells", characterSpells.length
-          ? spellList(characterSpells, decorateCard)
+          ? spellList(characterSpells, decorateCard, describeSpell)
           : node("p", "character-note", "No spells known yet. Choose from Selectable spells below."));
         section.firstElementChild.id = "my-spells-title";
         section.firstElementChild.tabIndex = -1;
         spellOutput.append(section);
         if (selectable.length) {
-          const panel = optional("spells", `Selectable spells (${selectable.length})`, spellList(selectable, decorateCard));
+          const panel = optional("spells", `Selectable spells (${selectable.length})`, spellList(selectable, decorateCard, describeSpell));
           panel.id = "my-selectable-spells";
           spellOutput.append(panel);
         }

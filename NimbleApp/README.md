@@ -23,6 +23,8 @@ when their new feature unlocks: Professional Skulker replaces Leave No Trace,
 and Captain of Legions replaces Unparalleled Tactics. The Forge swaps Necrotic
 for Fire, including utility spell picks. Legends lose Lyrical Weaponry, and
 Honorseekers pick Honorable Gambits at the normal Underhanded Ability levels.
+Spellblades replace each Combat Tactic or Weapon Mastery pick with a choice
+of a Commander’s Order or a tier 1 or lower spell under **Feature Choices**.
 Class features are grouped by use and show rules text from the supplied
 sheets. **Character Notes** supports titled pages
 that you can add, switch between, and delete. Save the character profile to
@@ -37,6 +39,8 @@ Infuser upgrade at level 7.
 Selected abilities from the class catalogs appear in the ability list. Related
 rules and level upgrades share entries where applicable. Core feature chains
 show the current rules first, with the original progression expandable by level.
+Hex and Misery display their unlocked upgrades on their character cards, as do
+Gravity Well, Catastrophic Release, and Crushing Mass after unlocking Singularity.
 Shadowmancer's level 3 pact and later invocation choices use separate Lesser
 and Greater catalogs. Psionic ability choices are limited to the ranks unlocked
 when the choice is granted.
