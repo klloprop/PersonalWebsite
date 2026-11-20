@@ -28,6 +28,12 @@ sheets. **Character Notes** supports titled pages
 that you can add, switch between, and delete. Save the character profile to
 keep changes; older notes appear on the **General** page. The casting summary shows the unlocked spell tier and the
 class's mana resource; enter the requested stat to see a numeric maximum.
+Class-specific resources have their own labeled boxes alongside mana and spell
+tier when applicable. Manawrights see their Mana Dice capacity and die size.
+Their Constant Tinkering picks list unused upgrades for inventions and gadgets
+learned by that level, including subclass grants. Chosen upgrades appear on
+the corresponding ability cards, and Alchemists get a separate Aetheric
+Infuser upgrade at level 7.
 Selected abilities from the class catalogs appear in the ability list. Related
 rules and level upgrades share entries where applicable. Core feature chains
 show the current rules first, with the original progression expandable by level.

@@ -139,6 +139,14 @@
 
   function renderCasting(current, entries) {
     const resource = rules.castingResource(current);
+    const secondary = rules.secondaryResource(current);
+    const artificer = current.className === "Manawright (Artificer)";
+    byId("my-resource-label").textContent = artificer ? "Max Mana Dice" : "Mana";
+    byId("my-mana-box").hidden = !resource.stat && Boolean(secondary);
+    byId("my-tier-box").hidden = Boolean(secondary) && (!resource.stat || artificer);
+    byId("my-dice-box").hidden = !secondary;
+    byId("my-dice-label").textContent = secondary?.label || "";
+    byId("my-dice").textContent = secondary?.value || "";
     byId("my-casting").hidden = false;
     byId("my-mana-stat-field").hidden = !resource.stat;
     byId("my-mana-stat-label").textContent = resource.stat ? `Current ${resource.stat} score` : "";
@@ -339,19 +347,21 @@
     }
     if (name === "THE PACT IS SEALED" || name === "Lesser Invocation") return data.catalogs["Lesser Invocations"];
     if (name === "A Gift from the Master") return data.catalogs.Invocations;
-    if (name === "Powerful Mind") return data.catalogs["Psionic Abilities"]
+    if (name === "Powerful Mind" || name === "Shieldstorm") return data.catalogs["Psionic Abilities"]
       .filter((option) => option.requiredLevel > 0 && option.requiredLevel <= feature.level);
     if (name === "Fit for Any Battlefield") return [
       ...data.catalogs["Commander’s Orders"].filter((option) => option.tactic),
       ...(feature.level > 2 ? [{ name: "+1 max Combat Die", description: "Increase your maximum Combat Dice by 1.", page: feature.page, repeatable: true }] : [])
     ];
     if (name === "Commander’s Orders") return data.catalogs[name].filter((option) => !option.tactic);
-    if (name === "Afflictions") return data.catalogs[name].filter((option) => !["Withered", "Frenzied"].includes(option.name));
+    if (name === "Afflictions") return data.catalogs[name].filter(({ name: option }) =>
+      !["Withered", "Frenzied"].includes(option) && !(option === "Pestilent" && current.subclass === "The Hex" && feature.level >= 11));
     if (["Hexbinder’s Familiar", "Empowered Familiar", "Mighty Familiar"].includes(name)) return data.catalogs["Familiar Boons"];
     if (feature.subclass === "Elemental Lord" && name === "Elemental Mastery") return data.catalogs["Elemental Prowess"];
     if (!feature.subclass && name === "Elemental Mastery") return direct(["Fire", "Ice", "Lightning"]);
     if (name === "Old Habits…") return data.catalogs["Underhanded Ability"] || [];
-    if (name === "Constant Tinkering" || name === "Eureka!") return [...(data.catalogs["Eureka!"] || []), ...(data.catalogs.Gadgets || [])];
+    if (name === "Eureka!") return [...rules.artificerCatalog(data, "Eureka!"), ...rules.artificerCatalog(data, "Gadgets")];
+    if (name === "Chimeric Boon") return data.catalogs[name].slice(0, data.catalogs[name].findIndex(({ activation }) => activation));
     if (data.catalogs[name]?.length) return data.catalogs[name];
     if (/\butility spell/i.test(text) && !/\b(?:tier|school to learn)\b/i.test(text)) {
       const school = text.match(/\b(Fire|Ice|Lightning|Wind|Radiant|Necrotic) Utility Spell/i)?.[1];
@@ -425,7 +435,20 @@
       const companionSize = featurePicks[JSON.stringify([className, subclass, 3, "Beastmaster Companion"])];
       const features = rules.unlockedFeatures(data.features, { ...current, companionSize });
       const selectedOptions = [];
-      const knownFeatures = features.filter((feature) => !feature.choice).map(({ name }) => name);
+      const upgradeSlots = [];
+      const automatic = rules.automaticAbilities(data, current);
+      const replacedByAbility = new Set(automatic.filter(({ name }) =>
+        ["Psionic Strike", "Thunder Gauntlets"].includes(name)).map(({ name }) => name));
+      const knownFeatures = [...features.filter((feature) => !feature.choice).map(({ name }) => name),
+        ...automatic.filter(({ source }) => !["Pestilential Reign", "Chimeric Sovereign"].includes(source)).map(({ name }) => name)];
+      const optionRows = (beforeLevel = Infinity) => {
+        const { duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
+        return selectedOptions.flatMap(({ feature, storedKey, options }) => {
+          const pick = options.get(featurePicks[storedKey]);
+          return pick && feature.level <= beforeLevel && !duplicates.includes(storedKey)
+            ? [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.name }] : [];
+        });
+      };
       function refreshFeaturePicks() {
         const { claimed, duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
         for (const { storedKey, options, select, explanation } of selectedOptions) {
@@ -447,16 +470,14 @@
       output.append(unlockedSection);
       function renderAbilities() {
         unlocked.replaceChildren();
-        const selected = selectedOptions.flatMap(({ feature, options, select }) => {
-          const pick = options.get(select.value);
-          if (!pick?.description) return [];
-          const category = /^Savage Arsenal\b/.test(feature.name) ? "Attacks & combat actions" : featureCategory(pick);
-          return [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.name, category }];
-        });
+        const selected = optionRows().filter(({ description }) => description)
+          .map((row) => ({ ...row, category: /^Savage Arsenal\b/.test(row.source) ? "Attacks & combat actions" : featureCategory(row) }));
         const uniquePicks = selected.filter((item, index) => selected.findIndex((other) =>
           other.name === item.name && other.page === item.page && other.description === item.description) === index);
-        const groups = groupFeatures([...features.filter((f) => !f.choice ||
-          /^(?:Fit for Any Battlefield|Weapon Mastery|Shadowrime|We’ll ALL Burn!|Electrical Dedication|(?:Mighty |Elemental )Avatar|Elemental Prowess)$/.test(f.name)), ...uniquePicks]
+        const granted = automatic.filter((row) => !uniquePicks.some((pick) => pick.name === row.name));
+        const upgrades = upgradeSlots.map(({ select, options }) => options.get(select.value)).filter(Boolean);
+        const groups = groupFeatures([...features.filter((f) => (!f.choice && !replacedByAbility.has(f.name)) ||
+          /^(?:Fit for Any Battlefield|Weapon Mastery|Shadowrime|We’ll ALL Burn!|Electrical Dedication|(?:Mighty |Elemental )Avatar|Elemental Prowess)$/.test(f.name)), ...uniquePicks, ...granted]
           .sort((a, b) => a.level - b.level), className);
         for (const category of ["Attacks & combat actions", "Reactions", "Utility & support", "Passives & upgrades", "Progression"]) {
           const items = groups.filter(({ rows }) => featureCategory(rows[0]) === category);
@@ -490,6 +511,11 @@
               if (consolidated || row.name !== name) detail.append(node("strong", "", ` ${row.name}`));
               detail.append(node("small", "", ` · ${row.sourceLabel || row.source || row.subclass || className} · PDF page ${row.page}`));
               if (row.description) detail.append(node("p", "feature-description", row.description));
+              for (const upgrade of upgrades.filter(({ target }) => target === row.name)) {
+                const line = node("p", "feature-description");
+                line.append(node("strong", "", `Upgrade: ${upgrade.upgrade}. `), document.createTextNode(upgrade.description));
+                detail.append(line);
+              }
               progression.append(detail);
             }
             list.append(item);
@@ -502,8 +528,13 @@
         }
         unlockedSection.hidden = !unlocked.childElementCount;
       }
+      function rerenderPick(key) {
+        render();
+        [...featureChoices.querySelectorAll("select")].find((item) => item.dataset.featurePick === key)?.focus();
+      }
       const makeFeatureList = (items) => {
         const list = node("ul", "character-feature-list");
+        const applied = new Set();
         for (const f of items) {
           const listed = choiceOptions(f, data, entries, current).some((option) => option.description);
           const item = node("li", listed ? "arsenal-feature" : "");
@@ -514,7 +545,37 @@
           // Reuse the old level-3 storage key for the first Gambit so saved picks survive.
           const pickLevel = f.name === "Honorable Gambits" && f.level === 4 ? 3 : f.level;
           const key = JSON.stringify([className, f.subclass, pickLevel, f.name]);
-          if (f.choice) {
+          if (f.name === "Constant Tinkering" || f.name === "Aetheric Infusions (2)") {
+            const pool = rules.upgradeOptions(f, [...automatic, ...optionRows(f.level)], applied);
+            const options = new Map(pool.map((option) => [option.name, option]));
+            const label = node("label", "character-feature-note");
+            label.append(node("span", "", `Choose an upgrade for ${f.name} (level ${f.level})`));
+            const select = node("select");
+            select.dataset.featurePick = key;
+            select.add(new Option(pool.length ? "No upgrade selected" : "No eligible upgrades", ""));
+            for (const name of options.keys()) select.add(new Option(name, name));
+            select.value = options.has(featurePicks[key]) ? featurePicks[key] : "";
+            select.disabled = !pool.length;
+            if (select.value) applied.add(select.value);
+            select.addEventListener("change", () => {
+              featurePicks[key] = select.value;
+              autosave();
+              rerenderPick(key);
+            });
+            label.append(select);
+            item.append(label);
+            if (select.value) item.append(node("p", "feature-description", options.get(select.value).description));
+            upgradeSlots.push({ select, options });
+          } else if (f.choice || f.name === "Shieldstorm") {
+            if (f.name === "Shieldstorm") {
+              const grant = rules.shieldstormGrant(data, optionRows(f.level));
+              if (grant) {
+                automatic.push(grant);
+                knownFeatures.push(grant.name);
+                list.append(item);
+                continue;
+              }
+            }
             const text = f.description || "";
             const availableOptions = choiceOptions(f, data, entries, current);
             const two = /(?:^|[.!?]\s+)Choose 2\b/i.test(text);
@@ -526,7 +587,7 @@
             ];
             const avatarOptions = () => spellOptions((spell) => spell.tier > 0 && ["Fire", "Ice", "Lightning", "Wind", "Earth"].includes(spell.school));
             const pools = /invention and 1 new gadget/i.test(text)
-              ? [data.catalogs["Eureka!"] || [], data.catalogs.Gadgets || []]
+              ? [rules.artificerCatalog(data, "Eureka!"), rules.artificerCatalog(data, "Gadgets")]
               : /^Master of Twilight/.test(f.name)
                 ? [subclass === "The Forge (story)" ? "Fire" : "Necrotic", "Radiant"]
                   .map((school) => spellOptions((spell) => spell.school === school && spell.is_utility))
@@ -587,9 +648,8 @@
                 featurePicks[storedKey] = value;
                 autosave();
                 if (value === "__custom") byId("my-notes-panel").open = true;
-                if (/^Wind Spellcasting/.test(f.name) || f.name === "Beastmaster Companion") {
-                  render();
-                  [...featureChoices.querySelectorAll("select")].find((item) => item.dataset.featurePick === storedKey)?.focus();
+                if (/^(?:Wind Spellcasting|Eureka!|Powerful Mind)/.test(f.name) || f.name === "Beastmaster Companion") {
+                  rerenderPick(storedKey);
                   return;
                 }
                 refreshFeaturePicks();
@@ -621,10 +681,18 @@
         }
         return list;
       };
-      const choices = features.filter((f) => f.choice && f.name !== "Hexbinder Subclass");
+      const choices = features.filter((f) => (f.choice && f.name !== "Hexbinder Subclass" &&
+        !(subclass === "Fang & Claw" && f.level >= 15 && /^Chimeric Boon/.test(f.name))) ||
+        ["Aetheric Infusions (2)", "Shieldstorm"].includes(f.name));
       const subclassLabel = subclass || "Choose subclass";
       byId("my-choices-summary").textContent = `Feature Choices · ${choices.length} ${choices.length === 1 ? "option" : "options"}${subclassSelect.disabled ? "" : ` · ${subclassLabel}`}`;
       if (choices.length) featureChoices.append(makeFeatureList(choices));
+      const appliedUpgrades = new Set(upgradeSlots.map(({ select }) => select.value).filter(Boolean));
+      for (const { select } of upgradeSlots) {
+        for (const option of select.options) {
+          if (option.value && option.value !== select.value && appliedUpgrades.has(option.value)) option.disabled = true;
+        }
+      }
       refreshFeaturePicks();
       renderAbilities();
       const notes = node("div", "class-sheet-notes");

@@ -3,10 +3,61 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary,
-  unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons } = require("./character.js");
+  unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons,
+  artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource } = require("./character.js");
 
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
+
+test("Constant Tinkering offers unused upgrades only for items learned by that level", () => {
+  const data = classSheets["Manawright (Artificer)"];
+  const gauntlets = artificerCatalog(data, "Eureka!").find(({ name }) => name === "Thunder Gauntlets");
+  const stim = artificerCatalog(data, "Gadgets").find(({ name }) => name === "Stim Bot");
+  assert.match(gauntlets.description, /1d6 \+ INT.*Mishap/);
+  const learned = [{ ...gauntlets, level: 2 }, { ...stim, level: 4 }];
+  const used = new Set(["Thunder Gauntlets — Extended Arc Coils"]);
+  const names = (level) => upgradeOptions({ name: "Constant Tinkering", level }, learned, used).map(({ name }) => name);
+  assert.deepEqual(names(3), ["Thunder Gauntlets — Kinetic Redirect", "Thunder Gauntlets — Paired Resonators"]);
+  assert.ok(names(4).includes("Stim Bot — Improved Dosing"));
+});
+
+test("subclass items and automatic catalog abilities unlock at their printed levels", () => {
+  const grants = (className, level, subclass) => automaticAbilities(classSheets[className], { className, level, subclass });
+  const artificer = "Manawright (Artificer)";
+  assert.deepEqual(grants(artificer, 2).map(({ name }) => name), ["Thunder Gauntlets"]);
+  const alchemy = (level) => grants(artificer, level, "Alchemist").filter(({ subclass }) => subclass === "Alchemist");
+  assert.deepEqual(alchemy(3).map(({ name }) => name), ["Aetheric Infuser", "Alchemist’s Fire", "Propulsion Potion"]);
+  assert.equal(alchemy(15).length, 8);
+  assert.ok(alchemy(7).some(({ name }) => name === "Cryowall"));
+  const upgrades = upgradeOptions({ name: "Aetheric Infusions (2)", level: 7 }, alchemy(7), new Set());
+  assert.equal(upgrades.length, 3);
+  assert.ok(upgrades.every(({ target }) => target === "Aetheric Infuser"));
+  assert.ok(grants(artificer, 3, "Gadgeteer").some(({ name }) => name === "Cheer Bot"));
+  assert.ok(grants(artificer, 3, "Inventor").some(({ name }) => name === "Tethercoil"));
+  assert.ok(grants(artificer, 3, "Chronurgist").some(({ name }) => name === "Chronal Device"));
+  assert.deepEqual(grants("Hexbinder", 1).map(({ name }) => name), ["Frenzied", "Withered"]);
+  assert.ok(grants("Hexbinder", 11, "The Hex").some(({ name }) => name === "Pestilent"));
+  assert.equal(grants("Psion", 1)[0].name, "Psionic Strike");
+  const bastion = shieldstormGrant(classSheets.Psion, []);
+  assert.match(bastion.description, /Shield/);
+  assert.equal(shieldstormGrant(classSheets.Psion, [bastion]), null);
+  assert.equal(grants("Stormshifter", 14, "Fang & Claw").length, 0);
+  assert.equal(grants("Stormshifter", 15, "Fang & Claw").length, 9);
+});
+
+test("resource summaries reflect dice upgrades and subclass exceptions", () => {
+  const resource = (className, level, subclass) => secondaryResource({ className, level, subclass });
+  assert.equal(resource("Manawright (Artificer)", 13).value, "d8");
+  assert.equal(resource("Manawright (Artificer)", 20).value, "d10");
+  assert.equal(resource("Manawright (Artificer)", 20, "Inventor").value, "d12");
+  assert.match(resource("Commander", 17).value, /^d20\b/);
+  assert.equal(resource("Commander", 17, "Spellblade (story)"), null);
+  assert.match(resource("Berserker", 17, "Burning Rage").value, /^d4\b/);
+  assert.match(resource("Berserker", 17).value, /^d12\b/);
+  assert.equal(resource("Oathsworn", 14).value, "3d20");
+  assert.equal(resource("Hexbinder", 17, "The Sight").value, "3d8");
+  assert.equal(resource("Psion", 13).value, "d10");
+});
 
 test("Beastmaster automatically replaces the first two Hunt picks at level 3", () => {
   const { features } = classSheets.Hunter;

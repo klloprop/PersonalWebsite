@@ -61,6 +61,107 @@
     ["Epic Resistance", "Once per encounter, negate damage you would take or ignore a failed save."]
   ].map(([name, description]) => ({ ...epicBoonSource, name, description }));
 
+  const artificerItems = Object.fromEntries([
+    ["Thunder Gauntlets", 4, "1 action, Reach 4: deal 1d6 + INT damage. Add the Mana Dice total to damage and knock the target back 1 space per die. Mishap: you are knocked back too and land Prone.", [
+      ["Kinetic Redirect", "Once per round, choose any direction for the knockback."],
+      ["Paired Resonators", "Gain Dual Wielding."], ["Extended Arc Coils", "Increase Reach by 4."]], 2],
+    ["Manablade", 4, "1 action, Reach 1: LVL damage. Deal 10 damage per Mana Die (minimum one die, leftmost is Primary) plus the dice total. Mishap: take 5 damage per die spent and repair with an action and a DC 10 Arcana check.", [
+      ["Arc Module", "Once per encounter, also strike a creature adjacent to the first target. A Mishap deals 10 damage per die to you instead of 5."],
+      ["Streamlined Ignition", "Add 3 to repair checks and regain an action on a 20+."],
+      ["Twin Mana Core", "Gain Dual Wielding when spending at least two Mana Dice."]]],
+    ["Manabolt Cannon", 4, "2 actions, Range 8: 1d12 + INT damage. Add the Mana Dice total (minimum one die) and hit all creatures between you and the target. Mishap: take 2 damage per die rolled; repair with an action and a DC 10 Finesse check.", [
+      ["Amplified Conduit", "Add 4 Range and 2 damage per Mana Die, including on Mishaps."],
+      ["Overload Dampener", "Add 3 to repair checks and regain an action on a 20+."],
+      ["Selective Arc Filter", "You can spare one creature in the line."]]],
+    ["Manaforged Plate", 5, "8 + STR Defense. Once per round reduce damage by INT for free. When you Defend, add 2×STR Defense per Mana Die spent. Mishap: become Restrained (escape DC 10). Wear only one armor at a time.", [
+      ["Reactive Armor", "You can knock an adjacent Medium or smaller creature back one space per die rolled and knock it Prone if moved at least two spaces."],
+      ["Ablative Coating", "Once per encounter, when crit in melee, deal your Defense back as damage for free."],
+      ["Angled Deflectors", "Add INT to Defense."]]],
+    ["Aethertuned Jerkin", 5, "1 + INT + DEX Defense; +1 Speed and Initiative. When you Defend, move one space per die spent first. The attack misses if you leave line of sight or reach/range. Mishap: land Prone within two spaces of the intended spot, chosen by the GM. Wear only one armor at a time.", [
+      ["Autothrusters", "Regain an action when the Mana Dice rolled for this armor total 4 or more."],
+      ["Chronoshard Modulator", "Once per encounter, gain an action and halve the damage when crit."],
+      ["Passive Sensors", "Add INT to your Initiative and to one ally's after they roll."]]],
+    ["Stim Bot", 6, "", [
+      ["Calibrated Reagents", "Add 4 Reach; the recipient skips the STR save."],
+      ["Enhanced Stimulants", "Double the healing; the recipient gains a Wound."],
+      ["Improved Dosing", "Gain one extra use per Safe Rest."]]],
+    ["Homing Missile", 6, "", [
+      ["Long-Range Thrusters", "Add 4 Reach."], ["Reliable Explosives", "Roll with advantage."],
+      ["Reusable Parts", "Gain one extra use per Safe Rest."]]],
+    ["Scrapbot Swarm", 6, "", [
+      ["Dense Swarm", "Make two extra constructs."], ["Aerodynamic Scrap", "Add 4 Reach."],
+      ["Hearty Scrap", "Gain one extra use per Safe Rest."]]],
+    ["Safety Buddy", 6, "", [
+      ["Advanced Propulsion System", "Add 2 Reach."], ["Explosive Framework", "Deal INTd6 damage and apply Smoldering to the attacker."],
+      ["Durable Parts", "Gain one additional Safety Buddy."]]],
+    ["Propulsive Boots", 6, "", [
+      ["Enhanced Fuel Reserves", "Gain two extra uses per Safe Rest."], ["Micropropulsion", "Add INT Speed to this movement."],
+      ["Powerful Boosters", "Move at normal Speed while Grappling."]]],
+    ["Cheer Bot", 6, "Once per round, give an ally one action. The bot has 10 Defense and stops working if damaged until you repair it with a DC 10 Examination check.", [
+      ["Invigorating Beacon", "The ally who gains the action has advantage on their next roll."],
+      ["Self-Preservation Logic", "The bot has 20 Defense and attacks against it have disadvantage."],
+      ["Annoy-o-bot", "Taunt enemies within Reach 4."]], 3, "Gadgeteer"],
+    ["Tethercoil", 7, "Range 4 per Mana Die (minimum one). Tether, 1 action: pull a creature no larger than you toward you, or move to and ride a larger creature. Mishap: the GM can redirect it. Coil, 2 actions, once per encounter: restrain creatures fully in a square whose side equals the number of dice rolled, through the end of their next turn. Mishap: you are Restrained too.", [
+      ["Gilded Conductors", "Add 4 Range."], ["Auto-coiler", "Tethercoil does not trigger Rushed Attacks."],
+      ["Twin Grapplers", "Tether can pull up to two creatures."]], 3, "Inventor"],
+    ["Aetheric Infuser", 8, "Battlebrew, 1 action, twice per encounter: brew a known potion you haven't brewed this encounter. Each potion has its own Mishap.", [
+      ["Potion Launcher", "Add 4 Reach to potions."], ["Stable Admixtures", "Choose one potion to keep ready."],
+      ["Innervating Brews", "When using a potion, gain INT temporary HP per Mana Die spent."]], 3, "Alchemist"],
+    ["Alchemist’s Fire", 8, "In a 3×3 area, deal the sum of the Mana Dice plus 5 per die to creatures. Mishap: the GM changes the area to 1×1 or 5×5.", [], 3, "Alchemist", true],
+    ["Propulsion Potion", 8, "In a 3×3 area, move creatures 4 spaces per die spent in a direction you choose; then you may knock them Prone and end the effect. Mishap: the GM picks the direction.", [], 3, "Alchemist", true],
+    ["Cryowall", 8, "Create icy Full Cover for one round in two empty spaces per die spent. The wall has 20 Defense; any damage destroys one space. Mishap: take 2 damage per die spent and become Slowed.", [], 7, "Alchemist", true],
+    ["Liquid Lightning", 8, "Consume at any time for 0 actions. Gain extra Mana Dice equal to your maximum. They can cause Mishaps and expire when your Mana Accumulator recharges.", [], 7, "Alchemist"],
+    ["Bottled Luck", 8, "Affects a 3×3 area, enlarged by one per die spent. For each die spent, choose advantage or disadvantage on affected creatures' rolls this round. Mishap: the GM changes the area to 1×1 or 5×5.", [], 11, "Alchemist", true],
+    ["Petrification Potion", 8, "Grant a creature 20 temporary HP per Mana Die. It is Incapacitated until those HP are gone (allies may end it early) and loses 30 of them at the start of each turn. Mishap: lose one max Mana Die until cleared with a DC 10 Might check.", [], 15, "Alchemist", true],
+    ["Aberrant Brew", 8, "Grow or shrink a creature one size until your next turn. Bigger: Empowered 5 per die, and attacks by and against it gain advantage. Smaller: Weakened 5 per die, and those attacks gain disadvantage. Mishap: the GM applies the same effect to a second nearby creature.", [], 15, "Alchemist", true],
+    ["Chronal Device", 9, "Timetinker: 0 actions, Reach 4, once per turn. Per Mana Die spent, double or halve movement (including Interpose), roll Assess with advantage or choose another Assess option, or adjust an attack's Primary Die by 1. Mishap: an enemy chosen by the GM takes an action immediately.", [], 3, "Chronurgist"]
+  ].map(([name, page, description, upgrades, level, subclass, thrown]) => [name, {
+    name, page, description: thrown ? `Throw: 1 action, Reach 2×STR. ${description}` : description,
+    upgrades, level, subclass, sourceLabel: "Artificer 3.0"
+  }]));
+
+  function artificerCatalog(data, catalog) {
+    return data.catalogs[catalog].map((row) => {
+      const { description, upgrades, sourceLabel } = artificerItems[row.name];
+      return { ...row, description: description || row.description.replace(/\s*Upgrades:$/, ""), upgrades, sourceLabel };
+    });
+  }
+
+  function automaticAbilities(data, { className, subclass, level }) {
+    const grant = (catalog, names, source, at) => level < at ? [] : data.catalogs[catalog]
+      .filter(({ name }) => names.includes(name)).map((row) => ({ ...row, source, level: at }));
+    switch (className) {
+      case "Manawright (Artificer)":
+        return Object.values(artificerItems).filter((row) => row.level <= level && (!row.subclass || row.subclass === subclass))
+          .map((row) => ({ ...row, source: row.subclass || "Manawright" }));
+      case "Hexbinder":
+        return [...grant("Afflictions", ["Withered", "Frenzied"], "Afflictions", 1),
+          ...(subclass === "The Hex" ? grant("Afflictions", ["Pestilent"], "Pestilential Reign", 11) : [])];
+      case "Psion":
+        return grant("Psionic Abilities", ["Psionic Strike"], "Psionic Abilities", 1);
+      case "Stormshifter":
+        return subclass === "Fang & Claw" ? grant("Chimeric Boon",
+          data.catalogs["Chimeric Boon"].slice(0, data.catalogs["Chimeric Boon"].findIndex(({ activation }) => activation)).map(({ name }) => name),
+          "Chimeric Sovereign", 15) : [];
+      default:
+        return [];
+    }
+  }
+
+  function upgradeOptions(feature, learned, applied) {
+    return learned.filter((row) => row.level <= feature.level &&
+      (feature.name !== "Aetheric Infusions (2)" || row.name === "Aetheric Infuser"))
+      .flatMap((row) => (row.upgrades || []).map(([name, description]) => ({
+        name: `${row.name} — ${name}`, target: row.name, upgrade: name, description
+      }))).filter(({ name }) => !applied.has(name));
+  }
+
+  function shieldstormGrant(data, learned) {
+    if (learned.some(({ name }) => name === "Telekinetic Bastion")) return null;
+    const bastion = data.catalogs["Psionic Abilities"].find(({ name }) => name === "Telekinetic Bastion");
+    return { ...bastion, level: 11, source: "Shieldstorm" };
+  }
+
   const fixedReplacements = [
     ["BOUNDLESS FLAMES", "BOUNDLESS RAGE"],
     ["Captain of Legions", "Unparalleled Tactics"],
@@ -79,6 +180,7 @@
     return available.flatMap((feature) => {
       const base = feature.name.replace(/ \(\d+\)$/, "");
       if (replaced.has(base)) return [];
+      if (level >= 2 && base === "Thunder Gauntlets Prototype" && available.some(({ name }) => name === "Thunder Gauntlets")) return [];
       if (base === "Epic Boon") return [{ ...feature, ...epicBoonSource, choice: true, description: "Choose an Epic Boon. Its effects are listed here." }];
       if (activeSubclass === "Beastmaster (story)") {
         if (!feature.subclass && feature.level === 2 && feature.name === "Thrill of the Hunt") return [];
@@ -240,7 +342,7 @@
     }
     if (level >= 2 && className === "Manawright (Artificer)") {
       const bonus = Number(level >= 13) + Number(level >= 18) + Number(level >= 15 && subclass === "Inventor");
-      return { stat: "STR", multiplier: 1, bonus, unit: "Mana Dice (no mana pool)" };
+      return { stat: "STR", multiplier: 1, bonus, unit: "Mana Dice" };
     }
     if (level >= 2 && className === "Shadowmancer") return { text: "No mana pool; uses Pilfered Power." };
     if (level >= 2 && Object.hasOwn(progressions, className)) {
@@ -249,6 +351,33 @@
       return { stat, multiplier, bonus: level, unit: "max mana" };
     }
     return { text: "No mana pool" };
+  }
+
+  function secondaryResource({ className, subclass, level }) {
+    const size = (steps) => `d${steps.findLast(([at]) => level >= at)[1]}`;
+    if (className === "Manawright (Artificer)" && level >= 2) {
+      return { label: "Mana Die Size", value: subclass === "Inventor" && level >= 15 ? "d12" : size([[2, 4], [5, 6], [10, 8], [14, 10]]) };
+    }
+    if (className === "Berserker") {
+      return { label: "Fury Dice", value: `${subclass === "Burning Rage" && level >= 3 ? "d4" : size([[1, 4], [6, 6], [9, 8], [13, 10], [17, 12]])} · Max KEY` };
+    }
+    if (className === "Commander" && level >= 2 && subclass !== "Spellblade (story)") {
+      return { label: "Combat Dice", value: `${size([[2, 6], [5, 8], [9, 10], [13, 12], [17, 20]])} · Base STR per encounter` };
+    }
+    if (className === "Oathsworn") {
+      return { label: "Judgment Dice", value: `${level >= 14 ? 3 : 2}${size([[1, 6], [3, 8], [5, 10], [8, 12], [10, 20]])}` };
+    }
+    if (className === "Hexbinder" && (level >= 5 || (subclass === "The Sight" && level >= 3))) {
+      return { label: "Futuresight Dice", value: `${1 + Number(level >= 10) + Number(subclass === "The Sight" && level >= 11)}d${4 + 2 * Number(level >= 17) + 2 * Number(subclass === "The Sight" && level >= 11)}` };
+    }
+    if (className === "Psion") return { label: "Strain Dice", value: level >= 13 ? "d10" : "d8" };
+    if (className === "Hunter" && level >= 2) {
+      return { label: "Thrill of the Hunt Charges", value: level >= 18 ? "Gain 1 at the start of your turn; expire after combat" : "Earned against your Quarry; expire after combat" };
+    }
+    if (className === "Zephyr") {
+      return { label: "Momentum", value: "Gain 1 per space moved; lost when damaged or combat ends" };
+    }
+    return null;
   }
 
   function featureCategory({ name, description = "" }) {
@@ -313,8 +442,8 @@
     switch (name) {
       case "Mana Accumulator": {
         const resource = castingResource(character);
-        const die = has("Big Brained Inventor") ? 12 : highest([[2, 4], [5, 6], [10, 8], [14, 10]]);
-        return [["Mana Dice", `Bank up to STR${resource.bonus ? ` + ${resource.bonus}` : ""} d${die} Mana Dice to power inventions. They fully recharge at the end of your turn.`],
+        const die = secondaryResource(character).value;
+        return [["Mana Dice", `Bank up to STR${resource.bonus ? ` + ${resource.bonus}` : ""} ${die} Mana Dice to power inventions. They fully recharge at the end of your turn.`],
           ...(has("Mana Recovery Valve") ? [["Mishap", "Roll your next Mana Die this encounter with advantage."]] : []),
           ...(has("Grand Mechanist") ? [["Once per encounter", "Reroll any number of your Mana Dice as d20s. Increase two stats by 1 at level 20."]] : [])];
       }
@@ -374,7 +503,8 @@
   }
 
   const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains,
-    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons };
+    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons,
+    artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
