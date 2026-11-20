@@ -18,7 +18,11 @@ test("Beastmaster automatically replaces the first two Hunt picks at level 3", (
   assert.ok(unlocked.some(({ name, choice }) => name === "Thrill of the Hunt (2)" && choice));
   assert.ok(unlocked.some(({ name, choice }) => name === "Beastmaster Companion" && choice));
   for (const ability of ["Go for the Throat!", "Protect Me!"]) {
-    assert.ok(unlocked.some(({ name, level, choice }) => name === ability && level === 3 && !choice));
+    const feature = unlocked.find(({ name }) => name === ability);
+    assert.equal(feature?.level, 3);
+    assert.equal(feature.choice, false);
+    assert.equal(feature.source, "Beastmaster Companion");
+    assert.equal(feature.sourceLabel, "Hunter 3.0");
     assert.ok(!atLevel(4, "Pack").some(({ name }) => name === ability));
   }
 });

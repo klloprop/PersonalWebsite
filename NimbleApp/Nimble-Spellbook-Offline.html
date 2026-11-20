@@ -530,7 +530,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
             ? effects.map((effect, i) => `${companionSizes[i]}: ${effect(level)}`).join("\n\n")
             : `${companionSizes[index]}: ${effects[index](level)}`;
           const category = feature.name === "Protect Me!" ? "Reactions" : "Attacks & combat actions";
-          return [{ ...feature, ...companionSource, choice: false, description, category }];
+          return [{ ...feature, ...companionSource, choice: false, description, category, source: "Beastmaster Companion" }];
         }
       }
       if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];
