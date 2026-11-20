@@ -1,6 +1,89 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary } = require("./character.js");
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary,
+  unlockedFeatures, resolveFeaturePicks } = require("./character.js");
+
+const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
+const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
+
+test("Beastmaster automatically replaces the first two Hunt picks at level 3", () => {
+  const { features } = classSheets.Hunter;
+  const atLevel = (level, subclass = "Beastmaster (story)") => unlockedFeatures(features, { level, subclass });
+  assert.ok(atLevel(2).some(({ name, choice }) => name === "Thrill of the Hunt" && choice));
+  assert.ok(!atLevel(2).some(({ name }) => name === "Protect Me!"));
+  const unlocked = atLevel(4);
+  assert.ok(!unlocked.some(({ name }) => name === "Thrill of the Hunt"));
+  assert.ok(unlocked.some(({ name, choice }) => name === "Thrill of the Hunt (2)" && choice));
+  assert.ok(unlocked.some(({ name, choice }) => name === "Beastmaster Companion" && choice));
+  for (const ability of ["Go for the Throat!", "Protect Me!"]) {
+    assert.ok(unlocked.some(({ name, level, choice }) => name === ability && level === 3 && !choice));
+    assert.ok(!atLevel(4, "Pack").some(({ name }) => name === ability));
+  }
+});
+
+test("feature choices reserve learned abilities but allow repeatable bonuses", () => {
+  const options = new Map([
+    ["Fleet Feet", { name: "Fleet Feet" }],
+    ["Go for the Throat!", { name: "Go for the Throat!" }],
+    ["DEX", { name: "DEX", repeatable: true }],
+  ]);
+  const slots = ["first", "second", "automatic", "stat1", "stat2"].map((storedKey) => ({ storedKey, options }));
+  const picks = { first: "Fleet Feet", second: "Fleet Feet", automatic: "Go for the Throat!", stat1: "DEX", stat2: "DEX" };
+  const known = ["Go for the Throat!"];
+  const result = resolveFeaturePicks(slots, picks, known);
+  assert.deepEqual(result.duplicates, ["second", "automatic"]);
+  assert.equal(result.claimed.get("Fleet Feet"), "first");
+  assert.equal(result.claimed.get("Go for the Throat!"), null);
+  assert.equal(resolveFeaturePicks(slots, { ...picks, first: "" }, known).claimed.get("Fleet Feet"), "second");
+});
+
+test("Legends and Honorseeker replace their normal choices without granting extra picks", () => {
+  const legends = unlockedFeatures(classSheets.Songweaver.features, { subclass: "Legends (story)", level: 17 });
+  assert.ok(legends.some(({ name }) => name === "Legend’s Tale"));
+  assert.ok(!legends.some(({ name }) => name.startsWith("Lyrical Weaponry")));
+  const cheat = classSheets["The Cheat"].features;
+  const honorseeker = (level) => unlockedFeatures(cheat, { subclass: "The Honorseeker (story)", level });
+  assert.ok(!honorseeker(3).some(({ name }) => name === "Honorable Gambits"));
+  const veteran = honorseeker(18);
+  assert.deepEqual(veteran.filter(({ name }) => name === "Honorable Gambits").map(({ level }) => level),
+    cheat.filter(({ name }) => name.startsWith("Underhanded Ability")).map(({ level }) => level));
+  assert.ok(veteran.some(({ name }) => name === "Old Habits…"));
+  assert.ok(!veteran.some(({ name }) => name.startsWith("Underhanded Ability")));
+});
+
+test("fixed replacements take effect only when the replacement unlocks", () => {
+  const names = (className, subclass, level) =>
+    unlockedFeatures(classSheets[className].features, { subclass, level }).map(({ name }) => name);
+  assert.ok(names("The Cheat", "Silent Blade", 10).includes("Leave No Trace"));
+  const skulker = names("The Cheat", "Silent Blade", 11);
+  assert.ok(skulker.includes("Professional Skulker"));
+  assert.ok(!skulker.includes("Leave No Trace"));
+  assert.ok(names("Commander", "", 19).includes("Unparalleled Tactics"));
+  const commander = names("Commander", "", 20);
+  assert.ok(commander.includes("Captain of Legions"));
+  assert.ok(!commander.includes("Unparalleled Tactics"));
+  const summary = Object.fromEntries(featureSummary({ className: "Commander", level: 20 },
+    "Coordinated Strike!", [{ name: "Coordinated Strike!" }]));
+  assert.match(summary.Strike, /INT allies/);
+});
+
+test("The Forge exchanges Necrotic for Fire, including utility spell choices", () => {
+  const forge = { className: "Shepherd", subclass: "The Forge (story)", level: 6 };
+  const utility = (school) => ({ school, tier: 0, is_utility: 1 });
+  assert.equal(availability(utility("Fire"), forge), "option");
+  assert.equal(availability(utility("Necrotic"), forge), null);
+  assert.equal(availability(utility("Fire"), { ...forge, level: 11 }), "known");
+  assert.equal(availability(utility("Necrotic"), { ...forge, subclass: "Mercy" }), "option");
+  const choices = unlockedFeatures(classSheets.Shepherd.features, forge)
+    .filter(({ name }) => name.startsWith("Master of Twilight"));
+  assert.equal(choices.length, 2);
+  for (const { description } of choices) {
+    assert.match(description, /Fire/);
+    assert.doesNotMatch(description, /Necrotic/);
+  }
+});
 
 test("summarized features reflect current rules rather than older dice and limits", () => {
   const summary = (className, level, name) => Object.fromEntries(featureSummary({ className, level }, name, [{ description: "" }]));

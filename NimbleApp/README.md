@@ -12,8 +12,18 @@ To put the reference under another site's header, see the [embedding handoff](./
 
 In **My Character**, choose a class, level, and optionally a subclass to see
 level unlocks and spell availability. Pick a subclass in **Feature Choices**
-directly below the class selector. Class features are grouped by use and show
-rules text from the supplied sheets. **Character Notes** supports titled pages
+directly below the class selector. Already learned abilities stay visible but
+cannot be picked again. Repeatable bonuses, such as stat increases, are still
+selectable. With GM approval, Beastmaster automatically replaces the first
+two Thrill of the Hunt picks with **Go for the Throat!** and **Protect Me!**.
+You still choose the companion's size; later Hunt picks are unchanged. See
+the Hunter sheet for the size-specific effects. Fixed replacements take effect
+when their new feature unlocks: Professional Skulker replaces Leave No Trace,
+and Captain of Legions replaces Unparalleled Tactics. The Forge swaps Necrotic
+for Fire, including utility spell picks. Legends lose Lyrical Weaponry, and
+Honorseekers pick Honorable Gambits at the normal Underhanded Ability levels.
+Class features are grouped by use and show rules text from the supplied
+sheets. **Character Notes** supports titled pages
 that you can add, switch between, and delete. Save the character profile to
 keep changes; older notes appear on the **General** page. The casting summary shows the unlocked spell tier and the
 class's mana resource; enter the requested stat to see a numeric maximum.

@@ -320,7 +320,8 @@
     const name = feature.name.replace(/ \(\d+\)$/, "");
     const text = feature.description || "";
     const direct = (names) => names.map((value) => ({ name: value }));
-    if (/stat/i.test(name)) return direct([...new Set(text.match(/\b(?:STR|DEX|INT|WIL)\b/g) || [])]);
+    if (/stat/i.test(name)) return direct([...new Set(text.match(/\b(?:STR|DEX|INT|WIL)\b/g) || [])])
+      .map((option) => ({ ...option, repeatable: true }));
     if (/Wind Spellcasting/.test(name)) return direct(["Fire", "Ice", "Lightning", "Radiant", "Necrotic"]);
     if (name === "Deepening Study") return direct(["Ice", "Radiant"]);
     if (name === "Weapon Mastery") return [
@@ -329,7 +330,6 @@
       { name: "Bludgeoning", description: "Once per turn, deal +10 damage with a bludgeoning attack against a creature with Defense.", page: 4 }
     ];
     if (name === "Beastmaster Companion") return direct(["Small companion", "Medium companion", "Large companion"]);
-    if (/^(Protect Me!|Go for the Throat!)$/.test(name)) return direct(["Small companion version", "Medium companion version", "Large companion version"]);
     if (name === "Hexbinder Subclass") return direct(rules.classes.Hexbinder);
     if (name === "Fireshaper" || name === "Frostshaper") {
       const schools = name === "Fireshaper" ? ["Ice", "Lightning"] : ["Fire", "Lightning"];
@@ -342,7 +342,7 @@
       .filter((option) => option.requiredLevel > 0 && option.requiredLevel <= feature.level);
     if (name === "Fit for Any Battlefield") return [
       ...data.catalogs["Commander’s Orders"].filter((option) => option.tactic),
-      ...(feature.level > 2 ? [{ name: "+1 max Combat Die", description: "Increase your maximum Combat Dice by 1.", page: feature.page }] : [])
+      ...(feature.level > 2 ? [{ name: "+1 max Combat Die", description: "Increase your maximum Combat Dice by 1.", page: feature.page, repeatable: true }] : [])
     ];
     if (name === "Commander’s Orders") return data.catalogs[name].filter((option) => !option.tactic);
     if (name === "Afflictions") return data.catalogs[name].filter((option) => !["Withered", "Frenzied"].includes(option.name));
@@ -421,23 +421,32 @@
         return state ? [{ spell, state }] : [];
       });
       renderCasting(current, entries);
-      const replaced = subclass === "Spellblade (story)" ? /^Weapon Mastery(?:$| \()/i
-        : subclass === "The Honorseeker (story)" ? /^(?:Sneak Attack|Vicious Opportunist|Underhanded Ability|Twist the Blade|Supreme Execution)/i
-        : null;
-      const features = data.features.filter((feature) => feature.level <= level &&
-        !(subclass === "Burning Rage" && /^BOUNDLESS RAGE$/i.test(feature.name)) &&
-        (feature.subclass ? feature.subclass === subclass : !replaced?.test(feature.name)) &&
-        !(subclass === "Arena" && /^Commander’s Orders\b/.test(feature.name)))
-        .sort((a, b) => a.level - b.level);
+      const features = rules.unlockedFeatures(data.features, current);
       const selectedOptions = [];
+      const knownFeatures = features.filter((feature) => !feature.choice).map(({ name }) => name);
+      function refreshFeaturePicks() {
+        const { claimed, duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
+        for (const { storedKey, options, select, explanation } of selectedOptions) {
+          for (const item of select.options) {
+            const option = options.get(item.value);
+            if (!option) continue;
+            item.disabled = !option.repeatable && claimed.has(option.name) && claimed.get(option.name) !== storedKey;
+            item.textContent = item.disabled ? `${option.name} (already learned)` : option.name;
+          }
+          const value = featurePicks[storedKey];
+          select.value = !duplicates.includes(storedKey) && (options.has(value) || value === "__custom") ? value : "";
+          explanation.textContent = options.get(select.value)?.description || "";
+          explanation.hidden = !explanation.textContent;
+        }
+      }
       const spellChoices = new Map();
       const unlocked = node("div", "ability-categories");
       const unlockedSection = heading("Unlocked class features", unlocked);
       output.append(unlockedSection);
       function renderAbilities() {
         unlocked.replaceChildren();
-        const selected = selectedOptions.flatMap(({ feature, options, storedKey }) => {
-          const pick = options.get(featurePicks[storedKey]);
+        const selected = selectedOptions.flatMap(({ feature, options, select }) => {
+          const pick = options.get(select.value);
           if (!pick?.description) return [];
           const category = /^Savage Arsenal\b/.test(feature.name) ? "Attacks & combat actions" : featureCategory(pick);
           return [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.name, category }];
@@ -500,7 +509,9 @@
             node("small", "", ` · ${f.subclass || className} · PDF page ${f.page}`));
           if (listed) item.append(document.createTextNode(" "), node("span", "keyword-badge arsenal-badge", "Ability choice"));
           if (f.description) item.append(node("p", "feature-description", f.description));
-          const key = JSON.stringify([className, f.subclass, f.level, f.name]);
+          // Reuse the old level-3 storage key for the first Gambit so saved picks survive.
+          const pickLevel = f.name === "Honorable Gambits" && f.level === 4 ? 3 : f.level;
+          const key = JSON.stringify([className, f.subclass, pickLevel, f.name]);
           if (f.choice) {
             const text = f.description || "";
             const availableOptions = choiceOptions(f, data, entries);
@@ -515,7 +526,8 @@
             const pools = /invention and 1 new gadget/i.test(text)
               ? [data.catalogs["Eureka!"] || [], data.catalogs.Gadgets || []]
               : /^Master of Twilight/.test(f.name)
-                ? ["Necrotic", "Radiant"].map((school) => spellOptions((spell) => spell.school === school && spell.is_utility))
+                ? [subclass === "The Forge (story)" ? "Fire" : "Necrotic", "Radiant"]
+                  .map((school) => spellOptions((spell) => spell.school === school && spell.is_utility))
                 : /^Deep Knowledge/.test(f.name) ? [
                     spellOptions((spell) => !spell.is_utility && spell.tier <= Number(text.match(/tier (\d+)/i)[1])),
                     spellOptions((spell) => spell.is_utility)
@@ -556,30 +568,31 @@
                 item.append(label);
                 continue;
               }
-              selectedOptions.push({ feature: f, options, storedKey });
+              select.dataset.featurePick = storedKey;
               select.add(new Option("Not selected", ""));
-              for (const name of options.keys()) select.add(new Option(name));
+              for (const name of options.keys()) select.add(new Option(name, name));
               select.add(new Option("Other — record in notes", "__custom"));
-              select.value = featurePicks[storedKey] ?? "";
               const explanation = node("p", "feature-description");
-              const updateExplanation = () => {
-                const picked = options.get(select.value);
-                explanation.textContent = picked?.description || "";
-                explanation.hidden = !explanation.textContent;
-              };
+              selectedOptions.push({ feature: f, options, storedKey, select, explanation });
               select.addEventListener("change", () => {
-                featurePicks[storedKey] = select.value;
-                autosave();
-                if (/^Wind Spellcasting/.test(f.name)) {
-                  render();
-                  featureChoices.querySelector("select")?.focus();
+                const value = select.value;
+                if (select.selectedOptions[0]?.disabled) {
+                  refreshFeaturePicks();
                   return;
                 }
-                if (select.value === "__custom") byId("my-notes-panel").open = true;
-                updateExplanation();
+                const { duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
+                for (const duplicate of duplicates) delete featurePicks[duplicate];
+                featurePicks[storedKey] = value;
+                autosave();
+                if (value === "__custom") byId("my-notes-panel").open = true;
+                if (/^Wind Spellcasting/.test(f.name)) {
+                  render();
+                  [...featureChoices.querySelectorAll("select")].find((item) => item.dataset.featurePick === storedKey)?.focus();
+                  return;
+                }
+                refreshFeaturePicks();
                 renderAbilities();
               });
-              updateExplanation();
               label.append(select);
               item.append(label, explanation);
             }
@@ -610,6 +623,7 @@
       const subclassLabel = subclass || "Choose subclass";
       byId("my-choices-summary").textContent = `Feature Choices · ${choices.length} ${choices.length === 1 ? "option" : "options"}${subclassSelect.disabled ? "" : ` · ${subclassLabel}`}`;
       if (choices.length) featureChoices.append(makeFeatureList(choices));
+      refreshFeaturePicks();
       renderAbilities();
       const notes = node("div", "class-sheet-notes");
       for (const note of data.notes) {

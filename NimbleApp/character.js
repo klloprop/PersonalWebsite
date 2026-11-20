@@ -19,6 +19,67 @@
     Zephyr: ["Pain", "Iron", "Hurricanes", "Flame"]
   };
   const coreSchools = ["Fire", "Ice", "Lightning", "Wind", "Radiant", "Necrotic"];
+  const companionAbilities = [
+    { name: "Go for the Throat!", description: "Use the attack for your companion's size. See the Hunter class sheet for the size-specific rules." },
+    { name: "Protect Me!", description: "Use the protection ability for your companion's size. See the Hunter class sheet for the size-specific rules." }
+  ];
+
+  const fixedReplacements = [
+    ["BOUNDLESS FLAMES", "BOUNDLESS RAGE"],
+    ["Captain of Legions", "Unparalleled Tactics"],
+    ["Professional Skulker", "Leave No Trace"],
+    ["Even the Odds", "Twist the Blade"],
+    ["Supreme Underdog", "Supreme Execution"],
+  ];
+
+  function unlockedFeatures(features, { subclass, level }) {
+    const activeSubclass = level >= 3 ? subclass : "";
+    const available = features.filter((feature) =>
+      feature.level <= level && (!feature.subclass || feature.subclass === activeSubclass));
+    const replaced = new Set(fixedReplacements
+      .filter(([replacement]) => available.some(({ name }) => name === replacement))
+      .map(([, original]) => original));
+    return available.flatMap((feature) => {
+      const base = feature.name.replace(/ \(\d+\)$/, "");
+      if (replaced.has(base)) return [];
+      if (activeSubclass === "Beastmaster (story)") {
+        if (!feature.subclass && feature.level === 2 && feature.name === "Thrill of the Hunt") return [];
+        if (feature.subclass === activeSubclass && feature.name === "Beastmaster Companion") {
+          return [{ ...feature, description: "Choose your companion's size. Go for the Throat! and Protect Me! automatically replace your first two Thrill of the Hunt picks. Your companion's attacks count toward your Thrill of the Hunt charges." }];
+        }
+        const companionAbility = companionAbilities.find(({ name }) => name === feature.name);
+        if (feature.subclass === activeSubclass && companionAbility) {
+          return [{ ...feature, choice: false, description: feature.description || companionAbility.description }];
+        }
+      }
+      if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];
+      if (activeSubclass === "Legends (story)" && base === "Lyrical Weaponry") return [];
+      if (activeSubclass === "The Forge (story)" && base === "Master of Twilight") {
+        return [{ ...feature, description: feature.description.replace(/\bNecrotic\b/g, "Fire") }];
+      }
+      if (activeSubclass === "The Honorseeker (story)") {
+        if (base === "Underhanded Ability" && !feature.subclass) {
+          return [{ ...feature, name: "Honorable Gambits", subclass: activeSubclass,
+            description: "Choose an Honorable Gambit instead of an Underhanded Ability." }];
+        }
+        if (["Sneak Attack", "Vicious Opportunist", "Honorable Gambits"].includes(base)) return [];
+      }
+      if (activeSubclass === "Arena" && /^Commander’s Orders\b/.test(feature.name)) return [];
+      return [feature];
+    }).sort((a, b) => a.level - b.level);
+  }
+
+  function resolveFeaturePicks(slots, picks, knownFeatures) {
+    const claimed = new Map(knownFeatures.map((name) => [name, null]));
+    const duplicates = [];
+    for (const { storedKey, options } of slots) {
+      const option = options.get(picks[storedKey]);
+      if (!option || option.repeatable) continue;
+      if (claimed.has(option.name)) duplicates.push(storedKey);
+      else claimed.set(option.name, storedKey);
+    }
+    return { claimed, duplicates };
+  }
   const full = [2, 4, 6, 8, 10, 12, 14, 16, 18];
   const progressions = {
     Mage: full, Shepherd: full, Songweaver: full, Stormshifter: full,
@@ -63,7 +124,7 @@
       if (className === "Oathsworn" && level >= 7 && (spell.school === "Radiant" || (activeSubclass === "Oathbreaker (story)" && spell.school === "Necrotic"))) status = "option";
       if (className === "Shadowmancer" && spell.school === "Necrotic" && level >= 6) status = level >= 14 ? "known" : "option";
       if (className === "Shadowmancer" && level >= 7 && schools.includes(spell.school) && spell.school !== "Necrotic") status = "option";
-      if (className === "Shepherd" && level >= 3 && ["Radiant", "Necrotic"].includes(spell.school)) status = level >= 11 ? "known" : "option";
+      if (className === "Shepherd" && level >= 3 && schools.includes(spell.school)) status = level >= 11 ? "known" : "option";
       if (className === "Songweaver" && level >= 3 && spell.school === "Wind") status = level >= 14 ? "known" : "option";
       if (className === "Stormshifter" && level >= 4 && schools.includes(spell.school)) status = "option";
     }
@@ -119,7 +180,7 @@
     if (character.className === "Mage") notes.push("Utility spells require school choices. Control, Chaos, Flame, Frost and Surges may grant a limited number of other-school spells.");
     if (character.className === "Oathsworn") notes.push("Utility spells are chosen individually; Oathbreaker exchanges specific spells.");
     if (character.className === "Shadowmancer") notes.push("Utility spells are chosen individually. Some subclass spells can be cast early only under special conditions.");
-    if (character.className === "Shepherd") notes.push("Utility spells are chosen individually. The Forge exchanges the Necrotic school for Fire; consult the class sheet for utility choices.");
+    if (character.className === "Shepherd") notes.push("Utility spells are chosen individually until level 11. The Forge exchanges the Necrotic school for Fire.");
     if (character.className === "Songweaver") notes.push("At level 2, choose one additional school; other-school results are alternatives, not all known. Utility spells are chosen individually.");
     if (character.className === "Stormshifter") notes.push("Sky & Storm chooses one extra school; Cinder & Ash and Venom & Web replace either Lightning or Wind. Utility spells are chosen individually.");
     if (character.className === "Hexbinder") notes.push("The Coven Mystic Mark is optional and requires an ally’s school. Non-Hexbinder results are options only if Coven is selected.");
@@ -184,7 +245,7 @@
 
   const featureChains = {
     "Manawright (Artificer)": { "Mana Accumulator": ["Tuned Mana Condenser", "Mana Recovery Valve", "Optimized Mana Compression", "Prime Configuration", "Big Brained Inventor", "Grand Mechanist"] },
-    Commander: { "Coordinated Strike!": ["Master Commander", "Unparalleled Tactics"] },
+    Commander: { "Coordinated Strike!": ["Master Commander", "Unparalleled Tactics", "Captain of Legions"] },
     Hexbinder: { Soothsayer: [] },
     Hunter: { "Hunter’s Mark": ["Nemesis"] },
     Mage: { "Elemental Surge": [] },
@@ -216,7 +277,10 @@
       }
       case "Coordinated Strike!": {
         const extra = level < 5 ? "" : `, plus INT${[9, 13, 17].filter((at) => level >= at).length ? ` + ${[9, 13, 17].filter((at) => level >= at).length}` : ""} extra uses per Safe Rest (at most once per round)`;
-        const lines = [["Strike", `Once per encounter${extra}, you and one ally within Reach 6 each immediately make a weapon or Unarmed Strike or cast a cantrip for free.${level >= 5 ? " Attacks made this way ignore disadvantage." : ""}${level >= 18 ? " On the first use each encounter, an ally who can hear you also gains an action for their next turn." : ""}`]];
+        const actionBonus = level >= 20 ? " On the first use each encounter, INT allies each gain an extra action."
+          : level >= 18 ? " On the first use each encounter, an ally who can hear you also gains an action for their next turn." : "";
+        const lines = [["Strike", `Once per encounter${extra}, you and one ally within Reach 6 each immediately make a weapon or Unarmed Strike or cast a cantrip for free.${level >= 5 ? " Attacks made this way ignore disadvantage." : ""}${actionBonus}`]];
+        if (level >= 20) lines.push(["Captain of Legions", "+1 to any two stats."]);
         if (level >= 5 && character.subclass !== "Spellblade (story)") lines.push(["Combat Dice", `d${highest([[5, 8], [9, 10], [13, 12], [17, 20]])}`]);
         return lines;
       }
@@ -266,7 +330,8 @@
     }
   }
 
-  const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains, featureSummary, rageSummary };
+  const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains,
+    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

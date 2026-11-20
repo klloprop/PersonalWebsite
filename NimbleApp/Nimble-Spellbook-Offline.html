@@ -457,6 +457,67 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     Zephyr: ["Pain", "Iron", "Hurricanes", "Flame"]
   };
   const coreSchools = ["Fire", "Ice", "Lightning", "Wind", "Radiant", "Necrotic"];
+  const companionAbilities = [
+    { name: "Go for the Throat!", description: "Use the attack for your companion's size. See the Hunter class sheet for the size-specific rules." },
+    { name: "Protect Me!", description: "Use the protection ability for your companion's size. See the Hunter class sheet for the size-specific rules." }
+  ];
+
+  const fixedReplacements = [
+    ["BOUNDLESS FLAMES", "BOUNDLESS RAGE"],
+    ["Captain of Legions", "Unparalleled Tactics"],
+    ["Professional Skulker", "Leave No Trace"],
+    ["Even the Odds", "Twist the Blade"],
+    ["Supreme Underdog", "Supreme Execution"],
+  ];
+
+  function unlockedFeatures(features, { subclass, level }) {
+    const activeSubclass = level >= 3 ? subclass : "";
+    const available = features.filter((feature) =>
+      feature.level <= level && (!feature.subclass || feature.subclass === activeSubclass));
+    const replaced = new Set(fixedReplacements
+      .filter(([replacement]) => available.some(({ name }) => name === replacement))
+      .map(([, original]) => original));
+    return available.flatMap((feature) => {
+      const base = feature.name.replace(/ \(\d+\)$/, "");
+      if (replaced.has(base)) return [];
+      if (activeSubclass === "Beastmaster (story)") {
+        if (!feature.subclass && feature.level === 2 && feature.name === "Thrill of the Hunt") return [];
+        if (feature.subclass === activeSubclass && feature.name === "Beastmaster Companion") {
+          return [{ ...feature, description: "Choose your companion's size. Go for the Throat! and Protect Me! automatically replace your first two Thrill of the Hunt picks. Your companion's attacks count toward your Thrill of the Hunt charges." }];
+        }
+        const companionAbility = companionAbilities.find(({ name }) => name === feature.name);
+        if (feature.subclass === activeSubclass && companionAbility) {
+          return [{ ...feature, choice: false, description: feature.description || companionAbility.description }];
+        }
+      }
+      if (activeSubclass === "Spellblade (story)" && base === "Weapon Mastery") return [];
+      if (activeSubclass === "Legends (story)" && base === "Lyrical Weaponry") return [];
+      if (activeSubclass === "The Forge (story)" && base === "Master of Twilight") {
+        return [{ ...feature, description: feature.description.replace(/\bNecrotic\b/g, "Fire") }];
+      }
+      if (activeSubclass === "The Honorseeker (story)") {
+        if (base === "Underhanded Ability" && !feature.subclass) {
+          return [{ ...feature, name: "Honorable Gambits", subclass: activeSubclass,
+            description: "Choose an Honorable Gambit instead of an Underhanded Ability." }];
+        }
+        if (["Sneak Attack", "Vicious Opportunist", "Honorable Gambits"].includes(base)) return [];
+      }
+      if (activeSubclass === "Arena" && /^Commander’s Orders\b/.test(feature.name)) return [];
+      return [feature];
+    }).sort((a, b) => a.level - b.level);
+  }
+
+  function resolveFeaturePicks(slots, picks, knownFeatures) {
+    const claimed = new Map(knownFeatures.map((name) => [name, null]));
+    const duplicates = [];
+    for (const { storedKey, options } of slots) {
+      const option = options.get(picks[storedKey]);
+      if (!option || option.repeatable) continue;
+      if (claimed.has(option.name)) duplicates.push(storedKey);
+      else claimed.set(option.name, storedKey);
+    }
+    return { claimed, duplicates };
+  }
   const full = [2, 4, 6, 8, 10, 12, 14, 16, 18];
   const progressions = {
     Mage: full, Shepherd: full, Songweaver: full, Stormshifter: full,
@@ -501,7 +562,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       if (className === "Oathsworn" && level >= 7 && (spell.school === "Radiant" || (activeSubclass === "Oathbreaker (story)" && spell.school === "Necrotic"))) status = "option";
       if (className === "Shadowmancer" && spell.school === "Necrotic" && level >= 6) status = level >= 14 ? "known" : "option";
       if (className === "Shadowmancer" && level >= 7 && schools.includes(spell.school) && spell.school !== "Necrotic") status = "option";
-      if (className === "Shepherd" && level >= 3 && ["Radiant", "Necrotic"].includes(spell.school)) status = level >= 11 ? "known" : "option";
+      if (className === "Shepherd" && level >= 3 && schools.includes(spell.school)) status = level >= 11 ? "known" : "option";
       if (className === "Songweaver" && level >= 3 && spell.school === "Wind") status = level >= 14 ? "known" : "option";
       if (className === "Stormshifter" && level >= 4 && schools.includes(spell.school)) status = "option";
     }
@@ -557,7 +618,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     if (character.className === "Mage") notes.push("Utility spells require school choices. Control, Chaos, Flame, Frost and Surges may grant a limited number of other-school spells.");
     if (character.className === "Oathsworn") notes.push("Utility spells are chosen individually; Oathbreaker exchanges specific spells.");
     if (character.className === "Shadowmancer") notes.push("Utility spells are chosen individually. Some subclass spells can be cast early only under special conditions.");
-    if (character.className === "Shepherd") notes.push("Utility spells are chosen individually. The Forge exchanges the Necrotic school for Fire; consult the class sheet for utility choices.");
+    if (character.className === "Shepherd") notes.push("Utility spells are chosen individually until level 11. The Forge exchanges the Necrotic school for Fire.");
     if (character.className === "Songweaver") notes.push("At level 2, choose one additional school; other-school results are alternatives, not all known. Utility spells are chosen individually.");
     if (character.className === "Stormshifter") notes.push("Sky & Storm chooses one extra school; Cinder & Ash and Venom & Web replace either Lightning or Wind. Utility spells are chosen individually.");
     if (character.className === "Hexbinder") notes.push("The Coven Mystic Mark is optional and requires an ally’s school. Non-Hexbinder results are options only if Coven is selected.");
@@ -622,7 +683,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
 
   const featureChains = {
     "Manawright (Artificer)": { "Mana Accumulator": ["Tuned Mana Condenser", "Mana Recovery Valve", "Optimized Mana Compression", "Prime Configuration", "Big Brained Inventor", "Grand Mechanist"] },
-    Commander: { "Coordinated Strike!": ["Master Commander", "Unparalleled Tactics"] },
+    Commander: { "Coordinated Strike!": ["Master Commander", "Unparalleled Tactics", "Captain of Legions"] },
     Hexbinder: { Soothsayer: [] },
     Hunter: { "Hunter’s Mark": ["Nemesis"] },
     Mage: { "Elemental Surge": [] },
@@ -654,7 +715,10 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       }
       case "Coordinated Strike!": {
         const extra = level < 5 ? "" : `, plus INT${[9, 13, 17].filter((at) => level >= at).length ? ` + ${[9, 13, 17].filter((at) => level >= at).length}` : ""} extra uses per Safe Rest (at most once per round)`;
-        const lines = [["Strike", `Once per encounter${extra}, you and one ally within Reach 6 each immediately make a weapon or Unarmed Strike or cast a cantrip for free.${level >= 5 ? " Attacks made this way ignore disadvantage." : ""}${level >= 18 ? " On the first use each encounter, an ally who can hear you also gains an action for their next turn." : ""}`]];
+        const actionBonus = level >= 20 ? " On the first use each encounter, INT allies each gain an extra action."
+          : level >= 18 ? " On the first use each encounter, an ally who can hear you also gains an action for their next turn." : "";
+        const lines = [["Strike", `Once per encounter${extra}, you and one ally within Reach 6 each immediately make a weapon or Unarmed Strike or cast a cantrip for free.${level >= 5 ? " Attacks made this way ignore disadvantage." : ""}${actionBonus}`]];
+        if (level >= 20) lines.push(["Captain of Legions", "+1 to any two stats."]);
         if (level >= 5 && character.subclass !== "Spellblade (story)") lines.push(["Combat Dice", `d${highest([[5, 8], [9, 10], [13, 12], [17, 20]])}`]);
         return lines;
       }
@@ -704,7 +768,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     }
   }
 
-  const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains, featureSummary, rageSummary };
+  const api = { classes, availability, explanation, castingResource, featureCategory, maxTier, featureChains,
+    featureSummary, rageSummary, unlockedFeatures, resolveFeaturePicks };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1526,7 +1591,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     const name = feature.name.replace(/ \(\d+\)$/, "");
     const text = feature.description || "";
     const direct = (names) => names.map((value) => ({ name: value }));
-    if (/stat/i.test(name)) return direct([...new Set(text.match(/\b(?:STR|DEX|INT|WIL)\b/g) || [])]);
+    if (/stat/i.test(name)) return direct([...new Set(text.match(/\b(?:STR|DEX|INT|WIL)\b/g) || [])])
+      .map((option) => ({ ...option, repeatable: true }));
     if (/Wind Spellcasting/.test(name)) return direct(["Fire", "Ice", "Lightning", "Radiant", "Necrotic"]);
     if (name === "Deepening Study") return direct(["Ice", "Radiant"]);
     if (name === "Weapon Mastery") return [
@@ -1535,7 +1601,6 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       { name: "Bludgeoning", description: "Once per turn, deal +10 damage with a bludgeoning attack against a creature with Defense.", page: 4 }
     ];
     if (name === "Beastmaster Companion") return direct(["Small companion", "Medium companion", "Large companion"]);
-    if (/^(Protect Me!|Go for the Throat!)$/.test(name)) return direct(["Small companion version", "Medium companion version", "Large companion version"]);
     if (name === "Hexbinder Subclass") return direct(rules.classes.Hexbinder);
     if (name === "Fireshaper" || name === "Frostshaper") {
       const schools = name === "Fireshaper" ? ["Ice", "Lightning"] : ["Fire", "Lightning"];
@@ -1548,7 +1613,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       .filter((option) => option.requiredLevel > 0 && option.requiredLevel <= feature.level);
     if (name === "Fit for Any Battlefield") return [
       ...data.catalogs["Commander’s Orders"].filter((option) => option.tactic),
-      ...(feature.level > 2 ? [{ name: "+1 max Combat Die", description: "Increase your maximum Combat Dice by 1.", page: feature.page }] : [])
+      ...(feature.level > 2 ? [{ name: "+1 max Combat Die", description: "Increase your maximum Combat Dice by 1.", page: feature.page, repeatable: true }] : [])
     ];
     if (name === "Commander’s Orders") return data.catalogs[name].filter((option) => !option.tactic);
     if (name === "Afflictions") return data.catalogs[name].filter((option) => !["Withered", "Frenzied"].includes(option.name));
@@ -1627,23 +1692,32 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         return state ? [{ spell, state }] : [];
       });
       renderCasting(current, entries);
-      const replaced = subclass === "Spellblade (story)" ? /^Weapon Mastery(?:$| \()/i
-        : subclass === "The Honorseeker (story)" ? /^(?:Sneak Attack|Vicious Opportunist|Underhanded Ability|Twist the Blade|Supreme Execution)/i
-        : null;
-      const features = data.features.filter((feature) => feature.level <= level &&
-        !(subclass === "Burning Rage" && /^BOUNDLESS RAGE$/i.test(feature.name)) &&
-        (feature.subclass ? feature.subclass === subclass : !replaced?.test(feature.name)) &&
-        !(subclass === "Arena" && /^Commander’s Orders\b/.test(feature.name)))
-        .sort((a, b) => a.level - b.level);
+      const features = rules.unlockedFeatures(data.features, current);
       const selectedOptions = [];
+      const knownFeatures = features.filter((feature) => !feature.choice).map(({ name }) => name);
+      function refreshFeaturePicks() {
+        const { claimed, duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
+        for (const { storedKey, options, select, explanation } of selectedOptions) {
+          for (const item of select.options) {
+            const option = options.get(item.value);
+            if (!option) continue;
+            item.disabled = !option.repeatable && claimed.has(option.name) && claimed.get(option.name) !== storedKey;
+            item.textContent = item.disabled ? `${option.name} (already learned)` : option.name;
+          }
+          const value = featurePicks[storedKey];
+          select.value = !duplicates.includes(storedKey) && (options.has(value) || value === "__custom") ? value : "";
+          explanation.textContent = options.get(select.value)?.description || "";
+          explanation.hidden = !explanation.textContent;
+        }
+      }
       const spellChoices = new Map();
       const unlocked = node("div", "ability-categories");
       const unlockedSection = heading("Unlocked class features", unlocked);
       output.append(unlockedSection);
       function renderAbilities() {
         unlocked.replaceChildren();
-        const selected = selectedOptions.flatMap(({ feature, options, storedKey }) => {
-          const pick = options.get(featurePicks[storedKey]);
+        const selected = selectedOptions.flatMap(({ feature, options, select }) => {
+          const pick = options.get(select.value);
           if (!pick?.description) return [];
           const category = /^Savage Arsenal\b/.test(feature.name) ? "Attacks & combat actions" : featureCategory(pick);
           return [{ ...pick, level: feature.level, subclass: feature.subclass, source: feature.name, category }];
@@ -1706,7 +1780,9 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
             node("small", "", ` · ${f.subclass || className} · PDF page ${f.page}`));
           if (listed) item.append(document.createTextNode(" "), node("span", "keyword-badge arsenal-badge", "Ability choice"));
           if (f.description) item.append(node("p", "feature-description", f.description));
-          const key = JSON.stringify([className, f.subclass, f.level, f.name]);
+          // Reuse the old level-3 storage key for the first Gambit so saved picks survive.
+          const pickLevel = f.name === "Honorable Gambits" && f.level === 4 ? 3 : f.level;
+          const key = JSON.stringify([className, f.subclass, pickLevel, f.name]);
           if (f.choice) {
             const text = f.description || "";
             const availableOptions = choiceOptions(f, data, entries);
@@ -1721,7 +1797,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
             const pools = /invention and 1 new gadget/i.test(text)
               ? [data.catalogs["Eureka!"] || [], data.catalogs.Gadgets || []]
               : /^Master of Twilight/.test(f.name)
-                ? ["Necrotic", "Radiant"].map((school) => spellOptions((spell) => spell.school === school && spell.is_utility))
+                ? [subclass === "The Forge (story)" ? "Fire" : "Necrotic", "Radiant"]
+                  .map((school) => spellOptions((spell) => spell.school === school && spell.is_utility))
                 : /^Deep Knowledge/.test(f.name) ? [
                     spellOptions((spell) => !spell.is_utility && spell.tier <= Number(text.match(/tier (\d+)/i)[1])),
                     spellOptions((spell) => spell.is_utility)
@@ -1762,30 +1839,31 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
                 item.append(label);
                 continue;
               }
-              selectedOptions.push({ feature: f, options, storedKey });
+              select.dataset.featurePick = storedKey;
               select.add(new Option("Not selected", ""));
-              for (const name of options.keys()) select.add(new Option(name));
+              for (const name of options.keys()) select.add(new Option(name, name));
               select.add(new Option("Other — record in notes", "__custom"));
-              select.value = featurePicks[storedKey] ?? "";
               const explanation = node("p", "feature-description");
-              const updateExplanation = () => {
-                const picked = options.get(select.value);
-                explanation.textContent = picked?.description || "";
-                explanation.hidden = !explanation.textContent;
-              };
+              selectedOptions.push({ feature: f, options, storedKey, select, explanation });
               select.addEventListener("change", () => {
-                featurePicks[storedKey] = select.value;
-                autosave();
-                if (/^Wind Spellcasting/.test(f.name)) {
-                  render();
-                  featureChoices.querySelector("select")?.focus();
+                const value = select.value;
+                if (select.selectedOptions[0]?.disabled) {
+                  refreshFeaturePicks();
                   return;
                 }
-                if (select.value === "__custom") byId("my-notes-panel").open = true;
-                updateExplanation();
+                const { duplicates } = rules.resolveFeaturePicks(selectedOptions, featurePicks, knownFeatures);
+                for (const duplicate of duplicates) delete featurePicks[duplicate];
+                featurePicks[storedKey] = value;
+                autosave();
+                if (value === "__custom") byId("my-notes-panel").open = true;
+                if (/^Wind Spellcasting/.test(f.name)) {
+                  render();
+                  [...featureChoices.querySelectorAll("select")].find((item) => item.dataset.featurePick === storedKey)?.focus();
+                  return;
+                }
+                refreshFeaturePicks();
                 renderAbilities();
               });
-              updateExplanation();
               label.append(select);
               item.append(label, explanation);
             }
@@ -1816,6 +1894,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       const subclassLabel = subclass || "Choose subclass";
       byId("my-choices-summary").textContent = `Feature Choices · ${choices.length} ${choices.length === 1 ? "option" : "options"}${subclassSelect.disabled ? "" : ` · ${subclassLabel}`}`;
       if (choices.length) featureChoices.append(makeFeatureList(choices));
+      refreshFeaturePicks();
       renderAbilities();
       const notes = node("div", "class-sheet-notes");
       for (const note of data.notes) {
