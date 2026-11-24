@@ -46,7 +46,7 @@ and Greater catalogs. Psionic ability choices are limited to the ranks unlocked
 when the choice is granted.
 Selected catalog abilities are highlighted, while sidebars such as Rigorous
 Training appear separately under **Class sheet notes & hints**.
-**Progression** is expandable, like the class-sheet notes. The casting summary
+Unlocked **Progression** features are visible alongside other abilities. The casting summary
 sits just above **Character spells**. Pick eligible spells in the expandable
 **Selectable spells** section. Once learned, a spell moves to its school group
 in **Character spells** without scrolling the page. Unchecking it
@@ -64,12 +64,18 @@ to remove the selected character and its notes. The standalone edition stores
 profiles in the same browser where local file storage is supported. Selections are tracking aids;
 the app does not enforce every choice limit or prerequisite.
 
-The character sheet's creation shortcuts cover class, origin, stats and
-skills, equipment, and saving. Apply a starting stat array or enter your own
-values. Hover over or expand a total to see its contributing rules and manual
-adjustments. Select armor and shields, add weapons from the catalog or enter
-custom gear, and track HP, Wounds, actions, Hit Dice, and inventory. Ability
-cards let you apply a personal rules override without losing the original text.
+Select **Create Character** to choose a class, ancestry and background, base
+stats, and starting equipment in order. Review and name the character to save
+it and open its level 1 sheet. Back preserves your choices; Cancel leaves the
+current sheet unchanged. For imported or higher-level characters, use the
+manual sheet controls and **Save manual sheet** instead.
+
+Track HP, Wounds, Hit Dice, and actions directly in the Health and Combat
+panels. Hover over or keyboard-focus a total to see its contributing rules and
+manual bonuses. Base stats, skills, gold, equipment, carried items, and known
+languages stay visible when their editors are closed. Weapon attacks appear on
+their equipment cards. Ability cards let you apply a personal rules override
+without losing the original text.
 
 Use **Level up** to preview new class features, take the flat HP increase or
 enter a roll, and allocate the new skill point. Subclass choices are offered

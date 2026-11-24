@@ -9,13 +9,7 @@
       </nav>
     </div>
     <section class="character-filter" aria-label="Character setup">
-      <nav class="sheet-steps" aria-label="Character creation">
-        <button type="button" class="school-button" data-sheet-jump="my-class">1. Class</button>
-        <button type="button" class="school-button" data-sheet-jump="my-origins">2. Ancestry &amp; background</button>
-        <button type="button" class="school-button" data-sheet-jump="my-sheet-stats">3. Stats &amp; skills</button>
-        <button type="button" class="school-button" data-sheet-jump="my-sheet-gear">4. Equipment</button>
-        <button type="button" class="school-button" data-sheet-jump="my-character-profiles">5. Name &amp; save</button>
-      </nav>
+      <button type="button" class="school-button active" id="my-create">Create Character</button>
       <div class="character-fields character-setup-fields">
         <label><span>CLASS</span><select id="my-class"><option value="">Choose a class</option></select></label>
         <label><span>LEVEL</span><select id="my-level"></select></label>
@@ -55,7 +49,7 @@
         <div class="character-fields profile-fields">
           <label><span>SAVED CHARACTERS</span><select id="my-profiles"><option value="">New character</option></select></label>
           <label><span>CHARACTER NAME</span><input id="my-name" maxlength="80" placeholder="Enter a name to save"></label>
-          <button type="button" class="school-button" id="my-save">Save</button>
+          <button type="button" class="school-button" id="my-save">Save manual sheet</button>
           <button type="button" class="school-button" id="my-delete" hidden>Delete character</button>
         </div>
       </details>
@@ -77,7 +71,7 @@
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
     <section id="my-sheet" class="hero-sheet" aria-labelledby="my-sheet-title" hidden>
       <header class="sheet-heading">
-        <div><h2 id="my-sheet-title">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
+        <div><h2 id="my-sheet-title" tabindex="-1">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
         <button type="button" class="school-button" id="my-level-up">Level up</button>
       </header>
       <section id="my-level-guide" class="character-options" aria-labelledby="my-level-guide-title" hidden>
@@ -101,17 +95,46 @@
         <button type="button" class="school-button" id="my-level-cancel">Cancel</button>
       </section>
       <p class="character-note" id="my-sheet-status" role="status"></p>
-      <div id="my-sheet-vitals" class="sheet-grid"></div>
+      <div id="my-sheet-vitals" class="sheet-vitals">
+        <section class="sheet-panel sheet-health" aria-labelledby="my-health-title">
+          <h3 id="my-health-title">Health</h3>
+          <div class="sheet-metrics" id="my-health-values"></div>
+        </section>
+        <section class="sheet-panel sheet-combat" aria-labelledby="my-combat-title">
+          <h3 id="my-combat-title">Combat</h3>
+          <div class="sheet-metrics" id="my-combat-values"></div>
+        </section>
+      </div>
+      <section class="sheet-panel" aria-labelledby="my-attributes-title">
+        <h3 id="my-attributes-title">Attributes &amp; saves</h3>
+        <div class="sheet-attributes" id="my-sheet-attributes"></div>
+        <h4>Skills</h4>
+        <div class="sheet-skills" id="my-sheet-skills"></div>
+      </section>
       <details class="character-options" id="my-sheet-stats">
-        <summary>Stats, saves &amp; skills</summary>
+        <summary>Edit stats, saves &amp; skills</summary>
         <div id="my-sheet-stat-fields"></div>
       </details>
+      <section class="sheet-panel" aria-labelledby="my-inventory-title">
+        <div class="sheet-panel-heading">
+          <h3 id="my-inventory-title">Equipment &amp; inventory</h3>
+          <div id="my-sheet-purse" class="sheet-purse"></div>
+        </div>
+        <h4>Equipped</h4>
+        <ul class="sheet-equipment" id="my-sheet-equipped"></ul>
+        <h4>Carried inventory</h4>
+        <ul class="sheet-inventory" id="my-sheet-inventory"></ul>
+      </section>
       <details class="character-options" id="my-sheet-gear">
-        <summary>Equipment, attacks &amp; inventory</summary>
+        <summary>Edit equipment, inventory &amp; gold</summary>
         <div id="my-sheet-gear-fields"></div>
       </details>
+      <section class="sheet-panel" aria-labelledby="my-languages-title">
+        <h3 id="my-languages-title">Languages &amp; movement</h3>
+        <dl id="my-sheet-traits-summary" class="sheet-traits"></dl>
+      </section>
       <details class="character-options" id="my-sheet-traits">
-        <summary>Languages, movement &amp; other adjustments</summary>
+        <summary>Edit languages, movement &amp; other adjustments</summary>
         <div id="my-sheet-adjustments"></div>
       </details>
     </section>
@@ -125,5 +148,17 @@
       <div id="my-dice-box" hidden><span id="my-dice-label" class="eyebrow"></span><output id="my-dice"></output></div>
     </div>
     <div id="my-spells"></div>
+    <dialog id="my-create-dialog" aria-labelledby="my-create-title">
+      <form id="my-create-form">
+        <header><p class="eyebrow" id="my-create-progress"></p><h2 id="my-create-title" tabindex="-1"></h2></header>
+        <div class="create-body" id="my-create-fields"></div>
+        <p id="my-create-error" class="character-note" role="status"></p>
+        <div class="create-actions">
+          <button type="button" class="school-button" id="my-create-cancel">Cancel</button>
+          <button type="button" class="school-button" id="my-create-back">Back</button>
+          <button type="submit" class="school-button active" id="my-create-next">Next</button>
+        </div>
+      </form>
+    </dialog>
   </section>
 </main>

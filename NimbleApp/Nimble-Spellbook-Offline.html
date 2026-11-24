@@ -108,20 +108,87 @@ h1, h2, h3, p { margin-top: 0; }
 .casting-summary > div { padding: 10px 12px; border: 1px solid var(--rule); background: #fbf8f1; }
 .casting-summary output { display: block; margin: 4px 0; font-weight: bold; }
 .hero-sheet { margin-block: 18px; }
-.sheet-steps, .sheet-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sheet-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#my-create { margin-bottom: 12px; }
+#my-create-dialog {
+  box-sizing: border-box; color: var(--ink); background: #fbf8f1; border: 1px solid var(--rule);
+  border-radius: 10px; padding: 0; width: min(36rem, calc(100% - 24px)); max-width: none;
+  margin: auto;
+}
+.tavern-autosize #my-create-dialog { top: var(--create-top, 8px); bottom: auto; margin: 0 auto; }
+#my-create-dialog::backdrop { background: rgb(25 18 13 / 65%); }
+#my-create-form { box-sizing: border-box; display: flex; flex-direction: column; padding: 16px; max-height: var(--create-height, calc(100dvh - 24px)); }
+#my-create-dialog h2, #my-create-dialog header p { margin: 0 0 8px; }
+.create-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.create-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+#my-create-error:empty { display: none; }
+#my-create-error { color: var(--red); }
 .sheet-heading { justify-content: space-between; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
 .sheet-heading h2, .sheet-heading p { margin: 0; }
 .sheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); gap: 8px; }
 .sheet-grid > * { min-width: 0; }
-#my-sheet-vitals > .sheet-grid { grid-column: 1 / -1; }
-.sheet-value { border: 1px solid var(--rule); padding: 8px 10px; }
-.sheet-value > summary { cursor: help; font-weight: bold; }
-.sheet-value > summary output { font-size: 1.15em; margin-left: .35em; }
-.sheet-value > small { display: block; margin-top: 5px; }
+.hero-sheet {
+  --sheet-card: var(--card, #fbf8f1);
+  --sheet-inset: var(--inset, #f0e7d9);
+}
+.sheet-vitals { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+.sheet-panel {
+  position: relative; min-width: 0; padding: 12px;
+  border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--sheet-card); overflow-wrap: anywhere;
+}
+.hero-sheet > .sheet-panel { margin-top: 14px; }
+.sheet-health { border-top: 3px solid var(--red); }
+.sheet-combat { border-top: 3px solid var(--rule); }
+.sheet-panel h3 { margin: 0 0 10px; font-size: 1.15rem; }
+.sheet-panel h4 { margin: 12px 0 6px; font-size: .95rem; }
+.sheet-metrics, .sheet-attributes, .sheet-skills, .sheet-equipment, .sheet-traits { display: grid; gap: 8px; }
+.sheet-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sheet-attributes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sheet-skills { grid-template-columns: repeat(auto-fit, minmax(min(100%, 105px), 1fr)); }
+.sheet-equipment, .sheet-traits { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+.sheet-value, .sheet-item, .sheet-control.sheet-tracker {
+  padding: 8px; border: 1px solid var(--rule); border-radius: 7px; background: var(--sheet-inset);
+}
+.sheet-value { display: grid; align-content: start; gap: 3px; cursor: help; }
+.sheet-label, .sheet-tracker, .sheet-caption { color: var(--muted); font: 700 .75rem/1.3 Arial, sans-serif; }
+.sheet-value output, .sheet-tracker input { color: var(--ink); font: 700 1.12rem/1.3 Georgia, serif; }
+.sheet-breakdown {
+  position: absolute; inset-inline: 12px; z-index: 2; visibility: hidden; pointer-events: none;
+  padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--ink); color: var(--paper); font: .8rem/1.4 Arial, sans-serif;
+}
+.sheet-value:hover > .sheet-breakdown, .sheet-value:focus-visible > .sheet-breakdown { visibility: visible; }
 .sheet-control { display: grid; gap: 3px; margin-block: 5px; }
+.sheet-control[hidden] { display: none; }
 .sheet-control input, .sheet-control select { min-width: 0; width: 100%; }
-.sheet-list { padding-inline-start: 1.35em; }
-.sheet-list li { margin-block: 5px; }
+.sheet-control.sheet-tracker { align-content: start; margin: 0; background: var(--sheet-card); }
+.sheet-tracker input { padding: 4px; border: 1px solid var(--rule); border-radius: 5px; background: transparent; }
+.sheet-tracker input::placeholder { color: var(--muted); opacity: 1; }
+.sheet-panel-heading, .sheet-purse { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sheet-panel-heading { justify-content: space-between; }
+.sheet-panel-heading h3 { margin-bottom: 0; }
+.sheet-gold { padding: 6px 9px; color: var(--red); border: 1px solid var(--rule); border-radius: 999px; }
+.sheet-purse .sheet-value { grid-template-columns: auto auto; align-items: baseline; column-gap: 6px; }
+.sheet-purse .sheet-caption { grid-column: 1 / -1; }
+.sheet-equipment { margin: 0; padding: 0; list-style: none; }
+.sheet-item { display: grid; align-content: start; gap: 4px; }
+.sheet-item-action {
+  display: grid; gap: 3px; margin-top: 3px; padding: 6px 8px; border-radius: 4px;
+  border-inline-start: 3px solid var(--red); background: var(--sheet-card); font-size: .88rem;
+}
+.sheet-inventory { margin: 0; padding-inline-start: 1.35em; }
+.sheet-inventory li + li { margin-block-start: 3px; }
+.sheet-traits { margin: 0; }
+.sheet-traits dd { margin: 4px 0 0; }
+.hero-sheet > .character-options:not(#my-level-guide) { margin-top: 6px; }
+@media (max-width: 680px) { .sheet-vitals { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .sheet-attributes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 421px) {
+  .sheet-health .sheet-metrics { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .sheet-health .sheet-metrics > * { grid-column: span 3; }
+  .sheet-health .sheet-metrics > :nth-child(-n+3) { grid-column: span 4; }
+}
 .sheet-ability-edit { font-size: .9em; margin-top: 4px; }
 .sheet-ability-edit summary { cursor: pointer; }
 .sheet-ability-edit textarea { width: 100%; color: var(--ink); background: transparent; border: 1px solid var(--rule); font: inherit; }
@@ -355,13 +422,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       </nav>
     </div>
     <section class="character-filter" aria-label="Character setup">
-      <nav class="sheet-steps" aria-label="Character creation">
-        <button type="button" class="school-button" data-sheet-jump="my-class">1. Class</button>
-        <button type="button" class="school-button" data-sheet-jump="my-origins">2. Ancestry &amp; background</button>
-        <button type="button" class="school-button" data-sheet-jump="my-sheet-stats">3. Stats &amp; skills</button>
-        <button type="button" class="school-button" data-sheet-jump="my-sheet-gear">4. Equipment</button>
-        <button type="button" class="school-button" data-sheet-jump="my-character-profiles">5. Name &amp; save</button>
-      </nav>
+      <button type="button" class="school-button active" id="my-create">Create Character</button>
       <div class="character-fields character-setup-fields">
         <label><span>CLASS</span><select id="my-class"><option value="">Choose a class</option></select></label>
         <label><span>LEVEL</span><select id="my-level"></select></label>
@@ -401,7 +462,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         <div class="character-fields profile-fields">
           <label><span>SAVED CHARACTERS</span><select id="my-profiles"><option value="">New character</option></select></label>
           <label><span>CHARACTER NAME</span><input id="my-name" maxlength="80" placeholder="Enter a name to save"></label>
-          <button type="button" class="school-button" id="my-save">Save</button>
+          <button type="button" class="school-button" id="my-save">Save manual sheet</button>
           <button type="button" class="school-button" id="my-delete" hidden>Delete character</button>
         </div>
       </details>
@@ -423,7 +484,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
     <section id="my-sheet" class="hero-sheet" aria-labelledby="my-sheet-title" hidden>
       <header class="sheet-heading">
-        <div><h2 id="my-sheet-title">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
+        <div><h2 id="my-sheet-title" tabindex="-1">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
         <button type="button" class="school-button" id="my-level-up">Level up</button>
       </header>
       <section id="my-level-guide" class="character-options" aria-labelledby="my-level-guide-title" hidden>
@@ -447,17 +508,46 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         <button type="button" class="school-button" id="my-level-cancel">Cancel</button>
       </section>
       <p class="character-note" id="my-sheet-status" role="status"></p>
-      <div id="my-sheet-vitals" class="sheet-grid"></div>
+      <div id="my-sheet-vitals" class="sheet-vitals">
+        <section class="sheet-panel sheet-health" aria-labelledby="my-health-title">
+          <h3 id="my-health-title">Health</h3>
+          <div class="sheet-metrics" id="my-health-values"></div>
+        </section>
+        <section class="sheet-panel sheet-combat" aria-labelledby="my-combat-title">
+          <h3 id="my-combat-title">Combat</h3>
+          <div class="sheet-metrics" id="my-combat-values"></div>
+        </section>
+      </div>
+      <section class="sheet-panel" aria-labelledby="my-attributes-title">
+        <h3 id="my-attributes-title">Attributes &amp; saves</h3>
+        <div class="sheet-attributes" id="my-sheet-attributes"></div>
+        <h4>Skills</h4>
+        <div class="sheet-skills" id="my-sheet-skills"></div>
+      </section>
       <details class="character-options" id="my-sheet-stats">
-        <summary>Stats, saves &amp; skills</summary>
+        <summary>Edit stats, saves &amp; skills</summary>
         <div id="my-sheet-stat-fields"></div>
       </details>
+      <section class="sheet-panel" aria-labelledby="my-inventory-title">
+        <div class="sheet-panel-heading">
+          <h3 id="my-inventory-title">Equipment &amp; inventory</h3>
+          <div id="my-sheet-purse" class="sheet-purse"></div>
+        </div>
+        <h4>Equipped</h4>
+        <ul class="sheet-equipment" id="my-sheet-equipped"></ul>
+        <h4>Carried inventory</h4>
+        <ul class="sheet-inventory" id="my-sheet-inventory"></ul>
+      </section>
       <details class="character-options" id="my-sheet-gear">
-        <summary>Equipment, attacks &amp; inventory</summary>
+        <summary>Edit equipment, inventory &amp; gold</summary>
         <div id="my-sheet-gear-fields"></div>
       </details>
+      <section class="sheet-panel" aria-labelledby="my-languages-title">
+        <h3 id="my-languages-title">Languages &amp; movement</h3>
+        <dl id="my-sheet-traits-summary" class="sheet-traits"></dl>
+      </section>
       <details class="character-options" id="my-sheet-traits">
-        <summary>Languages, movement &amp; other adjustments</summary>
+        <summary>Edit languages, movement &amp; other adjustments</summary>
         <div id="my-sheet-adjustments"></div>
       </details>
     </section>
@@ -471,6 +561,18 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       <div id="my-dice-box" hidden><span id="my-dice-label" class="eyebrow"></span><output id="my-dice"></output></div>
     </div>
     <div id="my-spells"></div>
+    <dialog id="my-create-dialog" aria-labelledby="my-create-title">
+      <form id="my-create-form">
+        <header><p class="eyebrow" id="my-create-progress"></p><h2 id="my-create-title" tabindex="-1"></h2></header>
+        <div class="create-body" id="my-create-fields"></div>
+        <p id="my-create-error" class="character-note" role="status"></p>
+        <div class="create-actions">
+          <button type="button" class="school-button" id="my-create-cancel">Cancel</button>
+          <button type="button" class="school-button" id="my-create-back">Back</button>
+          <button type="submit" class="school-button active" id="my-create-next">Next</button>
+        </div>
+      </form>
+    </dialog>
   </section>
 </div>
     </main>
@@ -1129,6 +1231,11 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return Object.fromEntries(order.map((stat, index) => [stat, arrays[array][index]]));
   }
 
+  function startingGear(className) {
+    const [, , , , armor, shield, weapons, inventory] = classes[className];
+    return { armor, shield, weapons, inventory };
+  }
+
   function breakdown(parts) {
     return { parts, total: parts.reduce((sum, [, value]) => sum + value, 0) };
   }
@@ -1211,7 +1318,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     };
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, derived, capstone, skillGrants };
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, capstone, skillGrants };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1744,6 +1851,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   const storageKey = "nimble-offline-characters-v1";
   const accountStore = window.NimbleProfileStore;
   const saveButton = byId("my-save");
+  const createButton = byId("my-create");
   const deleteButton = byId("my-delete");
   const editor = byId("my-character-title").closest(".library");
   let profiles = {};
@@ -2134,8 +2242,9 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     autosave();
   }
 
-  function sheetInput(label, key, { value = sheet[key] ?? "", type = "number", choices, onChange, multiline } = {}) {
+  function sheetInput(label, key, { value = sheet[key] ?? "", type = "number", choices, onChange, multiline, className = "" } = {}) {
     const field = node("label", "sheet-control", label);
+    if (className) field.classList.add(className);
     const input = node(choices ? "select" : multiline ? "textarea" : "input");
     input.dataset.sheetField = key;
     if (choices) {
@@ -2157,7 +2266,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       if (onChange) onChange(input.value);
       else writeSheet(key, input.value);
       if (key === "preset" || key === "weaponCatalog") input.value = "";
-      renderSheet(character(), currentFeatures(), key !== "armor");
+      renderSheet(character(), currentFeatures(), true);
     });
     field.append(input);
     return field;
@@ -2169,15 +2278,64 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return data ? rules.unlockedFeatures(data.features, { ...current, companionSize }) : [];
   }
 
-  function sheetValue(name, { parts, total }, suffix = "") {
-    const card = node("details", "sheet-value");
-    const summary = node("summary", "", name);
+  function sheetValue(name, { parts, total }, { suffix = "", caption = "", signed = false } = {}) {
+    const card = node("div", "sheet-value");
     const breakdown = parts.filter(([, value], index) => value !== 0 || !index)
       .map(([source, value]) => `${source}: ${value >= 0 ? "+" : ""}${value}`).join(" · ");
-    summary.title = breakdown;
-    summary.append(node("output", "", `${total}${suffix}`));
-    card.append(summary, node("small", "", breakdown));
+    const tooltip = node("span", "sheet-breakdown", breakdown);
+    tooltip.id = `sheet-breakdown-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    tooltip.setAttribute("role", "tooltip");
+    card.tabIndex = 0;
+    card.setAttribute("aria-describedby", tooltip.id);
+    card.append(node("span", "sheet-label", name), node("output", "", `${signed && total >= 0 ? "+" : ""}${total}${suffix}`));
+    if (caption) card.append(node("small", "sheet-caption", caption));
+    card.append(tooltip);
     return card;
+  }
+
+  function renderVitals(metrics, hitDie, refreshOnly) {
+    const groups = [
+      ["my-health-values", [
+        ["currentHP", "Current HP", metrics["Max HP"].total],
+        ["tempHP", "Temp HP", 0],
+        ["Max HP"],
+        ["wounds", "Wounds taken", 0],
+        ["Max Wounds"],
+        ["currentHitDice", "Hit Dice left", metrics["Hit Dice"].total],
+        ["Hit Dice", undefined, undefined, ` × d${hitDie}`, "Max Hit Dice"]
+      ]],
+      ["my-combat-values", [
+        ["currentActions", "Actions left", metrics.Actions.total],
+        ["Actions", undefined, undefined, "", "Max Actions"], ["Defense"], ["Initiative"], ["Speed", undefined, undefined, " spaces"]
+      ]]
+    ];
+    for (const [id, fields] of groups) {
+      const wrapper = byId(id);
+      const cards = fields.map(([key, label, fallback, suffix, heading]) => {
+        if (!label) return sheetValue(heading ?? key, metrics[key], { suffix });
+        const field = sheetInput(label, key, { className: "sheet-tracker" });
+        const input = field.querySelector("input");
+        input.placeholder = String(fallback);
+        input.title = `Defaults to ${fallback} when left blank`;
+        return field;
+      });
+      if (!refreshOnly) {
+        wrapper.replaceChildren(...cards);
+        continue;
+      }
+      cards.forEach((card, index) => {
+        const existing = wrapper.children[index];
+        if (existing.classList.contains("sheet-tracker")) {
+          const input = existing.querySelector("input");
+          const next = card.querySelector("input");
+          input.placeholder = next.placeholder;
+          input.title = next.title;
+        } else {
+          existing.querySelector("output").textContent = card.querySelector("output").textContent;
+          existing.querySelector(".sheet-breakdown").textContent = card.querySelector(".sheet-breakdown").textContent;
+        }
+      });
+    }
   }
 
   function sheetGrid(...content) {
@@ -2205,21 +2363,20 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     byId("my-level-up").disabled = level >= 20;
     sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
     const { stats, metrics, skills, hitDie } = sheetTotals;
-    const vitals = byId("my-sheet-vitals");
-    const updateValue = (card, replacement) => {
-      card.querySelector("summary").title = replacement.querySelector("summary").title;
-      card.querySelector("output").textContent = replacement.querySelector("output").textContent;
-      card.querySelector("small").textContent = replacement.querySelector("small").textContent;
-    };
-    const vitalCards = Object.entries(metrics).map(([name, value]) => sheetValue(name, value, name === "Hit Dice" ? ` × d${hitDie}` : ""));
-    if (refreshOnly) vitalCards.forEach((card, index) => updateValue(vitals.children[index], card));
-    else vitals.replaceChildren(...vitalCards, sheetGrid(sheetInput("Current HP", "currentHP"), sheetInput("Temporary HP", "tempHP"),
-      sheetInput("Wounds taken", "wounds"), sheetInput("Hit Dice remaining", "currentHitDice"),
-      sheetInput("Actions remaining", "currentActions")));
+    renderVitals(metrics, hitDie, refreshOnly);
 
     const statFields = byId("my-sheet-stat-fields");
     const base = sheetRules.baseArray(className, "Standard");
     const [advantage, disadvantage] = saves.split(" ");
+    const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal");
+    byId("my-sheet-attributes").replaceChildren(...sheetRules.stats.map((stat) => {
+      const value = stats[stat];
+      const isKey = keyStats.split(" ").includes(stat);
+      const save = saveMode(stat);
+      return sheetValue(stat, value, { signed: true,
+        caption: `${isKey ? "Key stat · " : ""}Base ${value.parts[0][1] >= 0 ? "+" : ""}${value.parts[0][1]}${save !== "Normal" ? ` · ${save} on saves` : ""}` });
+    }));
+    byId("my-sheet-skills").replaceChildren(...Object.entries(skills).map(([skill, value]) => sheetValue(skill, value, { signed: true })));
     const preset = sheetInput("Apply a starting array", "preset", {
       value: "", choices: [["", "Choose a preset"], ...sheetOptions(sheetRules.arrays)],
       onChange: (choice) => {
@@ -2230,25 +2387,19 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     });
     const statCards = sheetRules.stats.map((stat) => {
       const card = node("div", "");
-      card.append(sheetValue(`${stat}${keyStats.includes(stat) ? " · Key" : ""}`, stats[stat]),
+      card.append(
         sheetInput(`${stat} base`, `base:${stat}`, { value: sheet[`base:${stat}`] ?? base[stat] }),
         sheetInput(`${stat} manual bonus`, `bonus:${stat}`),
-        sheetInput(`${stat} save`, `save:${stat}`, { value: sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal"),
+        sheetInput(`${stat} save`, `save:${stat}`, { value: saveMode(stat),
           choices: ["Normal", "Advantage", "Disadvantage"].map((value) => [value, value]) }));
       return card;
     });
     const grants = sheetRules.skillGrants(level, sheet);
     const allocated = Object.keys(skills).reduce((sum, skill) => sum + grants[skill] + sheetRules.number(sheet[`skill:${skill}`]), 0);
     const budget = level - 1 + sheetRules.number(sheet.extraSkillPoints);
-    const skillsGrid = sheetGrid(...Object.entries(skills).map(([skill, value]) => {
-      const card = node("div", "");
-      card.append(sheetValue(skill, value), sheetInput(`${skill} points / adjustment`, `skill:${skill}`));
-      return card;
-    }));
+    const skillsGrid = sheetGrid(...Object.keys(skills).map((skill) => sheetInput(`${skill} points / adjustment`, `skill:${skill}`)));
     const skillBudget = `${allocated} allocated · ${budget} available from levels and optional points. Overrides are allowed.`;
     if (refreshOnly) {
-      [...statFields.querySelectorAll(".sheet-value")].forEach((card, index) =>
-        updateValue(card, index < statCards.length ? statCards[index].firstElementChild : skillsGrid.children[index - statCards.length].firstElementChild));
       for (const stat of sheetRules.stats) {
         statFields.querySelector(`[data-sheet-field="base:${stat}"]`).value = sheet[`base:${stat}`] ?? base[stat];
       }
@@ -2274,7 +2425,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     applyGear.addEventListener("click", () => {
       if (["armor", "shield", "weapons", "inventory"].some((key) => sheet[key]) &&
           !window.confirm("Replace your equipped armor, shield, weapons, and inventory with the class starting gear?")) return;
-      Object.assign(sheet, { armor: starterArmor, shield: starterShield, weapons: starterWeapons, inventory: starterGear });
+      Object.assign(sheet, sheetRules.startingGear(className));
       autosave();
       renderSheet(current, features);
       gear.querySelector("button")?.focus({ preventScroll: true });
@@ -2283,33 +2434,59 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       value: "", choices: [["", "Choose a weapon"], ...sheetOptions(sheetRules.weapons)],
       onChange: (weapon) => { if (weapon) writeSheet("weapons", [sheet.weapons, weapon].filter(Boolean).join(", ")); }
     });
-    const attacks = node("ul", "sheet-list");
-    const equipped = (sheet.weapons || "").split(/[\n,]+/).map((name) => name.trim()).filter(Boolean);
+    const equipment = byId("my-sheet-equipped");
+    const splitItems = (text, separator) => (text || "").split(separator).map((item) => item.trim()).filter(Boolean);
+    const itemCard = (name, kind) => {
+      const card = node("li", "sheet-item");
+      card.append(node("span", "sheet-label", kind), node("strong", "", name));
+      return card;
+    };
+    const armorName = sheet.armor || "Unarmored";
+    const armorCard = itemCard(armorName, "Armor");
+    const equipped = splitItems(sheet.weapons, /\r?\n|,\s*(?![^()]*\))/);
+    equipment.replaceChildren(armorCard);
+    if (sheet.shield) equipment.append(itemCard(sheet.shield, "Shield"));
     for (const weapon of equipped.length ? equipped : ["Unarmed Strike"]) {
       const entry = Object.hasOwn(sheetRules.weapons, weapon) && sheetRules.weapons[weapon];
-      if (!entry) {
-        attacks.append(node("li", "", weapon));
-        continue;
-      }
+      const card = itemCard(weapon, equipped.length ? "Weapon" : "Unarmed");
+      equipment.append(card);
+      if (!entry) continue;
       const [dice, statNames, reach] = entry;
       const modifiers = statNames.split("/").map((stat) => `${dice}${stats[stat].total >= 0 ? "+" : ""}${stats[stat].total} (${stat})`);
-      const attack = node("li", "", `${weapon} · ${modifiers.join(" or ")} · ${reach}`);
-      attack.title = statNames.split("/").map((stat) => stats[stat].parts.map(([source, amount]) => `${stat} ${source}: ${amount}`).join(", ")).join(" / ");
-      attacks.append(attack);
+      const attack = node("div", "sheet-item-action");
+      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", modifiers.join(" or ")), node("span", "", reach));
+      card.append(attack);
     }
+    const inventory = splitItems(sheet.inventory, sheet.inventory?.includes("\n") ? /\r?\n/ : /,\s*(?![^()]*\))/);
+    byId("my-sheet-inventory").replaceChildren(...(inventory.length ? inventory : ["Nothing carried yet"]).map((item) => node("li", "", item)));
+    byId("my-sheet-purse").replaceChildren(
+      node("strong", "sheet-gold", `${sheetRules.number(sheet.gold)} gp`),
+      sheetValue("Inventory slots", metrics["Inventory slots"], { caption: `${sheetRules.number(sheet.usedSlots)} used` }));
     if (refreshOnly) {
-      gear.querySelector(".sheet-list").replaceWith(attacks);
       gear.querySelector('[data-sheet-field="weapons"]').value = sheet.weapons ?? "";
-    } else gear.replaceChildren(node("p", "character-note", `Starting gear: ${[starterArmor, starterShield, starterWeapons, starterGear].filter(Boolean).join(", ")}. Alternatively, start with ${25 * level} gp to buy gear. Add background gear or custom items below.`),
-      applyGear, sheetGrid(sheetInput("Armor", "armor", { choices: sheetOptions(sheetRules.armor, "Unarmored") }),
-        sheetInput("Shield", "shield", { choices: sheetOptions(sheetRules.shields, "No shield") }),
-        ...(sheet.armor === "Custom" ? [sheetInput("Custom armor Defense", "customArmor")] : []),
-        sheetInput("Gold (gp)", "gold"), sheetInput("Inventory slots used", "usedSlots")),
-      addWeapon, sheetInput("Equipped weapons (comma or line separated; custom text allowed)", "weapons", { multiline: true }),
-      node("h3", "", "Attacks"), attacks, sheetInput("Inventory and carried gear", "inventory", { multiline: true }));
+      gear.querySelector('[data-sheet-field="customArmor"]').parentElement.hidden = sheet.armor !== "Custom";
+    } else {
+      const customArmor = sheetInput("Custom armor Defense", "customArmor");
+      customArmor.hidden = sheet.armor !== "Custom";
+      gear.replaceChildren(node("p", "character-note", `Starting gear: ${[starterArmor, starterShield, starterWeapons, starterGear].filter(Boolean).join(", ")}. Alternatively, start with ${25 * level} gp to buy gear. Add background gear or custom items below.`),
+        applyGear, sheetGrid(sheetInput("Armor", "armor", { choices: sheetOptions(sheetRules.armor, "Unarmored") }),
+          sheetInput("Shield", "shield", { choices: sheetOptions(sheetRules.shields, "No shield") }),
+          customArmor, sheetInput("Gold (gp)", "gold"), sheetInput("Inventory slots used", "usedSlots")),
+        addWeapon, sheetInput("Equipped weapons (comma or line separated; custom text allowed)", "weapons", { multiline: true }),
+        sheetInput("Inventory and carried gear", "inventory", { multiline: true }));
+    }
 
     const adjustments = byId("my-sheet-adjustments");
     const climbs = features.some(({ name }) => name === "Explorer of the Wilds") ? " Class movement: climbing Speed (Explorer of the Wilds)." : "";
+    const movement = [sheet.movement, climbs && "Climbing Speed"].filter(Boolean).join(" · ");
+    byId("my-sheet-traits-summary").replaceChildren(...[
+      ["Known languages", sheet.languages?.trim() || "Common"], ["Size", sheet.size || ancestry?.size || "Medium"],
+      ["Movement", [`${metrics.Speed.total} spaces`, movement].filter(Boolean).join(" · ")]
+    ].map(([label, text]) => {
+      const pair = node("div", "");
+      pair.append(node("dt", "sheet-label", label), node("dd", "", text));
+      return pair;
+    }));
     const languageHint = `Common plus ${Math.max(0, stats.INT.total)} additional language(s) from INT.${climbs} Add ancestry or custom movement and bonuses here.`;
     if (refreshOnly) adjustments.querySelector(".character-note").textContent = languageHint;
     else adjustments.replaceChildren(
@@ -2432,20 +2609,6 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     const latest = featureChoices.querySelector(`[data-unlock-level="${level}"] select:not(:disabled)`);
     (latest || byId("my-choices-summary")).focus();
   });
-  for (const button of document.querySelectorAll("[data-sheet-jump]")) {
-    button.addEventListener("click", () => {
-      if (byId(button.dataset.sheetJump).closest("#my-sheet")?.hidden) {
-        classSelect.focus();
-        return;
-      }
-      const target = byId(button.dataset.sheetJump);
-      if (target.tagName === "DETAILS") {
-        target.open = true;
-        target.querySelector("summary").focus();
-      } else target.focus();
-    });
-  }
-
   function spellList(entries, decorateCard, describeSpell) {
     const list = node("div", "character-spell-list");
     window.SpellbookCards.renderSpellGroups(list, entries.map(({ spell, state }) => ({
@@ -2563,11 +2726,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
             addAbilityEdit(item, `ability:class:${JSON.stringify([className, rows[0].subclass, name])}`);
             list.append(item);
           }
-          if (category === "Progression") unlocked.append(optional("progression", category, list));
-          else {
-            section.append(node("h3", "", category), list);
-            unlocked.append(section);
-          }
+          section.append(node("h3", "", category), list);
+          unlocked.append(section);
         }
         unlockedSection.hidden = !unlocked.childElementCount;
       }
@@ -2902,12 +3062,13 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     render();
     savedSnapshot = saved ? JSON.stringify(currentProfile()) : "";
     status.textContent = saved ? `Loaded ${name}. Changes save automatically.`
-      : "Choose a class and name, then select Create character.";
+      : "Choose Create Character for guided setup, or fill out the sheet manually.";
   }
 
   function updateProfileControls() {
     saveButton.disabled = profileBusy;
-    saveButton.textContent = activeName ? "Save now" : "Create character";
+    saveButton.textContent = activeName ? "Save now" : "Save manual sheet";
+    createButton.disabled = profileBusy;
     profileSelect.disabled = profileBusy;
     deleteButton.hidden = !activeName;
     deleteButton.disabled = profileBusy;
@@ -2940,6 +3101,15 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet } };
   }
 
+  async function persistProfile(name, profile, previousName = null) {
+    const remaining = { ...profiles };
+    if (previousName) delete remaining[previousName];
+    const updated = { ...remaining, [name]: profile };
+    if (accountStore) await accountStore.save(name, profile, previousName);
+    else localStorage.setItem(storageKey, JSON.stringify(updated));
+    profiles = updated;
+  }
+
   function queueSave(requestedName) {
     const profile = currentProfile();
     const snapshot = JSON.stringify(profile);
@@ -2958,12 +3128,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
 
       status.textContent = `Saving ${name}…`;
       try {
-        const next = { ...profiles };
-        if (previousName) delete next[previousName];
-        const updated = { ...next, [name]: profile };
-        if (accountStore) await accountStore.save(name, profile, previousName || null);
-        else localStorage.setItem(storageKey, JSON.stringify(updated));
-        profiles = updated;
+        await persistProfile(name, profile, previousName || null);
         savedSnapshot = snapshot;
         activeName = name;
         if (name !== previousName) refreshProfiles(name);
@@ -2982,6 +3147,178 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   function autosave() {
     if (activeName) queueSave();
   }
+
+  const createDialog = byId("my-create-dialog");
+  const createForm = byId("my-create-form");
+  const createFields = byId("my-create-fields");
+  const createTitle = byId("my-create-title");
+  const createError = byId("my-create-error");
+  const createBack = byId("my-create-back");
+  const createNext = byId("my-create-next");
+  const createCancel = byId("my-create-cancel");
+  const createSteps = ["Choose a class", "Choose your origin", "Set base stats", "Choose starting equipment", "Name and review"];
+  let draft;
+  let createStep = 0;
+  let creating = false;
+
+  function createField(label, key, { choices, type = "text", required = false, change } = {}) {
+    const field = node("label", "sheet-control", label);
+    const input = node(choices ? "select" : "input");
+    if (choices) {
+      for (const [value, caption] of choices) input.add(new Option(caption, value));
+    } else if (type === "number") {
+      input.type = type;
+      input.min = "-9999";
+      input.max = "9999";
+    } else {
+      input.maxLength = 80;
+    }
+    input.required = required;
+    input.value = draft[key] ?? "";
+    input.addEventListener("input", () => { draft[key] = input.value; });
+    if (change) input.addEventListener("change", () => change(input.value));
+    field.append(input);
+    return field;
+  }
+
+  function renderCreateStep() {
+    createError.textContent = "";
+    byId("my-create-progress").textContent = `Step ${createStep + 1} of ${createSteps.length}`;
+    createTitle.textContent = createSteps[createStep];
+    createBack.hidden = createStep === 0;
+    createNext.textContent = createStep === createSteps.length - 1 ? "Create Character" : "Next";
+    const hint = (text) => node("p", "character-note", text);
+    const view = (value) => [...value.keys()].sort().map((name) => [name, name]);
+    if (createStep === 0) {
+      createFields.replaceChildren(hint("Your character starts at level 1. You can level up or set another level on the finished sheet."),
+        createField("Class", "className", { required: true,
+          choices: [["", "Choose a class"], ...sheetOptions(rules.classes)], change: () => { draft.base = null; } }));
+    } else if (createStep === 1) {
+      createFields.replaceChildren(hint("Choose an ancestry and background now, or leave them for later."),
+        createField("Ancestry", "ancestry", { choices: [["", "Choose later"], ...view(ancestries)] }),
+        createField("Background", "background", { choices: [["", "Choose later"], ...view(backgrounds)] }));
+    } else if (createStep === 2) {
+      const setArray = (name) => {
+        draft.base = sheetRules.baseArray(draft.className, name);
+        for (const stat of sheetRules.stats) draft[stat] = String(draft.base[stat]);
+      };
+      if (!draft.base) setArray(draft.array = "Standard");
+      const preset = createField("Starting array", "array", {
+        choices: [...sheetOptions(sheetRules.arrays), ["Custom", "Custom"]],
+        change: (name) => {
+          if (name !== "Custom") setArray(name);
+          renderCreateStep();
+        }
+      });
+      const scores = sheetRules.stats.map((stat) => {
+        const field = createField(stat, stat, { type: "number", required: true });
+        field.querySelector("input").addEventListener("input", () => {
+          draft.array = "Custom";
+          preset.querySelector("select").value = draft.array;
+        });
+        return field;
+      });
+      createFields.replaceChildren(hint(`Key stats: ${sheetRules.classes[draft.className][0].replace(" ", " and ")}. Choose an array or edit the scores.`),
+        preset, sheetGrid(...scores));
+    } else if (createStep === 3) {
+      const gear = Object.values(sheetRules.startingGear(draft.className)).filter(Boolean).join(", ");
+      createFields.replaceChildren(createField("Starting equipment", "equipment", { choices: [
+        ["class", "Class starting gear"], ["gold", "25 gp to buy equipment"], ["custom", "Add my own later"]
+      ] }), hint(`Class starting gear: ${gear}. You can edit equipment and add background gear on the finished sheet.`));
+    } else {
+      const review = node("ul", "sheet-list");
+      for (const text of [
+        `Level 1 ${draft.className}`, `Ancestry: ${draft.ancestry || "Choose later"}`, `Background: ${draft.background || "Choose later"}`,
+        sheetRules.stats.map((stat) => `${stat} ${draft[stat]}`).join(" · "),
+        { class: "Class starting gear", gold: "25 gp", custom: "Equipment to be added later" }[draft.equipment]
+      ]) review.append(node("li", "", text));
+      createFields.replaceChildren(createField("Character name", "name", { required: true }), review);
+    }
+    createFields.scrollTop = 0;
+    createTitle.focus();
+  }
+
+  function positionCreateDialog() {
+    const frame = window.frameElement;
+    if (!frame?.matches(".nimble-reference") || !createDialog.open) return;
+    const rect = frame.getBoundingClientRect();
+    const top = Math.max(0, -rect.top);
+    const bottom = Math.min(rect.height, window.parent.innerHeight - rect.top);
+    if (bottom <= top) return;
+    createDialog.style.setProperty("--create-top", `${top + 8}px`);
+    createDialog.style.setProperty("--create-height", `${bottom - top - 16}px`);
+  }
+
+  const createViewport = window.frameElement?.matches(".nimble-reference") ? window.parent : null;
+  createButton.addEventListener("click", () => {
+    draft = { className: "", ancestry: "", background: "", equipment: "class", name: "" };
+    createStep = 0;
+    createDialog.showModal();
+    positionCreateDialog();
+    createViewport?.addEventListener("scroll", positionCreateDialog, { passive: true });
+    createViewport?.addEventListener("resize", positionCreateDialog);
+    renderCreateStep();
+  });
+  createDialog.addEventListener("close", () => {
+    if (createDialog.open) return;
+    createViewport?.removeEventListener("scroll", positionCreateDialog);
+    createViewport?.removeEventListener("resize", positionCreateDialog);
+    draft = null;
+  });
+  createDialog.addEventListener("cancel", (event) => {
+    if (creating) event.preventDefault();
+  });
+  createCancel.addEventListener("click", () => createDialog.close());
+  createBack.addEventListener("click", () => {
+    createStep -= 1;
+    renderCreateStep();
+  });
+  createForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (creating) return;
+    if (createStep < createSteps.length - 1) {
+      createStep += 1;
+      renderCreateStep();
+      return;
+    }
+    const name = draft.name.trim();
+    if (!name) {
+      createError.textContent = "Enter a character name.";
+      createFields.querySelector("input").focus();
+      return;
+    }
+    const newSheet = Object.fromEntries(sheetRules.stats.map((stat) => [`base:${stat}`, draft[stat]]));
+    if (draft.equipment === "class") Object.assign(newSheet, sheetRules.startingGear(draft.className));
+    else if (draft.equipment === "gold") newSheet.gold = "25";
+    const profile = {
+      className: draft.className, level: 1, subclass: "", ancestry: draft.ancestry, background: draft.background,
+      secondBackground: "", backgroundSpell: "", notePages: [{ title: "General", text: "" }],
+      extraAbilities: [], picks: {}, featurePicks: {}, manaStats: {}, sheet: newSheet
+    };
+    creating = true;
+    setProfileBusy(true);
+    createCancel.disabled = createBack.disabled = createNext.disabled = true;
+    createError.textContent = "Saving your character…";
+    try {
+      await writes;
+      if (Object.hasOwn(profiles, name)) {
+        createError.textContent = "That name already exists. Choose a different name.";
+        createFields.querySelector("input").focus();
+        return;
+      }
+      await persistProfile(name, profile);
+      showProfile(name);
+      createDialog.close();
+      status.textContent = `Saved ${name} to ${accountStore ? "your Tavern account" : "this browser"}.`;
+      byId("my-sheet-title").focus();
+    } catch (error) {
+      createError.textContent = accountStore ? error.message : "This browser does not allow saving profiles. Your choices are still here.";
+    } finally {
+      creating = false;
+      setProfileBusy(false);
+      createCancel.disabled = createBack.disabled = createNext.disabled = false;
+    }
+  });
 
   nameInput.addEventListener("blur", () => {
     const name = nameInput.value.trim();

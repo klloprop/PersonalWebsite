@@ -57,6 +57,11 @@
     return Object.fromEntries(order.map((stat, index) => [stat, arrays[array][index]]));
   }
 
+  function startingGear(className) {
+    const [, , , , armor, shield, weapons, inventory] = classes[className];
+    return { armor, shield, weapons, inventory };
+  }
+
   function breakdown(parts) {
     return { parts, total: parts.reduce((sum, [, value]) => sum + value, 0) };
   }
@@ -139,7 +144,7 @@
     };
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, derived, capstone, skillGrants };
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, capstone, skillGrants };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
