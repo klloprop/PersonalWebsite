@@ -100,6 +100,27 @@ h1, h2, h3, p { margin-top: 0; }
 .casting-summary:not([hidden]) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 10px; margin-top: 14px; }
 .casting-summary > div { padding: 10px 12px; border: 1px solid var(--rule); background: #fbf8f1; }
 .casting-summary output { display: block; margin: 4px 0; font-weight: bold; }
+.hero-sheet { margin-block: 18px; }
+.sheet-steps, .sheet-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sheet-heading { justify-content: space-between; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+.sheet-heading h2, .sheet-heading p { margin: 0; }
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); gap: 8px; }
+.sheet-grid > * { min-width: 0; }
+#my-sheet-vitals > .sheet-grid { grid-column: 1 / -1; }
+.sheet-value { border: 1px solid var(--rule); padding: 8px 10px; }
+.sheet-value > summary { cursor: help; font-weight: bold; }
+.sheet-value > summary output { font-size: 1.15em; margin-left: .35em; }
+.sheet-value > small { display: block; margin-top: 5px; }
+.sheet-control { display: grid; gap: 3px; margin-block: 5px; }
+.sheet-control input, .sheet-control select { min-width: 0; width: 100%; }
+.sheet-list { padding-inline-start: 1.35em; }
+.sheet-list li { margin-block: 5px; }
+.sheet-ability-edit { font-size: .9em; margin-top: 4px; }
+.sheet-ability-edit summary { cursor: pointer; }
+.sheet-ability-edit textarea { width: 100%; color: var(--ink); background: transparent; border: 1px solid var(--rule); font: inherit; }
+#my-level-guide { margin-bottom: 12px; }
+#my-level-guide li { margin-block: 6px; }
+#my-level-hp { max-width: 9em; }
 #my-mana-stat-field { font-size: 13px; }
 #my-mana-stat { width: 7em; margin-left: 6px; padding: 4px; font: inherit; }
 .character-fields.character-setup-fields { grid-template-columns: minmax(0, 1fr) minmax(78px, 110px); }

@@ -58,7 +58,7 @@ def build() -> str:
     css = (ROOT / "styles.css").read_text(encoding="utf-8")
     scripts = "\n".join(
         f"<script>\n{(ROOT / filename).read_text(encoding='utf-8')}\n</script>"
-        for filename in ("character.js", "app.js", "conditions.js", "my_character.js")
+        for filename in ("character.js", "sheet.js", "app.js", "conditions.js", "my_character.js")
     )
     spells_markup = re.sub(r'\s*<label class="secret-toggle">.*?</label>', "", main_markup("index.html"))
     conditions_markup = main_markup("conditions.html").replace("library-title", "conditions-title")

@@ -57,7 +57,8 @@
 
 .tavern-reference :is(select, .search-input, .spell-card, .character-options,
 	.ability-category, .casting-summary > div, .condition-card, .character-options input:not([type="checkbox"]),
-	.character-options textarea, #my-mana-stat) {
+	.character-options textarea, #my-mana-stat, .sheet-value, .sheet-control input,
+	.sheet-control textarea) {
 	border-color: var(--rule);
 	border-radius: 8px;
 	background: var(--card);

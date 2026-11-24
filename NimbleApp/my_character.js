@@ -40,6 +40,10 @@
   let profileBusy = false;
   let picks = {};
   let manaStats = {};
+  const sheetRules = window.CharacterSheetRules;
+  let sheet = {};
+  let sheetTotals;
+  let pendingLevel = 0;
   let notePages = [{ title: "General", text: "" }];
   let activeNotePage = 0;
   let featurePicks = {};
@@ -150,7 +154,8 @@
     byId("my-casting").hidden = false;
     byId("my-mana-stat-field").hidden = !resource.stat;
     byId("my-mana-stat-label").textContent = resource.stat ? `Current ${resource.stat} score` : "";
-    manaInput.value = manaStats[resource.stat] ?? "";
+    manaInput.value = manaStats[resource.stat] ?? sheetTotals?.stats[resource.stat]?.total ?? "";
+    manaInput.placeholder = "From sheet";
     if (resource.stat) updateMana(resource);
     else byId("my-mana").textContent = resource.text;
     const leveled = entries.filter(({ spell }) => spell.tier > 0);
@@ -250,6 +255,7 @@
         if (entry.utilitySpell && utility) {
           item.append(optional("background-spell", `Learned: ${utility.name}`, spellList([{ spell: utility, state: "known" }])));
         }
+        if (entry.page) addAbilityEdit(item, `ability:origin:${JSON.stringify([kind, entry.name])}`);
         list.append(item);
       }
       output.append(heading(abilityGroups[kind], list));
@@ -409,6 +415,324 @@
     return [...groups.values()];
   }
 
+  function writeSheet(key, value) {
+    if (value === "") delete sheet[key];
+    else sheet[key] = value;
+    autosave();
+  }
+
+  function sheetInput(label, key, { value = sheet[key] ?? "", type = "number", choices, onChange, multiline } = {}) {
+    const field = node("label", "sheet-control", label);
+    const input = node(choices ? "select" : multiline ? "textarea" : "input");
+    input.dataset.sheetField = key;
+    if (choices) {
+      for (const [option, caption] of choices) input.add(new Option(caption, option));
+    } else if (multiline) {
+      input.rows = 3;
+      input.maxLength = 4000;
+    } else {
+      input.type = type;
+      if (type === "number") {
+        input.step = "1";
+        input.min = "-9999";
+        input.max = "9999";
+      } else input.maxLength = 400;
+    }
+    input.value = value;
+    input.addEventListener("change", () => {
+      if (!input.reportValidity()) return;
+      if (onChange) onChange(input.value);
+      else writeSheet(key, input.value);
+      if (key === "preset" || key === "weaponCatalog") input.value = "";
+      renderSheet(character(), currentFeatures(), key !== "armor");
+    });
+    field.append(input);
+    return field;
+  }
+
+  function currentFeatures(current = character()) {
+    const data = classIndex[current.className];
+    const companionSize = featurePicks[JSON.stringify([current.className, current.subclass, 3, "Beastmaster Companion"])];
+    return data ? rules.unlockedFeatures(data.features, { ...current, companionSize }) : [];
+  }
+
+  function sheetValue(name, { parts, total }, suffix = "") {
+    const card = node("details", "sheet-value");
+    const summary = node("summary", "", name);
+    const breakdown = parts.filter(([, value], index) => value !== 0 || !index)
+      .map(([source, value]) => `${source}: ${value >= 0 ? "+" : ""}${value}`).join(" · ");
+    summary.title = breakdown;
+    summary.append(node("output", "", `${total}${suffix}`));
+    card.append(summary, node("small", "", breakdown));
+    return card;
+  }
+
+  function sheetGrid(...content) {
+    const grid = node("div", "sheet-grid");
+    grid.append(...content);
+    return grid;
+  }
+
+  function sheetOptions(values, empty) {
+    return Object.keys(values).map((value) => [value, value || empty]);
+  }
+
+  function renderSheet(current, features, refreshOnly = false) {
+    const { className, subclass, level } = current;
+    const panel = byId("my-sheet");
+    panel.hidden = !className;
+    if (!className) {
+      sheetTotals = undefined;
+      return;
+    }
+    const [keyStats, , , saves, starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
+    const ancestry = ancestries.get(ancestrySelect.value);
+    byId("my-sheet-subtitle").textContent = [nameInput.value.trim(), `${className} · Level ${level}`, subclass,
+      ancestry?.name].filter(Boolean).join(" · ");
+    byId("my-level-up").disabled = level >= 20;
+    sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
+    const { stats, metrics, skills, hitDie } = sheetTotals;
+    const vitals = byId("my-sheet-vitals");
+    const updateValue = (card, replacement) => {
+      card.querySelector("summary").title = replacement.querySelector("summary").title;
+      card.querySelector("output").textContent = replacement.querySelector("output").textContent;
+      card.querySelector("small").textContent = replacement.querySelector("small").textContent;
+    };
+    const vitalCards = Object.entries(metrics).map(([name, value]) => sheetValue(name, value, name === "Hit Dice" ? ` × d${hitDie}` : ""));
+    if (refreshOnly) vitalCards.forEach((card, index) => updateValue(vitals.children[index], card));
+    else vitals.replaceChildren(...vitalCards, sheetGrid(sheetInput("Current HP", "currentHP"), sheetInput("Temporary HP", "tempHP"),
+      sheetInput("Wounds taken", "wounds"), sheetInput("Hit Dice remaining", "currentHitDice"),
+      sheetInput("Actions remaining", "currentActions")));
+
+    const statFields = byId("my-sheet-stat-fields");
+    const base = sheetRules.baseArray(className, "Standard");
+    const [advantage, disadvantage] = saves.split(" ");
+    const preset = sheetInput("Apply a starting array", "preset", {
+      value: "", choices: [["", "Choose a preset"], ...sheetOptions(sheetRules.arrays)],
+      onChange: (choice) => {
+        if (!choice) return;
+        for (const [stat, value] of Object.entries(sheetRules.baseArray(className, choice))) sheet[`base:${stat}`] = String(value);
+        autosave();
+      }
+    });
+    const statCards = sheetRules.stats.map((stat) => {
+      const card = node("div", "");
+      card.append(sheetValue(`${stat}${keyStats.includes(stat) ? " · Key" : ""}`, stats[stat]),
+        sheetInput(`${stat} base`, `base:${stat}`, { value: sheet[`base:${stat}`] ?? base[stat] }),
+        sheetInput(`${stat} manual bonus`, `bonus:${stat}`),
+        sheetInput(`${stat} save`, `save:${stat}`, { value: sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal"),
+          choices: ["Normal", "Advantage", "Disadvantage"].map((value) => [value, value]) }));
+      return card;
+    });
+    const grants = sheetRules.skillGrants(level, sheet);
+    const allocated = Object.keys(skills).reduce((sum, skill) => sum + grants[skill] + sheetRules.number(sheet[`skill:${skill}`]), 0);
+    const budget = level - 1 + sheetRules.number(sheet.extraSkillPoints);
+    const skillsGrid = sheetGrid(...Object.entries(skills).map(([skill, value]) => {
+      const card = node("div", "");
+      card.append(sheetValue(skill, value), sheetInput(`${skill} points / adjustment`, `skill:${skill}`));
+      return card;
+    }));
+    const skillBudget = `${allocated} allocated · ${budget} available from levels and optional points. Overrides are allowed.`;
+    if (refreshOnly) {
+      [...statFields.querySelectorAll(".sheet-value")].forEach((card, index) =>
+        updateValue(card, index < statCards.length ? statCards[index].firstElementChild : skillsGrid.children[index - statCards.length].firstElementChild));
+      for (const stat of sheetRules.stats) {
+        statFields.querySelector(`[data-sheet-field="base:${stat}"]`).value = sheet[`base:${stat}`] ?? base[stat];
+      }
+      statFields.querySelector(".character-note").textContent = skillBudget;
+    } else {
+      statFields.replaceChildren(preset, sheetGrid(...statCards), node("h3", "", "Skills"),
+        node("p", "character-note", skillBudget), sheetInput("Extra skill points", "extraSkillPoints"), skillsGrid);
+      const final = sheetRules.capstone(features);
+      if (final) {
+        const options = [["", "Choose a stat"], ...sheetRules.stats.map((stat) => [stat, stat])];
+        statFields.prepend(sheetGrid(sheetInput(`${final.name}: first +1`, "capstoneFirst", { choices: options }),
+          sheetInput(`${final.name}: second +1`, "capstoneSecond", { choices: options })));
+      }
+    }
+    for (const [key, other] of [["capstoneFirst", "capstoneSecond"], ["capstoneSecond", "capstoneFirst"]]) {
+      const input = statFields.querySelector(`[data-sheet-field="${key}"]`);
+      if (input) for (const option of input.options) option.disabled = Boolean(option.value && option.value === sheet[other]);
+    }
+
+    const gear = byId("my-sheet-gear-fields");
+    const applyGear = node("button", "school-button", "Use class starting gear");
+    applyGear.type = "button";
+    applyGear.addEventListener("click", () => {
+      if (["armor", "shield", "weapons", "inventory"].some((key) => sheet[key]) &&
+          !window.confirm("Replace your equipped armor, shield, weapons, and inventory with the class starting gear?")) return;
+      Object.assign(sheet, { armor: starterArmor, shield: starterShield, weapons: starterWeapons, inventory: starterGear });
+      autosave();
+      renderSheet(current, features);
+      gear.querySelector("button")?.focus({ preventScroll: true });
+    });
+    const addWeapon = sheetInput("Add a weapon from the catalog", "weaponCatalog", {
+      value: "", choices: [["", "Choose a weapon"], ...sheetOptions(sheetRules.weapons)],
+      onChange: (weapon) => { if (weapon) writeSheet("weapons", [sheet.weapons, weapon].filter(Boolean).join(", ")); }
+    });
+    const attacks = node("ul", "sheet-list");
+    const equipped = (sheet.weapons || "").split(/[\n,]+/).map((name) => name.trim()).filter(Boolean);
+    for (const weapon of equipped.length ? equipped : ["Unarmed Strike"]) {
+      const entry = Object.hasOwn(sheetRules.weapons, weapon) && sheetRules.weapons[weapon];
+      if (!entry) {
+        attacks.append(node("li", "", weapon));
+        continue;
+      }
+      const [dice, statNames, reach] = entry;
+      const modifiers = statNames.split("/").map((stat) => `${dice}${stats[stat].total >= 0 ? "+" : ""}${stats[stat].total} (${stat})`);
+      const attack = node("li", "", `${weapon} · ${modifiers.join(" or ")} · ${reach}`);
+      attack.title = statNames.split("/").map((stat) => stats[stat].parts.map(([source, amount]) => `${stat} ${source}: ${amount}`).join(", ")).join(" / ");
+      attacks.append(attack);
+    }
+    if (refreshOnly) {
+      gear.querySelector(".sheet-list").replaceWith(attacks);
+      gear.querySelector('[data-sheet-field="weapons"]').value = sheet.weapons ?? "";
+    } else gear.replaceChildren(node("p", "character-note", `Starting gear: ${[starterArmor, starterShield, starterWeapons, starterGear].filter(Boolean).join(", ")}. Alternatively, start with ${25 * level} gp to buy gear. Add background gear or custom items below.`),
+      applyGear, sheetGrid(sheetInput("Armor", "armor", { choices: sheetOptions(sheetRules.armor, "Unarmored") }),
+        sheetInput("Shield", "shield", { choices: sheetOptions(sheetRules.shields, "No shield") }),
+        ...(sheet.armor === "Custom" ? [sheetInput("Custom armor Defense", "customArmor")] : []),
+        sheetInput("Gold (gp)", "gold"), sheetInput("Inventory slots used", "usedSlots")),
+      addWeapon, sheetInput("Equipped weapons (comma or line separated; custom text allowed)", "weapons", { multiline: true }),
+      node("h3", "", "Attacks"), attacks, sheetInput("Inventory and carried gear", "inventory", { multiline: true }));
+
+    const adjustments = byId("my-sheet-adjustments");
+    const climbs = features.some(({ name }) => name === "Explorer of the Wilds") ? " Class movement: climbing Speed (Explorer of the Wilds)." : "";
+    const languageHint = `Common plus ${Math.max(0, stats.INT.total)} additional language(s) from INT.${climbs} Add ancestry or custom movement and bonuses here.`;
+    if (refreshOnly) adjustments.querySelector(".character-note").textContent = languageHint;
+    else adjustments.replaceChildren(
+      sheetGrid(sheetInput("Size", "size", { type: "text", value: sheet.size ?? ancestry?.size ?? "Medium" }),
+        sheetInput("Other movement (climb, swim, fly)", "movement", { type: "text" }),
+        sheetInput("Languages", "languages", { type: "text", value: sheet.languages ?? "Common" })),
+      node("p", "character-note", languageHint),
+      node("h3", "", "Manual adjustments"),
+      sheetGrid(...Object.keys(metrics).map((name) => sheetInput(`${name} bonus`, `bonus:${name}`))));
+    const resource = rules.castingResource(current);
+    if (resource.stat && !manaStats[resource.stat] && manaInput !== document.activeElement) {
+      manaInput.value = stats[resource.stat].total;
+      updateMana(resource);
+    }
+  }
+
+  function addAbilityEdit(item, key) {
+    const override = sheet[key];
+    const details = node("details", "sheet-ability-edit");
+    details.append(node("summary", "", override !== undefined ? "Edit rules override" : "Customize ability rules"));
+    const field = node("label", "sheet-control", "Custom rules (leave blank to restore the original)");
+    const input = node("textarea");
+    input.value = override ?? "";
+    input.rows = 2;
+    input.maxLength = 4000;
+    const save = node("button", "school-button", "Apply rules override");
+    save.type = "button";
+    save.addEventListener("click", () => {
+      writeSheet(key, input.value.trim());
+      if (key.startsWith("ability:origin:")) renderOrigins();
+      else render();
+    });
+    field.append(input);
+    details.append(field, save);
+    if (override !== undefined) {
+      const original = node("details", "sheet-ability-edit");
+      original.append(node("summary", "", "Original rules"));
+      for (const child of [...item.children].slice(1).filter((child) => !child.classList.contains("arsenal-badge"))) original.append(child);
+      item.append(node("p", "feature-description", override), original);
+    }
+    item.append(details);
+  }
+
+  function closeLevelGuide() {
+    pendingLevel = 0;
+    byId("my-level-guide").hidden = true;
+    byId("my-sheet-status").textContent = "";
+  }
+
+  function previewLevel() {
+    const current = character();
+    const subclass = pendingLevel === 3 ? byId("my-level-subclass").value : current.subclass;
+    const old = new Set(currentFeatures(current).map((row) => JSON.stringify([row.level, row.subclass, row.name])));
+    const next = { ...current, level: pendingLevel, subclass };
+    const fresh = [...currentFeatures(next), ...rules.automaticAbilities(classIndex[current.className], next).filter(({ level }) => level === pendingLevel)].filter((row, index, rows) =>
+      rows.findIndex((other) => other.name === row.name && other.level === row.level) === index &&
+      !old.has(JSON.stringify([row.level, row.subclass, row.name])));
+    const list = byId("my-new-features");
+    list.replaceChildren(...fresh.map((row) => {
+      const item = node("li", "", `${row.name}${row.choice ? " · choice" : ""}`);
+      if (row.description) item.append(node("p", "character-note", row.description));
+      return item;
+    }));
+    if (!fresh.length) list.append(node("li", "", "No additional features listed at this level."));
+  }
+
+  byId("my-level-up").addEventListener("click", () => {
+    const { className, level } = character();
+    if (!className || level >= 20) return;
+    pendingLevel = level + 1;
+    byId("my-level-guide-title").textContent = `Level up to ${pendingLevel}`;
+    byId("my-level-hp").value = sheet[`hp:${pendingLevel}`] ?? sheetRules.classes[className][1] / 2;
+    byId("my-level-roll-result").textContent = "The default is the flat HP increase. Roll or enter your own result.";
+    byId("my-level-skill").replaceChildren(new Option("Allocate later", ""));
+    for (const skill of Object.keys(sheetRules.skills)) byId("my-level-skill").add(new Option(skill));
+    byId("my-level-skill").value = sheet[`levelSkill:${pendingLevel}`] || "";
+    const subclass = byId("my-level-subclass");
+    subclass.replaceChildren(new Option("Choose later", ""));
+    for (const option of rules.classes[className]) subclass.add(new Option(option));
+    byId("my-level-subclass-field").hidden = pendingLevel !== 3;
+    byId("my-level-guide").hidden = false;
+    previewLevel();
+    byId("my-level-guide-title").focus();
+  });
+  byId("my-level-subclass").addEventListener("change", previewLevel);
+  byId("my-level-roll").addEventListener("click", () => {
+    const size = sheetRules.classes[character().className][1];
+    const roll = () => Math.floor(Math.random() * size) + 1;
+    const first = roll(), second = roll();
+    byId("my-level-hp").value = Math.max(first, second);
+    byId("my-level-roll-result").textContent = `Rolled ${first} and ${second}; kept ${Math.max(first, second)}.`;
+  });
+  byId("my-level-cancel").addEventListener("click", () => {
+    closeLevelGuide();
+    byId("my-level-up").focus();
+  });
+  byId("my-level-apply").addEventListener("click", () => {
+    const current = character();
+    if (pendingLevel !== current.level + 1 || pendingLevel > 20 || !byId("my-level-hp").reportValidity()) return;
+    const level = pendingLevel;
+    const skill = byId("my-level-skill").value;
+    sheet[`hp:${level}`] = String(sheetRules.number(byId("my-level-hp").value, sheetRules.classes[current.className][1] / 2));
+    if (skill) sheet[`levelSkill:${level}`] = skill;
+    else delete sheet[`levelSkill:${level}`];
+    const subclass = level === 3 ? byId("my-level-subclass").value : current.subclass;
+    closeLevelGuide();
+    levelSelect.value = String(level);
+    updateSubclass(subclass);
+    render();
+    autosave();
+    byId("my-sheet-status").textContent = `Level ${level} applied. Review any new picks in Feature Choices.`;
+    if (sheetRules.capstone(currentFeatures())) {
+      byId("my-sheet-stats").open = true;
+      byId("my-sheet-status").textContent = `Level ${level} applied. Choose your two stat increases in Stats, saves & skills.`;
+      byId("my-sheet-stats").querySelector('[data-sheet-field="capstoneFirst"]')?.focus();
+      return;
+    }
+    const choices = byId("my-choices");
+    choices.open = true;
+    const latest = featureChoices.querySelector(`[data-unlock-level="${level}"] select:not(:disabled)`);
+    (latest || byId("my-choices-summary")).focus();
+  });
+  for (const button of document.querySelectorAll("[data-sheet-jump]")) {
+    button.addEventListener("click", () => {
+      if (byId(button.dataset.sheetJump).closest("#my-sheet")?.hidden) {
+        classSelect.focus();
+        return;
+      }
+      const target = byId(button.dataset.sheetJump);
+      if (target.tagName === "DETAILS") {
+        target.open = true;
+        target.querySelector("summary").focus();
+      } else target.focus();
+    });
+  }
+
   function spellList(entries, decorateCard, describeSpell) {
     const list = node("div", "character-spell-list");
     window.SpellbookCards.renderSpellGroups(list, entries.map(({ spell, state }) => ({
@@ -427,14 +751,14 @@
     byId("my-choices-summary").textContent = "Feature Choices";
     byId("my-prompt").hidden = Boolean(className);
     const data = classIndex[className];
+    const features = currentFeatures(current);
+    renderSheet(current, features);
     if (data) {
       const entries = spells.flatMap((spell) => {
         const state = rules.availability(spell, current);
         return state ? [{ spell, state }] : [];
       });
       renderCasting(current, entries);
-      const companionSize = featurePicks[JSON.stringify([className, subclass, 3, "Beastmaster Companion"])];
-      const features = rules.unlockedFeatures(data.features, { ...current, companionSize });
       const selectedOptions = [];
       const upgradeSlots = [];
       const automatic = rules.automaticAbilities(data, current);
@@ -523,6 +847,7 @@
               }
               progression.append(detail);
             }
+            addAbilityEdit(item, `ability:class:${JSON.stringify([className, rows[0].subclass, name])}`);
             list.append(item);
           }
           if (category === "Progression") unlocked.append(optional("progression", category, list));
@@ -543,6 +868,7 @@
         for (const f of items) {
           const listed = choiceOptions(f, data, entries, current).some((option) => option.description);
           const item = node("li", listed ? "arsenal-feature" : "");
+          item.dataset.unlockLevel = String(f.level);
           item.append(node("span", "keyword-badge", `Level ${f.level}`), node("strong", "", ` ${f.name}`),
             node("small", "", ` · ${f.sourceLabel || f.subclass || className} · PDF page ${f.page}`));
           if (listed) item.append(document.createTextNode(" "), node("span", "keyword-badge arsenal-badge", "Ability choice"));
@@ -659,6 +985,7 @@
                 }
                 refreshFeaturePicks();
                 renderAbilities();
+                if (/(?:key|secondary) stat/i.test(f.name)) renderSheet(current, features);
               });
               label.append(select);
               item.append(label, explanation);
@@ -804,18 +1131,28 @@
     }
   }
 
-  classSelect.addEventListener("change", () => { updateSubclass(); render(); autosave(); });
-  subclassSelect.addEventListener("change", () => { render(); autosave(); });
-  levelSelect.addEventListener("change", () => { updateLevel(); render(); autosave(); });
+  classSelect.addEventListener("change", () => { closeLevelGuide(); updateSubclass(); render(); autosave(); });
+  subclassSelect.addEventListener("change", () => { closeLevelGuide(); render(); autosave(); });
+  levelSelect.addEventListener("change", () => { closeLevelGuide(); updateLevel(); render(); autosave(); });
+  ancestrySelect.addEventListener("change", () => renderSheet(character(), currentFeatures()));
   manaInput.addEventListener("input", () => {
     const resource = rules.castingResource(character());
     if (!resource.stat) return;
-    manaStats[resource.stat] = manaInput.value;
+    if (manaInput.value === "") delete manaStats[resource.stat];
+    else manaStats[resource.stat] = manaInput.value;
     updateMana(resource);
   });
-  manaInput.addEventListener("change", () => autosave());
+  manaInput.addEventListener("change", () => {
+    if (!manaInput.value) {
+      const resource = rules.castingResource(character());
+      manaInput.value = sheetTotals?.stats[resource.stat]?.total ?? "";
+      updateMana(resource);
+    }
+    autosave();
+  });
 
   function showProfile(name) {
+    closeLevelGuide();
     activeName = name;
     refreshProfiles(name);
     updateProfileControls();
@@ -833,6 +1170,7 @@
         .map((name) => ({ kind: "Other", name, description: "" }));
     resetExtraForm();
     renderExtraChoices();
+    sheet = { ...saved?.sheet };
     renderOrigins();
     picks = { ...saved?.picks };
     featurePicks = { ...saved?.featurePicks };
@@ -886,7 +1224,7 @@
     return { ...character(), notePages: notePages.map((page) => ({ ...page })),
       ancestry: ancestrySelect.value, background: backgroundSelect.value, secondBackground: secondBackground.value,
       backgroundSpell: backgroundSpell.value, extraAbilities: extraAbilities.map((entry) => ({ ...entry })),
-      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats } };
+      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet } };
   }
 
   function queueSave(requestedName) {
@@ -935,6 +1273,7 @@
   nameInput.addEventListener("blur", () => {
     const name = nameInput.value.trim();
     nameInput.value = name;
+    if (character().className) renderSheet(character(), currentFeatures(), true);
     if (activeName && name !== activeName && !profileBusy) queueSave(name);
   });
   saveButton.addEventListener("click", async () => {

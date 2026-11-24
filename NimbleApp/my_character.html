@@ -9,6 +9,13 @@
       </nav>
     </div>
     <section class="character-filter" aria-label="Character setup">
+      <nav class="sheet-steps" aria-label="Character creation">
+        <button type="button" class="school-button" data-sheet-jump="my-class">1. Class</button>
+        <button type="button" class="school-button" data-sheet-jump="my-origins">2. Ancestry &amp; background</button>
+        <button type="button" class="school-button" data-sheet-jump="my-sheet-stats">3. Stats &amp; skills</button>
+        <button type="button" class="school-button" data-sheet-jump="my-sheet-gear">4. Equipment</button>
+        <button type="button" class="school-button" data-sheet-jump="my-character-profiles">5. Name &amp; save</button>
+      </nav>
       <div class="character-fields character-setup-fields">
         <label><span>CLASS</span><select id="my-class"><option value="">Choose a class</option></select></label>
         <label><span>LEVEL</span><select id="my-level"></select></label>
@@ -68,6 +75,46 @@
       </details>
     </section>
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
+    <section id="my-sheet" class="hero-sheet" aria-labelledby="my-sheet-title" hidden>
+      <header class="sheet-heading">
+        <div><h2 id="my-sheet-title">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
+        <button type="button" class="school-button" id="my-level-up">Level up</button>
+      </header>
+      <section id="my-level-guide" class="character-options" aria-labelledby="my-level-guide-title" hidden>
+        <h3 id="my-level-guide-title" tabindex="-1"></h3>
+        <ol>
+          <li><label for="my-level-hp">Increase maximum HP</label>
+            <input id="my-level-hp" type="number" step="1" min="0" max="999">
+            <button type="button" class="school-button" id="my-level-roll">Roll Hit Die with advantage</button>
+            <p id="my-level-roll-result" class="character-note" role="status"></p>
+          </li>
+          <li>Increase maximum Hit Dice by 1.</li>
+          <li><label for="my-level-skill">Allocate your new skill point (optional)</label>
+            <select id="my-level-skill"></select>
+            <p class="character-note">You can move a point between skills in the sheet after leveling up.</p>
+          </li>
+          <li id="my-level-subclass-field" hidden><label for="my-level-subclass">Choose a subclass</label>
+            <select id="my-level-subclass"></select></li>
+          <li>Review new class features <ul id="my-new-features"></ul></li>
+        </ol>
+        <button type="button" class="school-button" id="my-level-apply">Apply level</button>
+        <button type="button" class="school-button" id="my-level-cancel">Cancel</button>
+      </section>
+      <p class="character-note" id="my-sheet-status" role="status"></p>
+      <div id="my-sheet-vitals" class="sheet-grid"></div>
+      <details class="character-options" id="my-sheet-stats">
+        <summary>Stats, saves &amp; skills</summary>
+        <div id="my-sheet-stat-fields"></div>
+      </details>
+      <details class="character-options" id="my-sheet-gear">
+        <summary>Equipment, attacks &amp; inventory</summary>
+        <div id="my-sheet-gear-fields"></div>
+      </details>
+      <details class="character-options" id="my-sheet-traits">
+        <summary>Languages, movement &amp; other adjustments</summary>
+        <div id="my-sheet-adjustments"></div>
+      </details>
+    </section>
     <div id="my-unlocks"></div>
     <div id="my-origin-abilities"></div>
     <div id="my-casting" class="casting-summary" hidden>

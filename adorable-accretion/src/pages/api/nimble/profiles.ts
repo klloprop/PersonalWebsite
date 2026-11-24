@@ -6,7 +6,7 @@ export const prerender = false;
 const maxBytes = 64 * 1024;
 const textFields = ['subclass', 'ancestry', 'background', 'secondBackground', 'backgroundSpell'];
 const profileFields = new Set([
-	...textFields, 'className', 'level', 'notePages', 'extraAbilities', 'picks', 'featurePicks', 'manaStats',
+	...textFields, 'className', 'level', 'notePages', 'extraAbilities', 'picks', 'featurePicks', 'manaStats', 'sheet',
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -19,7 +19,7 @@ function validName(value: unknown): value is string {
 
 function validProfile(profile: unknown): boolean {
 	if (!isRecord(profile)) return false;
-	const { className, level, notePages, extraAbilities, picks, featurePicks, manaStats } = profile;
+	const { className, level, notePages, extraAbilities, picks, featurePicks, manaStats, sheet } = profile;
 	return Object.keys(profile).every((key) => profileFields.has(key)) &&
 		typeof className === 'string' && className !== '' &&
 		typeof level === 'number' && Number.isInteger(level) && level >= 1 && level <= 20 &&
@@ -29,6 +29,8 @@ function validProfile(profile: unknown): boolean {
 		Array.isArray(extraAbilities) && extraAbilities.every((entry) => isRecord(entry) &&
 			typeof entry.kind === 'string' && typeof entry.name === 'string' && typeof entry.description === 'string') &&
 		isRecord(picks) && Object.values(picks).every((value) => typeof value === 'boolean') &&
+		(sheet === undefined || (isRecord(sheet) && Object.keys(sheet).length <= 240 &&
+			Object.entries(sheet).every(([key, value]) => key.length <= 512 && typeof value === 'string' && value.length <= 4000))) &&
 		[featurePicks, manaStats].every((map) => isRecord(map) &&
 			Object.values(map).every((value) => typeof value === 'string'));
 }

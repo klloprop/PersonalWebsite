@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
+const sheetRules = require("./sheet.js");
 const { availability, castingResource, featureCategory, maxTier, featureSummary, rageSummary,
   unlockedFeatures, resolveFeaturePicks, companionOptions, epicBoons,
   artificerCatalog, automaticAbilities, upgradeOptions, shieldstormGrant, secondaryResource,
@@ -9,6 +10,37 @@ const { availability, castingResource, featureCategory, maxTier, featureSummary,
 
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
+
+test("sheet totals separate starting stats, feature picks, and manual bonuses", () => {
+  const character = { className: "Commander", subclass: "", level: 4 };
+  const features = unlockedFeatures(classSheets.Commander.features, character);
+  const increase = features.find(({ name }) => name === "Key Stat Increase");
+  assert.ok(increase);
+  const picks = { [JSON.stringify([character.className, "", increase.level, increase.name])]: "STR" };
+  const result = sheetRules.derived(character, { "base:STR": "3", "bonus:STR": "1", "base:DEX": "4",
+    armor: "Rusty Mail", shield: "Wooden Buckler" }, features, picks);
+  assert.deepEqual(result.stats.STR.parts, [["Base", 3], ["Manual bonus", 1], [`Key Stat Increase (level ${increase.level})`, 1]]);
+  assert.equal(result.metrics.Defense.total, 10);
+  assert.equal(result.metrics.Initiative.total, 4);
+  assert.equal(result.metrics["Inventory slots"].total, 15);
+  assert.equal(result.skills.Examination.total, 3);
+});
+
+test("sheet respects recorded advancement and does not apply it before its level", () => {
+  const model = { "hp:2": "7", "levelSkill:2": "Might", "hp:4": "8", "levelSkill:4": "Might",
+    capstoneFirst: "STR", capstoneSecond: "INT" };
+  const at = (level) => {
+    const character = { className: "Commander", level };
+    return sheetRules.derived(character, model, unlockedFeatures(classSheets.Commander.features, character), {});
+  };
+  assert.equal(at(1).metrics["Max HP"].total, 17);
+  assert.equal(at(2).metrics["Max HP"].total, 24);
+  assert.equal(at(3).metrics["Max HP"].total, 29);
+  assert.equal(at(3).skills.Might.total, 3);
+  assert.equal(at(4).skills.Might.total, 4);
+  assert.equal(at(19).stats.STR.total, 2);
+  assert.equal(at(20).stats.STR.total, 3);
+});
 
 test("Spellblade replaces tactic and mastery choices without granting a pick for automatic mastery", () => {
   const { features } = classSheets.Commander;

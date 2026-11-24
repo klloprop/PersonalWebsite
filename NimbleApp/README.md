@@ -64,6 +64,19 @@ to remove the selected character and its notes. The standalone edition stores
 profiles in the same browser where local file storage is supported. Selections are tracking aids;
 the app does not enforce every choice limit or prerequisite.
 
+The character sheet's creation shortcuts cover class, origin, stats and
+skills, equipment, and saving. Apply a starting stat array or enter your own
+values. Hover over or expand a total to see its contributing rules and manual
+adjustments. Select armor and shields, add weapons from the catalog or enter
+custom gear, and track HP, Wounds, actions, Hit Dice, and inventory. Ability
+cards let you apply a personal rules override without losing the original text.
+
+Use **Level up** to preview new class features, take the flat HP increase or
+enter a roll, and allocate the new skill point. Subclass choices are offered
+at level 3; other choices are available after applying the level. The direct
+level selector still works for imported characters. Conditional effects and
+unmodeled bonuses can be applied manually.
+
 To refresh the offline file after changing the app, class sheets, or spell
 database, install PyMuPDF and run `py -m NimbleApp.build_offline` from the
 repository root. The build reads the Library's `CharacterOptions` PDFs directly.
