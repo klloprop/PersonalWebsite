@@ -24,11 +24,12 @@
 			return profiles;
 		},
 		async save(name, profile, previousName) {
+			const body = JSON.stringify({ name, profile, previousName });
 			await request({
 				method: 'PUT',
-				keepalive: true,
+				keepalive: new TextEncoder().encode(body).byteLength <= 64 * 1024,
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, profile, previousName }),
+				body,
 			}, 'Could not save your character. Your changes are still on screen; try again.');
 		},
 		async remove(name) {

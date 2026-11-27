@@ -83,6 +83,10 @@ in the deployment's source tree. If Vercel's Root Directory is
 `adorable-accretion`, enable **Include source files outside of the Root Directory
 in the Build Step**. Confirm publication rights before deploying.
 
+The authenticated reference route adds `connect-src 'self'` to the offline
+page's Content Security Policy so the iframe can reach the same-origin
+profiles API. The downloaded copy retains its offline policy.
+
 The hosted **Create character** button stores the initial profile in the
 Tavern's existing Upstash Redis database, scoped to the signed-in account.
 Further edits (including renames) save automatically, with note titles and

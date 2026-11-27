@@ -6,7 +6,7 @@ import tavernStyle from '../../../styles/nimble-frame.css?raw';
 export const prerender = false;
 
 const hostedReference = reference
-	.replace("style-src 'unsafe-inline'\"", "style-src 'unsafe-inline'; connect-src 'self'\"")
+	.replace(/(<meta http-equiv="Content-Security-Policy" content="[^"]*)"/, "$1; connect-src 'self'\"")
 	.replace('</head>', () => `<style>${tavernStyle}</style>\n<script>${accountScript}</script>\n</head>`);
 
 export const GET: APIRoute = ({ locals }) => {
