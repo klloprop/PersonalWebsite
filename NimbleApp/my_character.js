@@ -81,6 +81,7 @@
     image.hidden = !portrait;
     if (portrait) image.src = portrait;
     else image.removeAttribute("src");
+    image.closest(".play-portrait").classList.toggle("has-portrait", Boolean(portrait));
     byId("my-portrait-label").textContent = portrait ? "Replace image" : "Upload image";
     byId("my-portrait-remove").hidden = !portrait;
   }
@@ -898,15 +899,15 @@
         ["Help", "Explain how you can help an ally reroll. The GM may require a check. Only one Help per roll."]
       ]
     };
-    function abilityModes({ activation = "", description = "", name = "" }) {
+    function abilityModes({ activation = "", description = "", name = "", category }) {
       const modes = new Set();
       if (/reaction|when(?:ever)? you defend/i.test(activation) ||
           /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free |[0-9]+ actions?:?\s*)?reaction\b|when(?:ever)? you Defend\b/i.test(description)) modes.add("reactions");
       if (/^(?:free |heroic )?(?:\d+ )?actions?\b/i.test(activation) ||
           /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free action|action:|\d+ actions?\b)/i.test(description)) modes.add("actions");
       if (!modes.size) {
-        const category = featureCategory({ activation, description, name });
-        modes.add(category === "Reactions" ? "reactions" : category === "Attacks & combat actions" ? "actions" : "exploration");
+        const group = featureCategory({ activation, description, name, category });
+        modes.add(group === "Reactions" ? "reactions" : group === "Attacks & combat actions" ? "actions" : "exploration");
       }
       if (sheetRules.isCombatPassive(activation, description, modes)) {
         modes.add("actions");

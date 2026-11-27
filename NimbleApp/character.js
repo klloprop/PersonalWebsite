@@ -139,6 +139,18 @@
           ...(subclass === "The Hex" ? grant("Afflictions", ["Pestilent"], "Pestilential Reign", 11) : [])];
       case "Psion":
         return grant("Psionic Abilities", ["Psionic Strike"], "Psionic Abilities", 1);
+      case "Zephyr": {
+        const burst = data.features.find(({ name }) => name === "Burst of Speed");
+        if (level < burst.level) return [];
+        return burst.description.split("\n• ").slice(1).map((rule) => {
+          const end = rule.indexOf(". ");
+          const name = rule.slice(0, end);
+          const activation = { Windstep: "Free action" }[name];
+          return { name, description: `Spend 1 Burst of Speed. ${rule.slice(end + 2)}`, source: burst.name,
+            level: burst.level, page: burst.page, subclass: "", activation,
+            category: name === "Slipstream" ? "Reactions" : "Attacks & combat actions" };
+        });
+      }
       case "Stormshifter":
         return subclass === "Fang & Claw" ? grant("Chimeric Boon",
           data.catalogs["Chimeric Boon"].slice(0, data.catalogs["Chimeric Boon"].findIndex(({ activation }) => activation)).map(({ name }) => name),

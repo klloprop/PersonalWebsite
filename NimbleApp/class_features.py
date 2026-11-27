@@ -188,6 +188,7 @@ def feature_index(folder: Path) -> dict:
             for page_index in range(2, len(document)):
                 level, subclass, left = 0, "", 0.0
                 current = last = None
+                bullet_x = None
                 for spans in lines(document[page_index]):
                     if not spans:
                         continue
@@ -212,6 +213,21 @@ def feature_index(folder: Path) -> dict:
                     if not spans:
                         continue
                     first = spans[0]
+                    if (current and last and len(spans) > 1 and first["text"].strip() in {"•", "\ufffd"}
+                            and spans[1]["font"].startswith("AvenirNextCondensed")
+                            and 0 < first["bbox"][1] - last[1] <= 20
+                            and (abs(first["bbox"][0] - bullet_x) <= 4 if bullet_x is not None
+                                 else -3 <= first["bbox"][0] - last[0] <= 32)):
+                        current["description"] += "\n• " + joined(spans[1:])
+                        bullet_x = first["bbox"][0]
+                        last = spans[1]["bbox"]
+                        continue
+                    if (bullet_x is not None and current and last and first["font"].startswith("AvenirNextCondensed")
+                            and abs(first["bbox"][0] - last[0]) <= 4 and 0 < first["bbox"][1] - last[1] <= 16):
+                        current["description"] = continuation(current["description"], joined(spans))
+                        last = first["bbox"]
+                        continue
+                    bullet_x = None
                     cross_column = page_index == 2 and (
                         (class_name, level, first["text"].strip()) in {
                             ("Berserker", 4, "Savage Arsenal."),

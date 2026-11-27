@@ -11,6 +11,27 @@ const { availability, castingResource, featureCategory, maxTier, featureSummary,
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
 
+test("Zephyr gets all three Burst of Speed maneuvers at level two without a pick", () => {
+  const grants = (level) => automaticAbilities(classSheets.Zephyr, { className: "Zephyr", level });
+  assert.deepEqual(grants(1), []);
+  const [slipstream, galeforce, windstep] = grants(2);
+  assert.deepEqual(grants(2).map(({ name }) => name), ["Slipstream", "Galeforce Strike", "Windstep"]);
+  assert.equal(slipstream.category, "Reactions");
+  assert.match(slipstream.description, /first move 1 space/);
+  assert.equal(galeforce.category, "Attacks & combat actions");
+  assert.match(galeforce.description, /1d12 instead of 1d4/);
+  assert.equal(windstep.activation, "Free action");
+  assert.ok(grants(2).every(({ description }) => description.startsWith("Spend 1 Burst of Speed.")));
+});
+
+test("indented feature rules survive across classes, including wrapped bullets", () => {
+  const feature = (className, name) => classSheets[className].features.find((entry) => entry.name === name).description;
+  assert.equal(feature("The Cheat", "Cheat").split("\n• ").length - 1, 4);
+  assert.match(feature("The Cheat", "Cheat"), /competitions, or placing wagers/);
+  assert.match(feature("Mage", "Elemental Wards"), /Flame Ward[^\n]+\n• Frost Ward[^\n]+\n• Lightning Ward/);
+  assert.match(feature("Shadowmancer", "Greedy Pact"), /Suffer no damage and cast the spell as if it were 1 tier higher/);
+});
+
 test("play spell timing separates defense reactions, dual-mode casting and rituals", () => {
   const timing = (description, casting_time, tier) => sheetRules.spellTiming({ description, casting_time, tier });
   assert.deepEqual(timing("Castable only while Defending.", "0 Actions", 3),

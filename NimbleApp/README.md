@@ -85,7 +85,9 @@ refills the bar. Select a spell card to cast it, spend the applicable mana,
 and see a brief confirmation. Dotted rule terms still open their definitions
 without casting. Learn or unlearn optional spells under **Feature Choices → Manage
 spell choices**. Select **Upload image** in the portrait square to upload a PNG, JPEG, or WebP, then
-choose a square crop. Only that crop saves with the character. Equipment, gold,
+choose a square crop. Only that crop saves with the character. Hover over the
+portrait or use keyboard focus to reveal the replace and remove controls;
+they stay visible on touch-only screens. Equipment, gold,
 inventory, and languages remain visible farther down the sheet. Edit gold,
 silver, and copper directly beside the inventory slot counter. Hover or focus
 an equipped weapon, the inventory slot counter, or an active condition badge
