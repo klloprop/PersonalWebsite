@@ -271,7 +271,7 @@ h1, h2, h3, p { margin-top: 0; }
   position: absolute; right: 6px; bottom: 6px; background: var(--play-fill); color: var(--play-text);
 }
 .play-portrait #my-portrait-remove { inset: 6px 6px auto auto; }
-#my-portrait-status:empty, .play-cast-error:empty { display: none; }
+#my-portrait-status:empty { display: none; }
 .play-crop {
   display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 10px;
   padding: 12px; border: 2px solid var(--play-line); border-radius: 6px;
@@ -504,7 +504,21 @@ label.play-cell, .play-cell:has(> strong) { flex-direction: column; justify-cont
 .hero-sheet .spell-card { border-width: 2px; }
 .hero-sheet .spell-heading { flex-wrap: wrap; }
 .hero-sheet .casting-time.play-cost { background: var(--attack-cost); color: var(--play-text); }
-.play-cast { margin-top: 8px; }
+.play-spell-card { cursor: pointer; }
+.play-cast-control { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.play-spell-card:is(:hover, :has(> .play-cast-control:focus-visible)) { outline: 2px solid var(--play-line); outline-offset: 2px; }
+.play-spell-card.play-spell-cast {
+  outline: 3px solid var(--play-line);
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 2px var(--play-line);
+}
+.play-cast-popup {
+  position: absolute; z-index: 2; inset-inline-end: 8px; top: 8px; margin: 0;
+  max-width: calc(100% - 16px); padding: 6px 10px; border: 1px solid var(--play-line); border-radius: 6px;
+  background: var(--play-hint-fill); color: var(--play-hint-text); box-shadow: 0 3px 10px rgb(0 0 0 / 20%);
+  font: 700 .8rem/1.35 Arial, sans-serif; pointer-events: none;
+}
+.play-cast-popup:empty { opacity: 0; }
 @media (max-width: 960px) {
   .play-skills { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
@@ -3638,28 +3652,46 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       if (!timing.modes.includes("actions")) casting.dataset.exploration = casting.dataset.reactions;
     }
     if (!casting.parentElement) card.querySelector(".spell-heading").append(casting);
-    const button = node("button", "play-cast", `Cast ${spell.name}`);
-    const status = node("p", "character-note play-cast-error");
+    card.classList.add("play-spell-card");
+    const button = node("button", "play-cast-control", `Cast ${spell.name}`);
+    const status = node("p", "play-cast-popup");
     status.setAttribute("role", "status");
     button.type = "button";
-    button.addEventListener("click", () => {
+    let highlightTimer;
+    let popupTimer;
+    const feedback = (message, event, cast = false) => {
+      clearTimeout(highlightTimer);
+      clearTimeout(popupTimer);
+      card.classList.toggle("play-spell-cast", cast);
+      status.textContent = message;
+      const bounds = card.getBoundingClientRect();
+      const top = event.detail ? event.clientY - bounds.top + 10 : 10;
+      status.style.top = `${Math.max(6, Math.min(top, card.clientHeight - status.offsetHeight - 6))}px`;
+      if (cast) highlightTimer = setTimeout(() => card.classList.remove("play-spell-cast"), 650);
+      popupTimer = setTimeout(() => { status.textContent = ""; }, cast ? 1800 : 3500);
+    };
+    card.addEventListener("click", (event) => {
+      if (event.target !== button &&
+          (event.defaultPrevented || event.target.closest("button, a, summary, label, input, select, textarea") ||
+           !window.getSelection()?.isCollapsed)) return;
       const pool = manaPool(character());
       const cost = playMode === "reactions" ? timing.reactionCost : spell.tier;
-      status.textContent = "";
       if (pool?.label !== "Mana" && cost) {
-        status.textContent = `${spell.name} uses class-specific casting rules; no mana was spent.`;
+        feedback(`${spell.name} uses class-specific casting rules; no mana was spent.`, event);
         return;
       }
       if (cost && cost > tracked("currentMana", pool.total)) {
-        status.textContent = `Not enough mana to cast ${spell.name} (${cost} needed).`;
+        feedback(`Not enough mana to cast ${spell.name} (${cost} needed).`, event);
         return;
       }
       if (cost) {
         writeSheet("currentMana", String(tracked("currentMana", pool.total) - cost));
         refreshPlay();
       }
+      feedback(`Cast Spell: ${spell.name}`, event, true);
     });
-    card.append(button, status);
+    card.prepend(button);
+    card.append(status);
   }
 
   function render() {

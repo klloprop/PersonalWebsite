@@ -81,8 +81,9 @@ focus the info icon next to the rest buttons for requirements and effects.
 **Exploration**, **Actions**, and **Reactions** filter the character's abilities
 and known spells. The **Spells** section appears only when the current tab has
 spells to show. Click a diamond to spend or restore an action; **End turn**
-refills the bar. **Cast** spends the spell's base mana cost when the character
-uses mana. Learn or unlearn optional spells under **Feature Choices → Manage
+refills the bar. Select a spell card to cast it, spend the applicable mana,
+and see a brief confirmation. Dotted rule terms still open their definitions
+without casting. Learn or unlearn optional spells under **Feature Choices → Manage
 spell choices**. Select **Upload image** in the portrait square to upload a PNG, JPEG, or WebP, then
 choose a square crop. Only that crop saves with the character. Equipment, gold,
 inventory, and languages remain visible farther down the sheet. Edit gold,

@@ -1318,28 +1318,46 @@
       if (!timing.modes.includes("actions")) casting.dataset.exploration = casting.dataset.reactions;
     }
     if (!casting.parentElement) card.querySelector(".spell-heading").append(casting);
-    const button = node("button", "play-cast", `Cast ${spell.name}`);
-    const status = node("p", "character-note play-cast-error");
+    card.classList.add("play-spell-card");
+    const button = node("button", "play-cast-control", `Cast ${spell.name}`);
+    const status = node("p", "play-cast-popup");
     status.setAttribute("role", "status");
     button.type = "button";
-    button.addEventListener("click", () => {
+    let highlightTimer;
+    let popupTimer;
+    const feedback = (message, event, cast = false) => {
+      clearTimeout(highlightTimer);
+      clearTimeout(popupTimer);
+      card.classList.toggle("play-spell-cast", cast);
+      status.textContent = message;
+      const bounds = card.getBoundingClientRect();
+      const top = event.detail ? event.clientY - bounds.top + 10 : 10;
+      status.style.top = `${Math.max(6, Math.min(top, card.clientHeight - status.offsetHeight - 6))}px`;
+      if (cast) highlightTimer = setTimeout(() => card.classList.remove("play-spell-cast"), 650);
+      popupTimer = setTimeout(() => { status.textContent = ""; }, cast ? 1800 : 3500);
+    };
+    card.addEventListener("click", (event) => {
+      if (event.target !== button &&
+          (event.defaultPrevented || event.target.closest("button, a, summary, label, input, select, textarea") ||
+           !window.getSelection()?.isCollapsed)) return;
       const pool = manaPool(character());
       const cost = playMode === "reactions" ? timing.reactionCost : spell.tier;
-      status.textContent = "";
       if (pool?.label !== "Mana" && cost) {
-        status.textContent = `${spell.name} uses class-specific casting rules; no mana was spent.`;
+        feedback(`${spell.name} uses class-specific casting rules; no mana was spent.`, event);
         return;
       }
       if (cost && cost > tracked("currentMana", pool.total)) {
-        status.textContent = `Not enough mana to cast ${spell.name} (${cost} needed).`;
+        feedback(`Not enough mana to cast ${spell.name} (${cost} needed).`, event);
         return;
       }
       if (cost) {
         writeSheet("currentMana", String(tracked("currentMana", pool.total) - cost));
         refreshPlay();
       }
+      feedback(`Cast Spell: ${spell.name}`, event, true);
     });
-    card.append(button, status);
+    card.prepend(button);
+    card.append(status);
   }
 
   function render() {
