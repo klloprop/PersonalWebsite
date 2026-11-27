@@ -62,6 +62,9 @@ to remove the selected character and its notes. The standalone edition stores
 profiles in the same browser where local file storage is supported. Selections are tracking aids;
 the app does not enforce every choice limit or prerequisite.
 
+Opening **My Character** restores the last saved character used in this browser,
+if it still exists. In the Tavern, that preference is separate for each account.
+
 Select **Create Character** to choose a class, ancestry and background, base
 stats, and starting equipment in order. Review and name the character to save
 it and open its level 1 sheet. Back preserves your choices; Cancel leaves the
@@ -73,7 +76,8 @@ class resources. Ability scores stay aligned with or without a KEY badge.
 On phones, health and Hit Dice each get their own row, and
 skills are listed in two columns. **Override** unlocks calculated totals without
 altering the underlying class rules. Use **Safe Rest** in GM-approved lodging, or spend
-Hit Dice in **Field Rest** after catching your breath or making camp.
+Hit Dice in **Field Rest** after catching your breath or making camp. Hover or
+focus the info icon next to the rest buttons for requirements and effects.
 **Exploration**, **Actions**, and **Reactions** filter the character's abilities
 and known spells. The **Spells** section appears only when the current tab has
 spells to show. Click a diamond to spend or restore an action; **End turn**
@@ -81,9 +85,32 @@ refills the bar. **Cast** spends the spell's base mana cost when the character
 uses mana. Learn or unlearn optional spells under **Feature Choices → Manage
 spell choices**. Select **Upload image** in the portrait square to upload a PNG, JPEG, or WebP, then
 choose a square crop. Only that crop saves with the character. Equipment, gold,
-inventory, and languages remain visible farther down the sheet.
-Weapon cards under **Actions** group damage, action cost, reach, and other
-traits so they can be scanned in either Tavern theme.
+inventory, and languages remain visible farther down the sheet. Edit gold,
+silver, and copper directly beside the inventory slot counter. Hover or focus
+an equipped weapon, the inventory slot counter, or an active condition badge
+for details. Weapon attacks and ability costs appear on the play tabs.
+
+## Live character-sheet styling preview
+
+From the repository root, run `node .\NimbleApp\preview.mjs` and open
+<http://127.0.0.1:47922/#character>. The preview uses Tavern styling and applies
+saved changes to [styles.css](./styles.css) automatically. Use `?theme=light#character`
+to check the light theme. Preview characters are stored in this browser and
+do not use the Tavern database. For JavaScript or markup changes, rebuild the
+offline bundle and reload the preview.
+
+In [styles.css](./styles.css), look for `.play-hp > .play-icon` (HP),
+`TempHPIcon`, `ShieldIcon`, `MoveIcon`, `InitiativeIcon`,
+`.play-dice-hint > .play-icon` (the bandage), and `#my-play-wounds > .play-icon`.
+Edit `width` and `height` for size and `top`, `left`, or `inset-inline-*` for
+position. The bandage and wounds also have overrides in the 720px media query.
+The five standard Actions card icons are sized separately in the
+`my-tab-actions` rules in [styles.css](./styles.css).
+These icons use PNGs from the Tavern's `public/images/NimbleSheet` folder.
+Increasing their CSS size does not add detail. For sharper artwork at the same
+size, replace the PNGs with higher-resolution originals using the same names,
+proportions, and transparent padding.
+Rebuild the offline bundle after settling on your CSS changes.
 The **KEY** badges mark class key stats. Abilities and spells use the highest
 current total among those stats. Hover over or focus a class resource for
 its full rules.

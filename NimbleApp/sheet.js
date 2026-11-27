@@ -168,12 +168,35 @@
     return { modes, reactionCost: reactionCost === undefined ? spell.tier : Number(reactionCost) };
   }
 
+  function abilityCost({ activation = "", description = "" }, mode) {
+    const text = `${activation}. ${description}`;
+    if (mode === "reactions") {
+      if (/\bfree reaction\b/i.test(text)) return "Free reaction";
+      const paid = text.match(/\b(\d+) actions?\s*[:,–—-]?\s*reaction\b/i);
+      if (paid) return actionCostLabel(paid[1], "reaction");
+      if (/\b(?:when(?:ever)? you defend|while defending)\b/i.test(text) && !/\bReaction\b/i.test(activation)) return "When Defending";
+      if (/\breaction\b/i.test(activation) || /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?reaction[.:]|\bas a reaction\b/i.test(text)) return "1 action";
+    }
+    if (/\bfree action\b/i.test(activation) || /\bas a free action\b|(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?free action:/i.test(description)) return "Free action";
+    const paid = activation.match(/^\s*(\d+)\s+actions?\b/i) ||
+      description.match(/(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(\d+)\s+actions?\b(?!\s*[:,–—-]?\s*reaction\b)|\bas an action\b/i);
+    if (paid) return actionCostLabel(paid[1] ?? "1");
+    if (/^action\b/i.test(activation) || /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?action:/i.test(description)) return "1 action";
+    if (/^passive\b/i.test(activation)) return "Passive";
+    return "No listed cost";
+  }
+
+  function actionCostLabel(count, free = "action") {
+    const n = Number(count);
+    return n === 0 ? `Free ${free}` : `${n} ${n === 1 ? "action" : "actions"}`;
+  }
+
   function isCombatPassive(activation, description, modes) {
     if (!modes.has("exploration") || /\b(?:action|reaction)\b/i.test(activation)) return false;
     return /\b(?:combat|attacks?|damage|crits?|critical hits?|defense|initiative|temporar(?:y|ily) HP|temp HP|resistan(?:t|ce)|vulnerab(?:le|ility)|saving throws?)\b/i.test(description);
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, capstone, skillGrants, spellTiming, isCombatPassive };
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, capstone, skillGrants, spellTiming, abilityCost, actionCostLabel, isCombatPassive };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

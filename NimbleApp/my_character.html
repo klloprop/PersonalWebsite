@@ -139,8 +139,11 @@
           <div class="play-rest-buttons">
             <button type="button" id="my-safe-rest">Safe Rest</button>
             <button type="button" id="my-field-rest" aria-expanded="false" aria-controls="my-field-options">Field Rest</button>
-            <span class="play-info" tabindex="0" aria-describedby="my-rest-hint">ⓘ
-              <span id="my-rest-hint" class="play-tooltip" role="tooltip">Safe Rest: GM-approved safe lodging; restore HP, Hit Dice and mana, and heal 1 Wound. Field Rest: 10 minutes to roll spent Hit Dice + STR, or 8 hours with food and sleep to take maximum rolls instead.</span>
+            <span class="play-info" tabindex="0" aria-label="Rest rules" aria-describedby="my-rest-hint">ⓘ
+              <span id="my-rest-hint" class="play-tooltip" role="tooltip">
+                <span><strong>Safe Rest</strong> Requires GM-approved safe lodging. Restore HP, Hit Dice, and mana, and heal 1 Wound.</span>
+                <span><strong>Field Rest</strong> Catch your breath for 10 minutes to roll spent Hit Dice + STR, or make camp for 8 hours with food and sleep to take maximum rolls instead.</span>
+              </span>
             </span>
           </div>
           <form id="my-field-options" hidden>
@@ -178,7 +181,10 @@
       <section class="sheet-panel" aria-labelledby="my-inventory-title">
         <div class="sheet-panel-heading">
           <h3 id="my-inventory-title">Equipment &amp; inventory</h3>
-          <div id="my-sheet-purse" class="sheet-purse"></div>
+          <div class="sheet-inventory-controls">
+            <div id="my-sheet-purse" class="sheet-purse" role="group" aria-label="Coins"></div>
+            <div id="my-sheet-slots"></div>
+          </div>
         </div>
         <h4>Equipped</h4>
         <ul class="sheet-equipment" id="my-sheet-equipped"></ul>
@@ -186,11 +192,11 @@
         <ul class="sheet-inventory" id="my-sheet-inventory"></ul>
       </section>
       <details class="character-options" id="my-sheet-gear">
-        <summary>Edit equipment, inventory &amp; gold</summary>
+        <summary>Edit equipment &amp; inventory</summary>
         <div id="my-sheet-gear-fields"></div>
       </details>
       <section class="sheet-panel" aria-labelledby="my-languages-title">
-        <h3 id="my-languages-title">Languages &amp; movement</h3>
+        <h3 id="my-languages-title">Languages &amp; size</h3>
         <dl id="my-sheet-traits-summary" class="sheet-traits"></dl>
       </section>
       <details class="character-options" id="my-sheet-traits">

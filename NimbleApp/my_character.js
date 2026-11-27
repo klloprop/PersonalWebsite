@@ -32,6 +32,7 @@
   featureChoices.after(spellChoicesOutput);
   const storageKey = "nimble-offline-characters-v1";
   const accountStore = window.NimbleProfileStore;
+  const lastProfileKey = accountStore ? `nimble-last-character:account:${accountStore.scope}` : `${storageKey}:last`;
   const saveButton = byId("my-save");
   const createButton = byId("my-create");
   const deleteButton = byId("my-delete");
@@ -351,8 +352,8 @@
         item.append(node("span", "keyword-badge arsenal-badge", entry.source || kind));
         if (entry.page) item.append(node("small", "", ` · Core Rules · PDF page ${entry.page}`));
         if (entry.description) item.append(node("p", "feature-description", entry.description));
-        tagPlayAbility(item, abilityModes(entry));
         if (entry.page) addAbilityEdit(item, `ability:origin:${JSON.stringify([kind, entry.name])}`);
+        tagPlayAbility(item, [entry]);
         list.append(item);
       }
       output.append(heading(abilityGroups[kind], list));
@@ -521,7 +522,7 @@
     autosave();
   }
 
-  function sheetInput(label, key, { value = sheet[key] ?? "", type = "number", choices, onChange, multiline, className = "" } = {}) {
+  function sheetInput(label, key, { value = sheet[key] ?? "", type = "number", choices, onChange, multiline, className = "", min = -9999, max = 9999 } = {}) {
     const field = node("label", "sheet-control", label);
     if (className) field.classList.add(className);
     const input = node(choices ? "select" : multiline ? "textarea" : "input");
@@ -535,8 +536,8 @@
       input.type = type;
       if (type === "number") {
         input.step = "1";
-        input.min = "-9999";
-        input.max = "9999";
+        input.min = min;
+        input.max = max;
       } else input.maxLength = 400;
     }
     input.value = value;
@@ -574,24 +575,29 @@
   function sheetValue(name, { parts, total }, { suffix = "", caption = "", signed = false } = {}) {
     const card = node("div", "sheet-value");
     const breakdown = parts.filter(([, value], index) => value !== 0 || !index)
-      .map(([source, value]) => `${source}: ${value >= 0 ? "+" : ""}${value}`).join(" · ");
-    const tooltip = node("span", "sheet-breakdown", breakdown);
-    tooltip.id = `sheet-breakdown-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-    tooltip.setAttribute("role", "tooltip");
-    card.tabIndex = 0;
-    card.setAttribute("aria-describedby", tooltip.id);
+      .map(([source, value]) => `${source}: ${typeof value === "number" && value >= 0 ? "+" : ""}${value}`).join(" · ");
     card.append(node("span", "sheet-label", name), node("output", "", `${signed && total >= 0 ? "+" : ""}${total}${suffix}`));
     if (caption) card.append(node("small", "sheet-caption", caption));
-    card.append(tooltip);
+    attachSheetHint(card, `sheet-breakdown-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, breakdown);
     return card;
+  }
+
+  function attachSheetHint(card, id, text) {
+    const tooltip = node("span", "sheet-breakdown", text);
+    tooltip.id = id;
+    tooltip.setAttribute("role", "tooltip");
+    card.tabIndex = 0;
+    card.setAttribute("aria-describedby", id);
+    card.append(tooltip);
   }
 
   const tracked = (key, max) => Math.max(0, Math.min(max, sheetRules.number(sheet[key], max)));
   const refreshPlay = () => renderSheet(character(), currentFeatures(), true);
   const icon = (name) => {
     const image = node("span", "play-icon");
+    image.dataset.icon = name;
     image.style.backgroundImage = `var(--image-${name})`;
-    if (name === "MoveIcon" || name === "InitiativeIcon") image.classList.add("play-white-icon");
+    if (name === "MoveIcon" || name === "InitiativeIcon" || name === "QuestionIcon") image.classList.add("play-white-icon");
     image.setAttribute("aria-hidden", "true");
     return image;
   };
@@ -613,10 +619,11 @@
     field.append(input, node("span", "", label));
     return field;
   }
-  function playTotal(key, label, value, options = {}) {
+  function playTotal(key, label, value, options = {}, hint = "") {
     const bonusKey = `bonus:${key}`;
     if (overrideSheet) return playField(label, bonusKey, value.total, { bonus: sheetRules.number(sheet[bonusKey]), ...options });
     const field = sheetValue(label, value, options);
+    if (hint) field.querySelector(".sheet-breakdown").append(` · ${hint}`);
     field.classList.add("play-cell");
     return field;
   }
@@ -628,7 +635,7 @@
     return { parts: [[resource.unit, base], ["Manual bonus", bonus]], total: Math.max(0, base + bonus),
       label: current.className === "Manawright (Artificer)" ? "Mana Dice" : "Mana", encounter: resource.unit === "mana at Initiative" };
   }
-  function renderPlayDashboard(current, ancestry, saves) {
+  function renderPlayDashboard(current, ancestry, saves, features) {
     const { metrics, stats, skills, hitDie, key } = sheetTotals;
     const keyAttributes = sheetRules.keyStats(current.className);
     if (document.activeElement !== playName) playName.value = nameInput.value;
@@ -647,7 +654,8 @@
     byId("my-play-defense").replaceChildren(tempHP, defense);
     byId("my-play-dice").replaceChildren(diceHint,
       playField("Current Hit Dice", "currentHitDice", tracked("currentHitDice", dice), { max: dice }), playTotal("Hit Dice", "Max Hit Dice", metrics["Hit Dice"]));
-    const speed = playTotal("Speed", "Speed", metrics.Speed);
+    const extraMovement = [sheet.movement, features.some(({ name }) => name === "Explorer of the Wilds") && "Climbing Speed"].filter(Boolean);
+    const speed = playTotal("Speed", "Speed", metrics.Speed, {}, extraMovement.join(" · "));
     const initiative = playTotal("Initiative", "Initiative", metrics.Initiative, { min: -9999 });
     initiative.dataset.stat = "DEX";
     for (const [field, image] of [[tempHP, "TempHPIcon"], [defense, "ShieldIcon"], [speed, "MoveIcon"], [initiative, "InitiativeIcon"]]) {
@@ -756,7 +764,7 @@
     const badges = byId("my-condition-badges");
     if (!options.childElementCount) {
       for (const [name, effect] of window.NimbleCoreConditions) {
-        const label = node("label", "", name);
+        const label = node("label", "play-condition-option", name);
         label.title = effect;
         const input = node("input");
         input.type = "checkbox";
@@ -769,11 +777,13 @@
         options.append(label);
       }
     }
-    badges.replaceChildren(...window.NimbleCoreConditions.filter(([name]) => selected.includes(name)).map(([name, effect]) => {
-      const badge = node("span", "", name);
-      badge.title = effect;
+    badges.replaceChildren(...window.NimbleCoreConditions.map(([name, effect], index) => {
+      if (!selected.includes(name)) return null;
+      const badge = node("span", "play-condition-badge");
+      badge.append(node("span", "", name));
+      attachSheetHint(badge, `condition-hint-${index}`, effect);
       return badge;
-    }));
+    }).filter(Boolean));
     for (const input of options.querySelectorAll("input")) input.checked = selected.includes(input.value);
   }
   function renderActionPoints() {
@@ -821,7 +831,7 @@
     byId("my-level-up").disabled = level >= 20;
     sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
     const { skills } = sheetTotals;
-    renderPlayDashboard(current, ancestry, saves.split(" "));
+    renderPlayDashboard(current, ancestry, saves.split(" "), features);
 
     const statFields = byId("my-sheet-stat-fields");
     const base = sheetRules.baseArray(className, "Standard");
@@ -904,13 +914,29 @@
       }
       return [...modes];
     }
-    function tagPlayAbility(item, modes) {
-      item.dataset.playMode = [...new Set(modes)].join(" ");
+    function tagPlayAbility(item, rows) {
+      const modesByRow = rows.map(abilityModes);
+      item.dataset.playMode = [...new Set(modesByRow.flat())].join(" ");
       item.classList.add("play-ability");
+      const badge = node("span", "play-cost");
+      for (const mode of ["exploration", "actions", "reactions"]) {
+        const matching = rows.filter((_, index) => modesByRow[index].includes(mode));
+        const costs = [...new Set(matching.map((row) => sheetRules.abilityCost(row, mode)))];
+        const listed = costs.filter((cost) => cost !== "No listed cost");
+        badge.dataset[mode] = (listed.length ? listed : costs).join(" / ");
+      }
+      const title = item.firstElementChild;
+      const header = node("div", "play-card-heading");
+      title.replaceWith(header);
+      header.append(title, badge);
     }
     function applyPlayFilter() {
       const matches = (item) => item.dataset.playMode.split(" ").includes(playMode);
-      for (const card of editor.querySelectorAll("[data-play-mode]")) card.hidden = !matches(card);
+      for (const card of editor.querySelectorAll("[data-play-mode]")) {
+        card.hidden = !matches(card);
+        const cost = card.querySelector(".play-cost");
+        if (cost?.dataset[playMode]) cost.textContent = cost.dataset[playMode];
+      }
       byId("my-play-spells").hidden = !spellOutput.querySelector("[data-play-mode]:not([hidden])");
       for (const section of editor.querySelectorAll("#my-unlocks .ability-category, #my-origin-abilities > section, #my-spells .school-section")) {
         const cards = [...section.querySelectorAll("[data-play-mode]")];
@@ -932,8 +958,10 @@
       }
       byId("my-heroic-actions").replaceChildren(...heroic[playMode].map(([name, text, image]) => {
         const card = node("article", "play-action-card");
-        const content = node("div");
-        content.append(node("h4", "", name), node("p", "", text));
+        const content = node("div", "play-action-content");
+        const header = node("div", "play-card-heading");
+        header.append(node("h4", "", name), node("span", "play-cost", name === "Cast a Spell" ? "Varies by spell" : "1 action"));
+        content.append(header, node("p", "", text));
         if (image) card.append(icon(image));
         card.append(content);
         return card;
@@ -948,22 +976,24 @@
       for (const weapon of equippedWeapons(true)) {
         const card = node("article", "play-action-card play-weapon");
         const attack = weaponAttack(weapon);
-        const header = node("header", "play-weapon-heading");
-        header.append(node("h4", "", weapon), node("span", "play-attack-badge play-attack-cost", attack ? "1 action" : "Custom weapon"));
+        const stats = attack?.damage.map(({ stat }) => stat).join("/");
+        const header = node("header", "play-card-heading");
+        header.append(node("h4", "", stats ? `${weapon} (${stats})` : weapon), node("span", "play-cost", "1 action"));
         card.append(header);
         if (attack) {
-          const damage = node("div", "play-attack-row");
+          const damage = node("div", "play-attack-row play-damage-line");
           damage.append(node("span", "play-attack-label", "Damage"));
           for (const [index, { formula, stat }] of attack.damage.entries()) {
             if (index) damage.append(node("span", "play-attack-label", "or"));
-            const badge = node("span", "play-attack-badge play-attack-damage");
-            badge.append(node("strong", "", formula), node("span", "", stat));
-            damage.append(badge);
+            const value = node("span", "play-damage-value");
+            value.append(node("strong", "", formula));
+            if (attack.damage.length > 1) value.append(node("small", "", stat));
+            damage.append(value);
           }
           const traits = node("ul", "play-attack-row play-attack-traits");
           traits.setAttribute("aria-label", "Weapon traits");
           for (const trait of attack.traits) {
-            const badge = node("li", "play-attack-badge", trait);
+            const badge = node("li", "play-attack-trait", trait);
             if (/^(?:Reach|Range|Thrown)\b/.test(trait)) badge.classList.add("play-attack-reach");
             traits.append(badge);
           }
@@ -1085,22 +1115,41 @@
     const armorCard = itemCard(armorName, "Armor");
     equipment.replaceChildren(armorCard);
     if (sheet.shield) equipment.append(itemCard(sheet.shield, "Shield"));
-    for (const weapon of equippedWeapons()) {
+    for (const [index, weapon] of equippedWeapons().entries()) {
+      if (weapon === "Unarmed Strike") continue;
       const entry = weaponAttack(weapon);
-      const card = itemCard(weapon, weapon === "Unarmed Strike" ? "Unarmed" : "Weapon");
+      const card = itemCard(weapon, "Weapon");
       equipment.append(card);
-      if (!entry) continue;
-      const damage = entry.damage.map(({ formula, stat }) => `${formula} (${stat})`).join(" or ");
-      const attack = node("div", "sheet-item-action");
-      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", damage), node("span", "", entry.traits.join(", ")));
-      card.append(attack);
+      if (entry) {
+        const handling = entry.traits.filter((trait) => /handed|stack of/i.test(trait));
+        if (handling.length) card.append(node("small", "sheet-caption", handling.join(" · ")));
+        const damage = entry.damage.map(({ formula, stat }) => `${formula} (${stat})`).join(" or ");
+        card.classList.add("sheet-hint-anchor");
+        attachSheetHint(card, `equipped-weapon-hint-${index}`, `1 action · Damage: ${damage} · ${entry.traits.join(", ")}`);
+      }
     }
     renderWeaponActions();
     const inventory = splitItems(sheet.inventory, sheet.inventory?.includes("\n") ? /\r?\n/ : /,\s*(?![^()]*\))/);
     byId("my-sheet-inventory").replaceChildren(...(inventory.length ? inventory : ["Nothing carried yet"]).map((item) => node("li", "", item)));
-    byId("my-sheet-purse").replaceChildren(
-      node("strong", "sheet-gold", `${sheetRules.number(sheet.gold)} gp`),
-      sheetValue("Inventory slots", metrics["Inventory slots"], { caption: `${sheetRules.number(sheet.usedSlots)} used` }));
+    const purse = byId("my-sheet-purse");
+    const coins = [["Gold", "gold", "gp"], ["Silver", "silver", "sp"], ["Copper", "copper", "cp"]];
+    if (!purse.childElementCount) {
+      for (const [label, key, unit] of coins) {
+        const field = sheetInput(`${label} (${unit})`, key, { min: 0, max: Number.MAX_SAFE_INTEGER, className: "sheet-coin" });
+        field.classList.add(`sheet-coin-${key}`);
+        const input = field.querySelector("input");
+        input.setAttribute("aria-label", `${label} (${unit})`);
+        field.replaceChildren(node("span", "", unit), input);
+        purse.append(field);
+      }
+    }
+    for (const [, key] of coins) {
+      const input = purse.querySelector(`[data-sheet-field="${key}"]`);
+      if (input !== document.activeElement || input.value === "") input.value = sheetRules.number(sheet[key]);
+    }
+    const slots = sheetValue("Inventory slots", metrics["Inventory slots"], { caption: `${sheetRules.number(sheet.usedSlots)} used` });
+    slots.classList.add("sheet-hint-anchor");
+    byId("my-sheet-slots").replaceChildren(slots);
     if (refreshOnly) {
       gear.querySelector('[data-sheet-field="weapons"]').value = sheet.weapons ?? "";
       gear.querySelector('[data-sheet-field="customArmor"]').parentElement.hidden = sheet.armor !== "Custom";
@@ -1110,17 +1159,15 @@
       gear.replaceChildren(node("p", "character-note", `Starting gear: ${[starterArmor, starterShield, starterWeapons, starterGear].filter(Boolean).join(", ")}. Alternatively, start with ${25 * level} gp to buy gear. Add background gear or custom items below.`),
         applyGear, sheetGrid(sheetInput("Armor", "armor", { choices: sheetOptions(sheetRules.armor, "Unarmored") }),
           sheetInput("Shield", "shield", { choices: sheetOptions(sheetRules.shields, "No shield") }),
-          customArmor, sheetInput("Gold (gp)", "gold"), sheetInput("Inventory slots used", "usedSlots")),
+          customArmor, sheetInput("Inventory slots used", "usedSlots")),
         addWeapon, sheetInput("Equipped weapons (comma or line separated; custom text allowed)", "weapons", { multiline: true }),
         sheetInput("Inventory and carried gear", "inventory", { multiline: true }));
     }
 
     const adjustments = byId("my-sheet-adjustments");
     const climbs = features.some(({ name }) => name === "Explorer of the Wilds") ? " Class movement: climbing Speed (Explorer of the Wilds)." : "";
-    const movement = [sheet.movement, climbs && "Climbing Speed"].filter(Boolean).join(" · ");
     byId("my-sheet-traits-summary").replaceChildren(...[
-      ["Known languages", sheet.languages?.trim() || "Common"], ["Size", sheet.size || ancestry?.size || "Medium"],
-      ["Movement", [`${metrics.Speed.total} spaces`, movement].filter(Boolean).join(" · ")]
+      ["Known languages", sheet.languages?.trim() || "Common"], ["Size", sheet.size || ancestry?.size || "Medium"]
     ].map(([label, text]) => {
       const pair = node("div", "");
       pair.append(node("dt", "sheet-label", label), node("dd", "", text));
@@ -1260,6 +1307,17 @@
   function decoratePlaySpell(card, spell) {
     const timing = sheetRules.spellTiming(spell);
     card.dataset.playMode = timing.modes.join(" ");
+    const casting = card.querySelector(".casting-time") || node("span", "casting-time");
+    casting.classList.add("play-cost");
+    const actions = (spell.casting_time || "").match(/^(\d+) actions?$/i);
+    casting.dataset.exploration = casting.dataset.actions = actions
+      ? sheetRules.actionCostLabel(actions[1]) : spell.casting_time || "No listed cost";
+    if (timing.modes.includes("reactions")) {
+      const cost = sheetRules.abilityCost(spell, "reactions");
+      casting.dataset.reactions = ["Passive", "No listed cost"].includes(cost) ? "1 action" : cost;
+      if (!timing.modes.includes("actions")) casting.dataset.exploration = casting.dataset.reactions;
+    }
+    if (!casting.parentElement) card.querySelector(".spell-heading").append(casting);
     const button = node("button", "play-cast", `Cast ${spell.name}`);
     const status = node("p", "character-note play-cast-error");
     status.setAttribute("role", "status");
@@ -1392,7 +1450,7 @@
               progression.append(detail);
             }
             addAbilityEdit(item, `ability:class:${JSON.stringify([className, rows[0].subclass, name])}`);
-            tagPlayAbility(item, rows.flatMap(abilityModes));
+            tagPlayAbility(item, rows);
             list.append(item);
           }
           section.append(node("h3", "", category), list);
@@ -1693,12 +1751,34 @@
     autosave();
   });
 
+  function rememberProfile(name) {
+    try {
+      if (name) localStorage.setItem(lastProfileKey, name);
+      else localStorage.removeItem(lastProfileKey);
+    } catch (error) {
+      console.warn("Could not remember the last Nimble character.", error);
+    }
+  }
+
+  function restoreLastProfile() {
+    let name;
+    try {
+      name = localStorage.getItem(lastProfileKey);
+    } catch (error) {
+      console.warn("Could not read the last Nimble character.", error);
+    }
+    if (!name || !Object.hasOwn(profiles, name)) return false;
+    showProfile(name);
+    return true;
+  }
+
   function showProfile(name) {
     closeLevelGuide();
     activeName = name;
     refreshProfiles(name);
     updateProfileControls();
     const saved = Object.hasOwn(profiles, name) ? profiles[name] : null;
+    if (saved) rememberProfile(name);
     nameInput.value = name;
     classSelect.value = saved?.className || "";
     levelSelect.value = String(saved?.level || 1);
@@ -1759,8 +1839,10 @@
     status.textContent = "Loading your Tavern characters…";
     try {
       profiles = await accountStore.load();
-      refreshProfiles(activeName);
-      status.textContent = "Create or select a character to save changes to your Tavern account.";
+      if (!restoreLastProfile()) {
+        refreshProfiles(activeName);
+        status.textContent = "Create or select a character to save changes to your Tavern account.";
+      }
     } catch (error) {
       status.textContent = error.message;
     } finally {
@@ -1806,7 +1888,10 @@
         await persistProfile(name, profile, previousName || null);
         savedSnapshot = snapshot;
         activeName = name;
-        if (name !== previousName) refreshProfiles(name);
+        if (name !== previousName) {
+          rememberProfile(name);
+          refreshProfiles(name);
+        }
         updateProfileControls();
         status.textContent = `Saved ${name} to ${accountStore ? "your Tavern account" : "this browser"}.`;
         return true;
@@ -2047,6 +2132,7 @@
       if (accountStore) await accountStore.remove(name);
       else localStorage.setItem(storageKey, JSON.stringify(next));
       profiles = next;
+      rememberProfile("");
       showProfile("");
       status.textContent = `Deleted ${name}.`;
     } catch (error) {
@@ -2058,10 +2144,12 @@
     }
   });
   updateProfileControls();
-  updateSubclass();
-  renderNotePages();
-  renderOrigins();
-  render();
+  if (accountStore || !restoreLastProfile()) {
+    updateSubclass();
+    renderNotePages();
+    renderOrigins();
+    render();
+  }
   if (accountStore) {
     function loadWhenOpened() {
       if (location.hash !== "#character") return;

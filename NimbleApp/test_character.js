@@ -28,6 +28,17 @@ test("combat passives can appear in both combat tabs without promoting explorati
   assert.equal(sheetRules.isCombatPassive("Reaction", "Reduce damage from an attack.", new Set(["reactions"])), false);
 });
 
+test("ability cost labels distinguish explicit costs, triggered effects, and missing rules", () => {
+  assert.equal(sheetRules.abilityCost({ activation: "2 Actions" }, "actions"), "2 actions");
+  assert.equal(sheetRules.abilityCost({ activation: "0 Actions" }, "actions"), "Free action");
+  assert.equal(sheetRules.abilityCost({ description: "Free Reaction. Help an ally." }, "reactions"), "Free reaction");
+  assert.equal(sheetRules.abilityCost({ description: "Reaction. Push your ally." }, "reactions"), "1 action");
+  assert.equal(sheetRules.abilityCost({ description: "2 actions: Reaction." }, "reactions"), "2 actions");
+  assert.equal(sheetRules.abilityCost({ description: "Castable only while Defending." }, "reactions"), "When Defending");
+  assert.equal(sheetRules.abilityCost({ activation: "Passive" }, "actions"), "Passive");
+  assert.equal(sheetRules.abilityCost({ description: "An ally gains 1 action." }, "actions"), "No listed cost");
+});
+
 test("KEY uses the highest current class KEY stat and ignores higher secondary stats", () => {
   const character = { className: "Hexbinder", subclass: "", level: 7 };
   const features = unlockedFeatures(classSheets.Hexbinder.features, character);

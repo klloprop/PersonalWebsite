@@ -19,6 +19,7 @@
 	}
 
 	window.NimbleProfileStore = {
+		scope: document.currentScript.dataset.profileScope,
 		async load() {
 			const { profiles } = await request({}, 'Could not load your Tavern characters. Reload the Library to try again.');
 			return profiles;
