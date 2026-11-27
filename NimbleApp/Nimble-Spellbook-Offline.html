@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
   <title>Nimble Spellbook | Offline</title>
   <style>:root {
   color-scheme: light;
@@ -190,6 +190,334 @@ h1, h2, h3, p { margin-top: 0; }
   .sheet-health .sheet-metrics > :nth-child(-n+3) { grid-column: span 4; }
 }
 .sheet-ability-edit { font-size: .9em; margin-top: 4px; }
+.hero-sheet {
+  --play-fill: #fff7e9;
+  --play-line: #88612c;
+  --play-text: #352305;
+  --play-caption: #68491f;
+  --play-ready: #efb369;
+  --play-spent: #fffaf1;
+  --play-spent-line: #897667;
+  --play-icon-filter: brightness(.22);
+  --attack-cost: #edd9ac;
+  --attack-damage: #f8ded7;
+  --attack-reach: #dfe9db;
+  --attack-trait: #eee6d9;
+}
+.tavern-reference.dark .hero-sheet {
+  --play-fill: #3a2818;
+  --play-line: #f6c07a;
+  --play-text: #fff;
+  --play-caption: rgb(255 255 255 / 80%);
+  --play-ready: #f6c07a;
+  --play-spent: #fff;
+  --play-spent-line: #fff;
+  --play-icon-filter: none;
+  --attack-cost: #624520;
+  --attack-damage: #663535;
+  --attack-reach: #354c3c;
+  --attack-trait: #524032;
+}
+.hero-sheet [hidden] { display: none !important; }
+.play-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas: "identity health ancestry portrait" "attributes health dice portrait"
+    "conditions health motion portrait" "skills skills skills rest";
+  align-items: start; gap: 12px 24px; padding: 8px 0 0;
+  font-family: Arial, sans-serif; color: var(--play-text);
+}
+.play-identity { grid-area: identity; }
+.play-health { grid-area: health; padding-top: 33px; }
+.play-ancestry { grid-area: ancestry; }
+.play-attributes { grid-area: attributes; }
+.play-conditions { grid-area: conditions; }
+.play-dice { grid-area: dice; }
+.play-motion { grid-area: motion; }
+.play-skills { grid-area: skills; }
+.play-rest { grid-area: rest; }
+.play-portrait {
+  grid-area: portrait; position: relative; aspect-ratio: 1;
+}
+.hero-sheet .play-portrait .play-portrait-picker {
+  position: relative; display: grid; place-items: center; width: 100%; height: 100%; padding: 0; overflow: hidden;
+}
+.play-portrait-picker img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.play-portrait-label {
+  position: relative; margin-inline: 4px; padding: 4px 7px; border: 1px solid var(--play-line); border-radius: 5px;
+  background: var(--play-fill); color: var(--play-text); font-size: .75rem; line-height: 1.2;
+}
+.play-portrait-picker:hover .play-portrait-label, .play-portrait-picker:focus-visible .play-portrait-label {
+  outline: 1px solid var(--play-line);
+}
+.play-portrait .school-button {
+  position: absolute; right: 6px; bottom: 6px; background: var(--play-fill); color: var(--play-text);
+}
+.play-portrait #my-portrait-remove { inset: 6px 6px auto auto; }
+#my-portrait-status:empty, .play-cast-error:empty { display: none; }
+.play-crop {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 10px;
+  padding: 12px; border: 2px solid var(--play-line); border-radius: 6px;
+  background: var(--play-fill); color: var(--play-text);
+}
+.play-crop canvas { width: min(192px, 100%); height: auto; }
+.play-crop label { display: grid; margin-block: 6px; }
+.play-cell, .play-action-card, .hero-sheet button:not(.play-point, .play-wound-dot, .school-button),
+#my-condition-picker > summary, #my-play-wounds, .hero-sheet .sheet-panel,
+.hero-sheet .sheet-item, .hero-sheet .sheet-panel .sheet-value {
+  background: var(--play-fill); color: var(--play-text); border: 2px solid var(--stat-color, var(--play-line)); border-radius: 6px;
+}
+.hero-sheet :is(.sheet-panel .sheet-label, .sheet-panel .sheet-caption) { color: var(--play-caption); }
+.hero-sheet .sheet-panel .sheet-value output { color: inherit; }
+.hero-sheet .sheet-item-action { background: var(--paper); color: var(--ink); }
+.hero-sheet .sheet-item-action .sheet-label { color: var(--muted); }
+.hero-sheet .sheet-gold { border-width: 2px; color: var(--play-text); }
+.hero-sheet > .character-options { border-width: 2px; border-color: var(--play-line); }
+.play-cell {
+  position: relative; display: flex; flex-direction: column-reverse; justify-content: flex-start;
+  align-items: center; gap: 3px; text-align: center; min-width: 0; min-height: 54px; padding: 5px;
+  overflow-wrap: anywhere;
+}
+label.play-cell, .play-cell:has(> strong) { flex-direction: column; justify-content: flex-end; }
+.play-cell > :is(span:not(.play-icon), .sheet-label) { color: var(--play-caption); font: 700 .71rem/1.2 Arial, sans-serif; }
+.play-cell > :is(output, input, strong) { font: 700 clamp(.85rem, 1.65vw, 1.25rem)/1.15 Arial, sans-serif; color: inherit; }
+.play-cell input {
+  width: 100%; min-width: 0; text-align: center; color: inherit; background: transparent;
+  border: 1px solid transparent; border-radius: 3px; padding: 3px 0;
+}
+.play-cell input:hover, .play-cell input:focus { border-color: var(--play-line); }
+.play-cell input[type="number"] { appearance: textfield; }
+.play-cell input::-webkit-inner-spin-button { appearance: none; }
+.play-dashboard .play-cell:where(:has(> :is(input[type="number"], output))),
+.play-dashboard .play-resources .play-cell {
+  display: grid; align-content: start; grid-template: auto auto / minmax(0, 1fr);
+}
+.play-dashboard .play-cell > :is(input[type="number"], output) {
+  grid-row: 1; font-variant-numeric: tabular-nums;
+}
+.play-dashboard .play-cell > output {
+  border: 1px solid transparent; padding-block: 3px;
+}
+.play-dashboard .play-cell > :is(.sheet-label, span:not([class])) { grid-row: 2; }
+.play-cell > .sheet-breakdown, .play-tooltip {
+  position: absolute; inset: auto auto calc(100% + 6px) 50%; transform: translateX(-50%);
+  width: max-content; max-width: min(230px, 85vw); z-index: 4; visibility: hidden; pointer-events: none;
+  border-radius: 5px; background: #21160e; color: #fff; padding: 8px; border: 1px solid #f6c07a;
+  font: .78rem/1.35 Arial, sans-serif;
+}
+.play-info:hover .play-tooltip, .play-info:focus .play-tooltip { visibility: visible; }
+.play-tooltip { inset-inline: auto 0; transform: none; }
+.play-identity, .play-motion, .play-pair, .play-resources, .play-dice, #my-play-mana {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px;
+}
+.play-pair, .play-dice { position: relative; gap: 0; }
+.play-pair .play-cell, .play-dice .play-cell { border-radius: 0; }
+.play-pair .play-cell + .play-cell, .play-dice .play-cell + .play-cell { border-inline-start: 0; }
+.play-hp { margin-inline: 8%; }
+.play-hp .play-cell { padding-top: 35px; border-radius: 5px 5px 0 0; }
+.play-defense { margin: -2px 6% 0; }
+.play-defense > .play-cell:first-child { border-radius: 5px 0 0 5px; }
+.play-defense > .play-cell:last-child { border-radius: 0 5px 5px 0; }
+.play-resources { margin: 0 7%; gap: 0; }
+.play-resources:empty { display: none; }
+.play-dashboard .play-resources .play-cell {
+  min-height: 42px; border-radius: 0 0 5px 5px; align-content: center;
+}
+.play-resources .play-cell > strong { grid-row: 1; }
+.play-resources .play-cell:only-child { grid-column: 1 / -1; width: min(100%, 8rem); justify-self: center; }
+.play-resource:hover > .sheet-breakdown, .play-resource:focus-within > .sheet-breakdown { visibility: visible; }
+.play-dice { border-top: 2px solid var(--play-line); }
+.play-dice-hint {
+  grid-column: 1/-1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 36px; text-align: center; background: var(--play-fill); border-inline: 2px solid var(--play-line);
+  font-size: .8rem; padding: 5px 4px 5px 38px;
+}
+.play-icon { display: inline-block; flex: none; width: 40px; height: 40px; background: center / contain no-repeat; }
+.play-white-icon { filter: var(--play-icon-filter); }
+:is(.play-hp, .play-icon-cell, .play-dice-hint, #my-play-wounds) > .play-icon {
+  position: absolute; z-index: 1; pointer-events: none;
+}
+.play-hp > .play-icon { width: 66px; height: 66px; top: -33px; left: 50%; transform: translateX(-50%); }
+.play-icon-cell { padding-inline-start: 33px; }
+.play-icon-cell > .play-icon {
+  width: 26px; height: 30px; top: 50%; inset-inline-start: 3px; transform: translateY(-50%);
+}
+.play-defense .play-icon-cell { padding-inline: 22px 4px; }
+.play-defense .play-icon-cell > .play-icon { width: 40px; height: 40px; inset-inline-start: -22px; }
+.play-defense .play-icon-cell:last-child { padding-inline: 4px 22px; }
+.play-defense .play-icon-cell:last-child > .play-icon { inset-inline: auto -22px; }
+.play-dice-hint > .play-icon { width: 40px; height: 40px; inset-inline-start: -10px; top: -6px; }
+[data-stat="STR"] { --stat-color: #872e31; }
+[data-stat="DEX"] { --stat-color: #425842; }
+[data-stat="INT"] { --stat-color: #474f5c; }
+[data-stat="WIL"] { --stat-color: #98661c; }
+.play-attributes, .play-skills { display: grid; gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.play-skills { position: relative; grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.play-dashboard .play-attributes .play-cell {
+  min-height: 67px; padding: 0; border-width: 3px; grid-template-rows: 1fr auto;
+}
+.play-attributes .play-cell > :is(.sheet-label, span:not([class])) {
+  grid-column: 1; align-self: stretch; padding: 3px; background: var(--stat-color); color: #fff; font-size: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 2.65rem;
+}
+.play-attributes .play-cell > :is(input, output) { grid-column: 1; }
+.play-key-badge {
+  display: inline-block; padding: 1px 3px; border: 1px solid currentColor; border-radius: 3px;
+  font: 700 .58rem/1.1 Arial, sans-serif; vertical-align: middle;
+}
+.play-attributes [data-save="Advantage"]::before, .play-attributes [data-save="Disadvantage"]::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+  border-inline: 7px solid transparent;
+}
+.play-attributes [data-save="Advantage"]::before { bottom: 100%; border-bottom: 10px solid #69db6b; }
+.play-attributes [data-save="Disadvantage"]::after { top: 100%; border-top: 10px solid #ff6565; }
+.play-skills .play-cell { min-height: 64px; border-width: 2px; padding-inline: 2px; }
+.play-skills .play-cell { position: static; }
+.play-skills .play-cell > .sheet-breakdown { max-width: min(230px, 100%); }
+.play-conditions, #my-condition-badges, .play-rest-buttons, .play-turn, .play-tabs, .play-spell-heading {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+#my-condition-picker, #my-play-wounds, .play-info { position: relative; }
+#my-condition-picker > summary, .hero-sheet button:not(.play-point, .play-wound-dot, .school-button) {
+  cursor: pointer; padding: 6px 10px; font: 700 .9rem Arial, sans-serif;
+}
+#my-condition-options {
+  position: absolute; z-index: 3; min-width: 155px; padding: 8px;
+  background: var(--play-fill); border: 1px solid var(--play-line); border-radius: 5px;
+}
+#my-condition-options label { display: flex; gap: 5px; align-items: center; font-size: .85rem; padding-block: 2px; }
+#my-condition-badges span { background: #eee3d7; color: #3e2703; border-radius: 999px; padding: 2px 6px; font-size: .72rem; }
+#my-play-wounds { padding: 6px 6px 4px 43px; text-align: center; }
+#my-play-wounds > .play-icon { width: 42px; height: 42px; inset-inline-start: -6px; top: 5px; }
+.play-wound-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; }
+.play-wound-dot {
+  position: relative; padding: 0; width: 17px; height: 17px; border: 2px solid var(--play-line);
+  border-radius: 50%; background: transparent;
+}
+.play-wound-dot + .play-wound-dot::before {
+  content: ""; position: absolute; width: 5px; height: 2px; top: 50%; right: calc(100% + 3px);
+  transform: translateY(-50%); background: var(--play-line);
+}
+.play-wound-dot[aria-pressed="true"] + .play-wound-dot[aria-pressed="true"]::before { background: #bd4d4d; }
+.play-wound-dot[aria-pressed="true"] { background: #bd4d4d; }
+.play-wound-dot:has(.play-icon) { width: 26px; height: 26px; }
+.play-wound-dot > .play-icon { width: 100%; height: 100%; }
+.play-wound-label { font-size: .75rem; color: var(--play-caption); }
+.play-rest-buttons { margin-top: 6px; justify-content: center; }
+#my-field-options { margin-top: 7px; display: grid; gap: 6px; }
+#my-field-options input { width: 100%; }
+.play-body { max-width: 850px; margin: 24px auto; font-family: Arial, sans-serif; }
+.play-tabs { justify-content: center; margin-bottom: 14px; }
+.hero-sheet .play-tabs [role="tab"] { font-size: clamp(1.05rem, 3vw, 1.65rem); padding: 8px 12px; }
+.play-note { margin: 12px 0; padding: 6px 10px; border-inline-start: 3px solid var(--play-line); }
+.play-tabs [aria-selected="true"], #my-sheet-override[aria-pressed="true"] { outline: 2px solid var(--play-line); outline-offset: 2px; }
+.play-turn { justify-content: space-between; margin-block: 20px 24px; }
+.play-points { flex: 1; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 38px; padding: 12px; }
+.play-point {
+  position: relative; width: 45px; height: 45px; padding: 0; border: 0; background: transparent;
+}
+.play-point::after {
+  content: ""; position: absolute; inset: 7px; background: var(--play-spent);
+  border: 1px solid var(--play-spent-line); transform: rotate(45deg);
+}
+.play-point[aria-pressed="true"]::after { background: var(--play-ready); border-color: var(--play-line); }
+.play-point + .play-point::before {
+  content: ""; position: absolute; width: 21px; height: 2px; background: var(--play-spent-line);
+  right: calc(100% + 8px); top: 50%;
+}
+.play-point[aria-pressed="true"] + .play-point[aria-pressed="true"]::before { background: var(--play-line); }
+.play-cards, .play-body .character-feature-list { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.play-action-card { display: flex; gap: 8px; align-items: center; padding: 10px; }
+.play-action-card :is(h4, p) { margin: 0; }
+.play-action-card p { margin-top: 2px; font-size: .9rem; }
+.play-weapon { display: grid; align-content: start; gap: 8px; overflow-wrap: anywhere; }
+.play-weapon-heading, .play-attack-row { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; }
+.play-weapon-heading { justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--play-line); }
+.play-attack-traits { margin: 0; padding: 0; list-style: none; }
+.play-attack-badge {
+  display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 7px; border-radius: 6px;
+  background: var(--attack-trait); color: var(--play-text); font-size: .8rem; font-weight: 700;
+}
+.play-attack-label { color: var(--play-caption); font-size: .8rem; }
+.play-attack-cost { background: var(--attack-cost); }
+.play-attack-damage { background: var(--attack-damage); }
+.play-attack-damage strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.play-attack-reach { background: var(--attack-reach); }
+.play-body .ability-category { border: 0; background: transparent; margin-block: 10px; }
+.play-body .ability-category h3 { background: transparent; color: var(--ink); padding-inline: 0; }
+.hero-sheet .play-ability {
+  position: relative; border: 2px solid var(--play-line); border-radius: 6px; background: var(--play-fill);
+  color: var(--play-text); padding: 9px 10px;
+}
+.play-spell-heading { margin-top: 28px; border-top: 2px solid var(--play-line); padding-top: 10px; }
+.play-spell-heading h3 { margin: 0; display: flex; align-items: center; gap: 6px; }
+.play-spell-heading h3::before { content: ""; width: 34px; height: 39px; background: var(--image-SpellsIcon) center / contain no-repeat; }
+.play-ability small { color: var(--play-caption); }
+.hero-sheet .spell-card { border-width: 2px; }
+.play-cast { margin-top: 8px; }
+@media (max-width: 960px) {
+  .play-skills { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .play-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "identity portrait" "ancestry portrait" "attributes attributes"
+      "health health" "dice motion" "conditions conditions" "rest rest" "skills skills";
+    gap: 12px 14px;
+  }
+  .play-portrait { width: min(100%, 10rem); justify-self: center; align-self: center; }
+  .play-attributes { margin-block: 10px 4px; }
+  .play-dashboard .play-attributes .play-cell {
+    min-height: 7rem; grid-template-rows: minmax(0, 2fr) minmax(0, 1fr); gap: 0;
+  }
+  .play-attributes .play-cell > :is(.sheet-label, span:not([class])) {
+    min-height: 0; padding-block: 1px; gap: 1px; justify-content: center; font-size: .875rem;
+  }
+  .play-dashboard .play-cell > :is(output, input, strong) { font-size: 1rem; }
+  .play-dashboard .play-cell > .sheet-breakdown { max-width: 11rem; }
+  :is(.play-pair, .play-motion) > .play-cell:first-child > .sheet-breakdown,
+  .play-dice > .play-cell:nth-child(2) > .sheet-breakdown,
+  .play-attributes > .play-cell:nth-child(-n+2) > .sheet-breakdown {
+    inset-inline: 0 auto; transform: none;
+  }
+  :is(.play-pair, .play-motion, .play-dice) > .play-cell:last-child > .sheet-breakdown,
+  .play-attributes > .play-cell:nth-child(n+3) > .sheet-breakdown {
+    inset-inline: auto 0; transform: none;
+  }
+  .play-health { width: min(100%, 23rem); justify-self: center; }
+  .play-defense { margin-inline: 13%; }
+  .play-dice-hint { border-radius: 6px 6px 0 0; }
+  .play-dice { border-radius: 6px; }
+  .play-dice > .play-cell:nth-child(2) { border-end-start-radius: 6px; }
+  .play-dice > .play-cell:last-child { border-end-end-radius: 6px; }
+  .play-dice-hint > .play-icon { inset-inline-start: 0; width: 36px; }
+  .play-motion { align-self: stretch; }
+  .play-motion > .play-cell { align-content: center; }
+  .play-rest { width: min(100%, 23rem); justify-self: center; }
+  #my-play-wounds { min-height: 46px; }
+  #my-play-wounds > .play-icon { inset-inline-start: 2px; width: 36px; top: 50%; transform: translateY(-50%); }
+  #my-portrait-status, .play-crop { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .play-dashboard {
+    grid-template-areas: "identity portrait" "ancestry portrait" "attributes attributes"
+      "health health" "dice dice" "motion motion" "conditions conditions" "rest rest" "skills skills";
+  }
+  .play-identity { grid-template-columns: minmax(0, 1fr); }
+  .play-identity > .play-cell, .play-ancestry { min-height: 44px; }
+  .play-skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .play-dashboard .play-skills > .play-cell:has(> :is(input[type="number"], output)) {
+    min-height: 44px; padding-inline: 8px; grid-template: auto / minmax(0, 1fr) minmax(2.5rem, auto);
+    align-content: center; align-items: center;
+  }
+  .play-dashboard .play-skills .play-cell > .sheet-label { grid-area: 1 / 1; text-align: start; }
+  .play-dashboard .play-skills .play-cell > :is(input, output) { grid-area: 1 / 2; }
+  .play-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .hero-sheet .play-tabs [role="tab"] { min-height: 44px; padding-inline: 2px; font-size: .9rem; }
+  .play-points { gap: 0 14px; padding: 4px 6px; }
+  .play-point + .play-point::before { width: 9px; right: calc(100% + 2.5px); }
+  .play-cards, .play-body .character-feature-list { grid-template-columns: 1fr; }
+}
 .sheet-ability-edit summary { cursor: pointer; }
 .sheet-ability-edit textarea { width: 100%; color: var(--ink); background: transparent; border: 1px solid var(--rule); font: inherit; }
 #my-level-guide { margin-bottom: 12px; }
@@ -320,7 +648,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   .spell-grid { grid-template-columns: 1fr; }
   .school-heading h2 { font-size: 24px; }
 }
-</style>
+
+:root {--image-BrokenShield:url(data:image/png;base64,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);--image-DeathIcon:url(data:image/png;base64,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);--image-HitDiceIcon:url(data:image/png;base64,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);--image-HPIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADUAAAAyCAYAAAD845PIAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAy9JREFUeAHdms+R2jAUxj+ZFEA6cA75c9ulA3POTFhXkKWCkAqyVBBSQUgFWTYFQCpYjrnFkwbWBcRx3rMEYxhblkECo9+MMNhC8ic9PUtPFjDgBxDlwEgA13QMIRPo95p+r3vAl7d0xJFQWREdRpRuNnUQKWTZnBZU56qpHFF34TvQD4AJZfhAP/toZp4B0xhI0BLVUF8hRTWRULqj+/pWl6FSlOoZriREO1L632SkqXAfyn9Lh88wa7gyCaVxVc8F+ycW1ApU0RLtBTF9qmTOZZhkzmU+bry2gpiQ0jKvqGunpxayWz/BAv+AGQ2Mj3XX6WZmkKZtg6koiduKojF00ysO9qgTplrXSuOVGG5MsRDFToEEPeIwk9NCAqajUis6EsQklAYkKC3GVE8O1hAOYHMms37P39mJwI0gJoQy56KnHoDfcCRKkb4E4jfSvA9xCsb1kKDnz5T7DuEW9opLuKfPD3A2vyv4xRWLiuAX1ywqhF9EQe6fKJ6zOvVG56AfwENYVArP8FHUOhAWVqwdo5j7+SZqFfwFfsIvVpsJ7RMcu/ZXlF7DOQkJerFx6XP4wYo/Nusp40BJx5nyRyFKxexWuGzmQoXntjOKTKm8YLb3vxUVy56a4zLZ9hKzM/dTvXVpMwy+3x0r2xGlQsaXZoYzsRfqrgw7P8h4QgSLOHpOFc+l/ZOVS49ME1ntGMOqk5WiYuniuy7sTtTssAjdv2yaoWXz4/ndsO6iduWbFZ3Wfr/JMQmlsS6DVhQpSjPZIl1x8wnkRkCiy9QYo2A33xFhXH8sDCzHKPDCjiNr6PITMDZdpRtHk0jY/RmF3ZKge9PMrUJksdysZudxKlPkeiLRcmnUOu6neuwUY4zLZ6fQOtxwUDBTjbEB3Ln7BHJX8KCg0MER2pJXTGAXFtLotnUcFXZWwrjHjAdxA1zOUYKYo2Pp/IB+R4fc8N0JDTyX4+fQ0WPV2gbBSK7D2OW3vSnOzy7b2jpOwDK0Ux32Kt6YqZnQJrBgbvtY38opjbNZQ1a+PhDo3IRZDy1dJhz9pZT/opTL9JTbe33nPLA58nsaStSjV9uxf+TLiSfhPzhkzb3vzjpWAAAAAElFTkSuQmCC);--image-InitiativeIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAfCAYAAADa3IyoAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAI1JREFUeAHVk8ENgCAMRatxAEdwBEdwE91AR3ADRjJOAhuIE9SSgOFAKYaTPyk9/JfSNC0g4oFpaSC1FBYyKgI42Wrg/cJIgFiBkymuIM7hlgBOvxhUeZN1G9V5YEl4J3wSrXlPMbqcMjeKK7oJFZs7czgqABp59Y17M60NIN2mAyYGWONGJ19J+zwH7wEnq82wN4Z/JgAAAABJRU5ErkJggg==);--image-MoveIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABLCAYAAAA4TnrqAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAcFJREFUeAHt2O1NwzAQxnGXCToCIzACqzABIzAKK7BBRmCEYwPY4KFVfVIVYXJnOy/yPX/J6pcq9f2aSElSOlgAHi9run4mVi5DCW4JwQrNoECwQgUogs1bgCKYZoQimBMqLlglVDywRqg4YJ2gxgfrDDUu2EpQxwO7bOQJt2e1c6poZajjgGWo77yhzxqwDL1FshvYDAq1YNjmzNoPrAClEexusP+gNILBBqXFBYMPSosHhjooLQ4Y2qC0GGDodx80Pth1wDxojwjmjGDOCOaMYM4I5oxgzgjmjGDOCOaMYM4I5oxgzgjmjGDOCOasBuwZ2zU9pLbOefXo43Q6/Vi/jNs//Z626euyXlJt6HsZvO3420sJWi5BEIpQswSEMiUglCkBoUwJCGVKQChTAkKZEhDKlIBQpgSEMiUglCkBoUwJCGVK0OEF3oQ+jQ3VcdPjQ3XafByoxiHiQVUOExfKORShjMMRyjikCyofZ8I2yS5Qd4Peg7mh/jjGmFBaHvY1NbQymBwCqmcrgclwUFpnMBkWSusEJsNDaY1gEgZKqwSTcFCaEywulGYEI5S2AEaoeQUwQpWagRFqqQw2HRHqFztVPxuUonk/AAAAAElFTkSuQmCC);--image-QuestionIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABHCAYAAAC3bEFmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAABL9JREFUeAHtW/912zgMRvLu/+YmsDY4b1BtkG6QbtDcBM4Gzk3gdoJ0A/kmcDqBfBMoN8FXwIQixRVl86fU1t97eEpoiQRAACRBkuiCCy644IILfltcUWIAKPhRMv3FVCjd6LOPPdOLPp+Zvsnz6upqTwmRRAEsdMmPW6YPZITdKomAIljDgv139M2COuUse0T67Rf+ZktzBQtww/TA1DBVTCumJQVC6mD6xFQr3alVzQM9wYW5DdN7SgRVxkaVvJ5cEczAfY+ZG8oEEVwVcbAIyg1loFIqaCL0+Kiz8aG9Lg1+opmgx9M9pQQ38BhT29qDr0QB0DqEtwdKAa74s5qbt6/L8KjxYgc7durfJTlCA7LwuKGYaJkiT6jgFdxRwyPIaWftKAa0Mi/htUceEY4NHC0vhO9+JTK+V+QBFX6HeKg9lFAxrckH6CKrl8/zd08nBGr0nbXSk7Y3BqfOgOkEqdNtdEAXUQvyAIzljPXk+5Fv29meDU7CeMmCgHFeG7RhgzMtCmYtMYQG7q5wf7b18Isf4en3+r2N8ZocAeMaQ1iRI2Diwf2pl4JMX+uoLUwX5AgYH24G6nLuIJVt3HpghqyQ8d5m/iksyjk4q0WtxphvENb7HxDJZM+o0znXgG5UeFXede/3kulrYApqYSl/Jn/sLeXvyBEsm2Sktkw/BnjVTFAGRzW8GKDQ9cMQvBIvWl8zVOgcpXNgxAW8M08wI0Ipf7cuIAuOR5onbi3l38gf2zf1xjD/FEA3LB8jaKUHM9us3zRCMwTsK8ng9T7MiLdofeyJZgaYGakNBQUCZvF1JzFAdmxChqnogJmy2nr5c6Tdoi3TUhQgvj8LBUATKPynbQ2/Z/qb4uB/kp0omKRFss2Mc6Gu2IyYfR3D9HvtLQ/BVCte0ITAeP4guvDapgn+UjtNCJjc3RgkWCXZdTrIPqUCTvS8uENS15xUARjPHO1im7yFh0kVsIHd37NstLYKkAazBsGR3g/KR3jwUMs8QNbIf1JelJbyx9RHYnoomF5EAXsys8GcsK3wvlA+iJvtWwVkO9ygKAbKnjP2vuCwBBAFyLq6pLwoBsr2lBdmCaDBoKGMsARA78SpJw+1yH6tZveCTAmRkSFuT5nQyiqy/6FlX8kEphyrwkPwGSh/oXyQGeb29T/oAQb6TYChDVqdhJT0iwP9fODRDyvEPlszQ+gU/G7ohx+2jX414NT2n1qB35GSnwDa++uxF26QYUGiPdEel6uQ4bgrzt36h8tpCj9GlhjO/e1Sup+TonHOaQp/RmrYkWQ2qJ16/ubP2ebizkiJcUTfoToly/VQoU6P/2Gq8BOPCsq7uLNfnkEDVbR4oEF2DFFjj7pymFshxpHTt/WtRxRQUCRE5RuBh6UH6jtWgowK0YZCxDwsfVRpFSsmaHC6VYpVZ5rj8r0GVsh5PcUBvWifdiaLXNdTHIDc13h62q6mtAZMfXkL5hSHKGKTkwF0FzEaTH15C93CplFFJMstwswkN6r0FeY0SVNFtBZx8EfEuzr7oGbexBY81eVpybd9pG6/4Zm6G+GHG+LHU1N1ofbi9Dv9ttT3JWkrx3j/pcjIdX1edmHa2+Dy/6nr80KisO3xLfPY+A59L0vFpV8WnAAAAABJRU5ErkJggg==);--image-ShieldIcon:url(data:image/png;base64,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);--image-SpellsIcon:url(data:image/png;base64,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);--image-TempHPIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAxBJREFUeAHtmUFO20AUht+zU9TSClk9gSkqKqgLIlWoy1gcADhB4QZBUFLUBcmSUtr0BIgTQA9QOd1VBKleVNANxUdIu0Aiied1xsVpksbEE9uxU/FJScaT0Zvfb96MZ54RUsKPN/PklR9tHuNNbRUYQRASpt3D3fh5fCQ9fRseYfjvJ+ItwyJUTJvrT3OAtMg/S0SoAZDGDVoM6EBR6cjY+W73s3GxndPY+GUeEV7wS/262hJ2mg47eLx1UoEoRJuFJzo46j4B5XwbIdjIaM3YOzvya3Kx+zxH4ByCe8M+ZgiOgClrk1tf7L+mZQW/nJ3jXjWFV4O0J4LSwt5psbv+fGe+yL27DYGgWrMBxvTrqiWupEQLD5Ojfg0quNVll3A5wS0rNXTUrPC43JLHQ0JWsEAI/LQxkxfl851neXnBrhWNFGffLXlV/RZ3MekImQmDU5u4q64+nLh3CCFwHGYE97RYJcKhKaoaSrBAUXAx02uX5dV1eXwOUgAXNBfY05QS0XyC6BITUX4CxoSe8UJAZpeVNBITEWxIBVTLeMW+3iW0+ZcOSUNgBfY0AlUgBaCCleDhQcpnSAGNOn0MLNrY+1bh91mBRCFLbJqk9h5IWIIE4f2Xxa+U6ES9TWBPFo4PRFH6YJuUt69Y3fDK0qKFtxH+DNOwIKLyzJZle9eDpRCad0piuGAY8H5+XTY6Rncg0UbZqqECyzxYahAzIiyyJaujn4GTNcbuqUWMxRrfxCjfHhYeoTJMC+/OyvzZX4QYIGLFqVfVD73+C50WM96elqIW7gounPiOYiS5vCiF9xMsiCwBGYXwIIIFkWZNXeFEA6wqPKdBsBJEsCCWE4qZ50kdVTG5db29Xrs/5n464OtwE+vL05uWBQGJ7VjlCs+IlAG1DsT/iCaqXLHGaq9lTeB3BMxATBhlN2OaNTdmt6lHrItH81ShugYDMJQDrLk+s0SA77UHY7o2PmYj0srkZtX3UNHvjddQXl+IdC/ydBbP4RV/XtazNwkOQmzh0c11uETy2E91fsNvIo7k263fT6VH5GrxuRgAAAAASUVORK5CYII=);--image-WoundIcon:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADUAAAAyCAYAAAD845PIAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAABQtJREFUeAHdWjFz00gUfm99SUGlls6Ux5FDJlQ0p/Q3E6fC3TkNDHPFhV8Q5xccKW6YHEVEw3hME2boUWqGsQYyQ4moaEUXYrzLe5LsyLJkS9YuM/DNJLZWyq7evu99+/ZtEErgye3bDki5DYi2UqpJTc3klh/9NBqH916/9qEm3nU6DtI4iNhWl2OE0RhK+UqIFxv9vresHyy6cWzb1oUQe/TAP3RpwXK4YykPHvh+ABXxvtNpjpU6pq/OsmfpfQKhVO/XweDpgmfmwZ5RUvIgTaiGUCHu3X/z5mnZP3jb6XTpJf+FchM3BRsnEXfzPCeyDUe3bvXIoFdQ3SCGhUq53EeZh4luPRF7qJJBDKYnjfWK+8jea6Qv+GVoBvahJqgP58+rV/Hlp09e0TP8MvRSWsZ6sLGBj8/OvEnb1FNHm5ttHQalBttf5DEyaBt0jUWTwyIzuY6MYlHAmNdawYZRfG4XvEgAGsE0HrbbEY0jo0jlurBaDC2HlHZuO2IIGsExtr6+zkodG5XIthGogslS8fqje6w9/hTRwmrKS9FIKtdTRD/tRpH3LY4tQfJ9E0wCsZnfjPqNIjSUuiloJh0wC4uFKNtIC+dnMAAJYAssmEldoFwx2PX9Oa8Q/f4AMyD6mYwnBuVp2SbO9WjcLpiAUharX+UUpXz/Krjv+3N5oNSQSRSCxEKASRR7qQ0GwUYZUaEiL32NaWeMHQxjRhV5idKZv8AsfJb02jvWLNhLJK2n2Xb2knFhIiexpGs3iuDn7YB1ZuZFoDE88VXKU9AMrjE8tu1mzoAnYBiRUTSjHhiIqwbicbbt4sqVQzAVwzGC68+fn06ydBd0A9GhTeJeuqnluiHN5CMwB49/RUZRUlu6UFIFvEnM0vC3weCAPgIwgBEi9x0bdc/3ua7mgX5YeTSUyeCa4bb6/YC/TDMKqruZGCim4ebmzNr0e7/vQlwI1YZRaqKmRiWC4YIB5MWR0DvW1EtJ35fgCiuY2GbnUFvqy//CUYbOM0bxgqliw/Qisz5xugQlSsxlwCxIe4kxl6VTEvpIt2isA7xIX2vcegSJms4gd+sxUuohaAJR7yS989W59SDabeW15xr1N0k80VCPYRnqjWPa1d56EO16WdpNULhJ1EXDLPVQD/W8PNpNsHDnu6bUDtQsD59TdSd9repnEwHRbnfRAwuN4ligRZl5u7LMU0Yx4xlVL5tgg7aKaDfB0hoFy/xIytUNo4ziP9ueeis5JPOgOkI6ht1ZZhCjVOGFhWNcQzjWhJip1a/iLVoGdm88e1YqtUKoAMq4uw0hjqE6wjUpr6Wl/ezuXT6tdEr9tVLdGwvOeLOoVCIjKrok9TtQnYrWSIjZggtimZcMhZROFYMYlet+JPUnq8QYZtamEmVnjqEt3slCRaxUzExirLWq3A+7XWtJ2ZlVrlU2hrJYuULLqhjJfUnDpJTT59bOz4vTJCrZlZHtRahVdmbDaIFuqRJVopk6YEFBkyh6Mrq4qGVQ0o8eHNn2PgrRy7sXlaCHw2v8Pfnvlg/ZZziXW5T6VIG2AwISkAPiGKcv82dRiN7k+3hexkOWbF0GMbSeelABx80TEJTykp5KpRfiWBAqSvYyaD/KmcQZ8Xpal6AaevooNE6ZaMc6+vKlVTd+8vALGECSOTykOPtIcbafJLVecjukmexdHwwO4UcFFzP/b7U+0KfD18O4PvFzYHDnjg3fCd8AgMBkB+G/sZMAAAAASUVORK5CYII=);}</style>
 </head>
 <body>
   <div class="page-frame">
@@ -484,8 +813,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
     <section id="my-sheet" class="hero-sheet" aria-labelledby="my-sheet-title" hidden>
       <header class="sheet-heading">
-        <div><h2 id="my-sheet-title" tabindex="-1">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
-        <button type="button" class="school-button" id="my-level-up">Level up</button>
+        <h2 id="my-sheet-title" tabindex="-1">Character sheet</h2>
+        <button type="button" class="school-button" id="my-sheet-override" aria-pressed="false">Override</button>
       </header>
       <section id="my-level-guide" class="character-options" aria-labelledby="my-level-guide-title" hidden>
         <h3 id="my-level-guide-title" tabindex="-1"></h3>
@@ -508,23 +837,83 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         <button type="button" class="school-button" id="my-level-cancel">Cancel</button>
       </section>
       <p class="character-note" id="my-sheet-status" role="status"></p>
-      <div id="my-sheet-vitals" class="sheet-vitals">
-        <section class="sheet-panel sheet-health" aria-labelledby="my-health-title">
-          <h3 id="my-health-title">Health</h3>
-          <div class="sheet-metrics" id="my-health-values"></div>
-        </section>
-        <section class="sheet-panel sheet-combat" aria-labelledby="my-combat-title">
-          <h3 id="my-combat-title">Combat</h3>
-          <div class="sheet-metrics" id="my-combat-values"></div>
+      <div class="play-dashboard">
+        <div class="play-identity">
+          <label class="play-cell"><input id="my-play-name" type="text" maxlength="80"><span>Name</span></label>
+          <div class="play-cell"><strong id="my-sheet-subtitle"></strong><span>Level · Class · Subclass</span></div>
+        </div>
+        <div id="my-sheet-attributes" class="play-attributes"></div>
+        <div class="play-conditions">
+          <details id="my-condition-picker"><summary>Conditions</summary><div id="my-condition-options"></div></details>
+          <div id="my-condition-badges"></div>
+        </div>
+        <div class="play-health">
+          <div class="play-pair play-hp" id="my-play-hp"></div>
+          <div class="play-pair play-defense" id="my-play-defense"></div>
+          <div class="play-resources" id="my-play-resources"></div>
+        </div>
+        <div class="play-ancestry play-cell"><strong id="my-play-ancestry"></strong><span>Ancestry</span></div>
+        <div class="play-dice" id="my-play-dice"></div>
+        <div class="play-motion" id="my-play-motion"></div>
+        <div class="play-portrait">
+          <button type="button" class="play-portrait-picker" id="my-portrait-picker">
+            <img id="my-portrait-image" alt="" hidden>
+            <span class="play-portrait-label" id="my-portrait-label">Upload image</span>
+          </button>
+          <input type="file" id="my-portrait-file" accept="image/png,image/jpeg,image/webp" hidden>
+          <button type="button" class="school-button" id="my-level-up">Level up</button>
+          <button type="button" class="school-button" id="my-portrait-remove" hidden>Remove photo</button>
+        </div>
+        <p class="character-note" id="my-portrait-status" role="status"></p>
+        <form class="play-crop" id="my-portrait-crop" hidden>
+          <canvas id="my-portrait-preview" width="192" height="192" role="img" aria-label="Square portrait crop preview"></canvas>
+          <div>
+            <label>Horizontal position <input id="my-portrait-x" type="range" min="0" max="100" value="50"></label>
+            <label>Vertical position <input id="my-portrait-y" type="range" min="0" max="100" value="50"></label>
+            <label>Zoom <input id="my-portrait-zoom" type="range" min="1" max="5" step=".05" value="1"></label>
+            <button type="submit">Save square crop</button>
+            <button type="button" id="my-portrait-cancel">Cancel</button>
+          </div>
+        </form>
+        <div id="my-sheet-skills" class="play-skills" aria-label="Skills"></div>
+        <div class="play-rest">
+          <div id="my-play-wounds"></div>
+          <div class="play-rest-buttons">
+            <button type="button" id="my-safe-rest">Safe Rest</button>
+            <button type="button" id="my-field-rest" aria-expanded="false" aria-controls="my-field-options">Field Rest</button>
+            <span class="play-info" tabindex="0" aria-describedby="my-rest-hint">ⓘ
+              <span id="my-rest-hint" class="play-tooltip" role="tooltip">Safe Rest: GM-approved safe lodging; restore HP, Hit Dice and mana, and heal 1 Wound. Field Rest: 10 minutes to roll spent Hit Dice + STR, or 8 hours with food and sleep to take maximum rolls instead.</span>
+            </span>
+          </div>
+          <form id="my-field-options" hidden>
+            <label>Rest method <select id="my-field-method"><option value="roll">Catch Breath (10 min)</option><option value="max">Make Camp (8 hours)</option></select></label>
+            <label>Hit Dice to spend <input type="number" id="my-field-dice" min="1" value="1" required></label>
+            <button type="submit">Apply Field Rest</button>
+          </form>
+        </div>
+      </div>
+      <div class="play-body">
+        <div class="play-tabs" role="tablist" aria-label="Play mode">
+          <button type="button" id="my-tab-exploration" role="tab" data-mode="exploration" aria-selected="true" aria-controls="my-play-panel">Exploration</button>
+          <button type="button" id="my-tab-actions" role="tab" data-mode="actions" aria-selected="false" aria-controls="my-play-panel" tabindex="-1">Actions</button>
+          <button type="button" id="my-tab-reactions" role="tab" data-mode="reactions" aria-selected="false" aria-controls="my-play-panel" tabindex="-1">Reactions</button>
+        </div>
+        <section id="my-play-panel" role="tabpanel" aria-labelledby="my-tab-exploration">
+          <div id="my-turn" class="play-turn" hidden>
+            <div id="my-action-points" class="play-points" aria-label="Action points"></div>
+            <button id="my-end-turn" type="button">End turn</button>
+          </div>
+          <div id="my-heroic-actions" class="play-cards"></div>
+          <p id="my-free-action-note" class="play-note" hidden><strong>Free action:</strong> Once on your turn, do one simple task without spending an action, such as opening an unlocked door, dropping an item, or ending Concentration.</p>
+          <div id="my-unlocks"></div>
+          <div id="my-origin-abilities"></div>
+          <section id="my-play-spells" aria-labelledby="my-spells-title" hidden>
+            <div class="play-spell-heading"><h3 id="my-spells-title" tabindex="-1">Spells</h3><div id="my-play-mana"></div></div>
+            <div id="my-spells"></div>
+          </section>
         </section>
       </div>
-      <section class="sheet-panel" aria-labelledby="my-attributes-title">
-        <h3 id="my-attributes-title">Attributes &amp; saves</h3>
-        <div class="sheet-attributes" id="my-sheet-attributes"></div>
-        <h4>Skills</h4>
-        <div class="sheet-skills" id="my-sheet-skills"></div>
-      </section>
-      <details class="character-options" id="my-sheet-stats">
+      <details class="character-options" id="my-sheet-stats" hidden>
         <summary>Edit stats, saves &amp; skills</summary>
         <div id="my-sheet-stat-fields"></div>
       </details>
@@ -550,17 +939,17 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         <summary>Edit languages, movement &amp; other adjustments</summary>
         <div id="my-sheet-adjustments"></div>
       </details>
-    </section>
-    <div id="my-unlocks"></div>
-    <div id="my-origin-abilities"></div>
+      <details class="character-options">
+        <summary>Casting rules and limits</summary>
     <div id="my-casting" class="casting-summary" hidden>
       <div id="my-mana-box"><span id="my-resource-label" class="eyebrow">MANA</span><output id="my-mana"></output>
         <label id="my-mana-stat-field" hidden><span id="my-mana-stat-label"></span><input id="my-mana-stat" type="number" step="1" placeholder="Optional"></label>
       </div>
+        </details>
+      </section>
       <div id="my-tier-box"><span class="eyebrow">MAXIMUM SPELL TIER</span><output id="my-max-tier"></output></div>
       <div id="my-dice-box" hidden><span id="my-dice-label" class="eyebrow"></span><output id="my-dice"></output></div>
     </div>
-    <div id="my-spells"></div>
     <dialog id="my-create-dialog" aria-labelledby="my-create-title">
       <form id="my-create-form">
         <header><p class="eyebrow" id="my-create-progress"></p><h2 id="my-create-title" tabindex="-1"></h2></header>
@@ -1226,9 +1615,21 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   }
 
   function baseArray(className, array) {
-    const key = classes[className][0].split(" ");
+    const key = keyStats(className);
     const order = [...key, ...stats.filter((stat) => !key.includes(stat))];
     return Object.fromEntries(order.map((stat, index) => [stat, arrays[array][index]]));
+  }
+
+  function keyStats(className) {
+    return classes[className][0].split(" ");
+  }
+
+  function resolveKey(text, key) {
+    return text.replace(/(?:\b(\d+)\s*([+×])\s*)?(\+\s*)?\bKEY\b(?![-\s]+(?:[Ss]tats?|STATS?)\b)/g,
+      (_match, operand, operator, plus) => {
+        if (operator) return String(operator === "×" ? Number(operand) * key : Number(operand) + key);
+        return plus && key >= 0 ? `+${key}` : String(key);
+      });
   }
 
   function startingGear(className) {
@@ -1277,6 +1678,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     const [, hitDie, startingHP] = classes[className];
     const totals = statTotals(character, sheet, features, picks);
     const value = (stat) => totals[stat].total;
+    const key = Math.max(...keyStats(className).map(value));
     const has = (name) => features.some((feature) => feature.name === name);
     const gear = Object.hasOwn(armor, sheet.armor) ? sheet.armor : "";
     const [armorValue, armorStat, cap, secondStat] = armor[gear];
@@ -1299,10 +1701,10 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       [`Level ${index + 2} HP`, number(sheet[`hp:${index + 2}`], hitDie / 2)]);
     const grants = skillGrants(level, sheet);
     return {
-      stats: totals, hitDie,
+      stats: totals, hitDie, key,
       metrics: {
         "Max HP": measure("Max HP", [["Starting HP", startingHP], ...hpSteps]),
-        "Hit Dice": measure("Hit Dice", [["Level", level]]),
+        "Hit Dice": measure("Hit Dice", [["Level", level], ...(has("Potent Bloom") ? [["Potent Bloom (KEY)", key]] : [])]),
         "Max Wounds": measure("Max Wounds", [["Base", 6]]),
         Defense: measure("Defense", defense),
         Initiative: measure("Initiative", [["DEX", value("DEX")], ...(swift ? [["Swift Feet", swift]] : [])]),
@@ -1318,7 +1720,23 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     };
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, capstone, skillGrants };
+  function spellTiming(spell) {
+    const text = spell.description || "";
+    const reactionOnly = /\bReaction:|^Castable only while Defending\b/i.test(text);
+    const reactionAlso = /\bcast (?:as a Reaction|while Defending)\b/i.test(text);
+    const modes = ["exploration"];
+    if (!reactionOnly && /\bactions?\b/i.test(spell.casting_time || "")) modes.push("actions");
+    if (reactionOnly || reactionAlso) modes.push("reactions");
+    const reactionCost = text.match(/cast as a Reaction for (\d+) mana/i)?.[1];
+    return { modes, reactionCost: reactionCost === undefined ? spell.tier : Number(reactionCost) };
+  }
+
+  function isCombatPassive(activation, description, modes) {
+    if (!modes.has("exploration") || /\b(?:action|reaction)\b/i.test(activation)) return false;
+    return /\b(?:combat|attacks?|damage|crits?|critical hits?|defense|initiative|temporar(?:y|ily) HP|temp HP|resistan(?:t|ce)|vulnerab(?:le|ility)|saving throws?)\b/i.test(description);
+  }
+
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, capstone, skillGrants, spellTiming, isCombatPassive };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
@@ -1719,6 +2137,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     ["Taunted", "Attack with disadvantage unless targeting whoever Taunted you most recently."],
     ["Weakened X", "Subtract X from attack damage."]
   ];
+  window.NimbleCoreConditions = core;
   const special = [
     ["Bloodied", "At half your maximum HP or less."],
     ["Charged", "Taking lightning damage makes you Charged for one minute or until combat ends. Some spells interact with this status, including Overload and Electrickery."],
@@ -1848,6 +2267,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   const status = byId("my-status");
   const output = byId("my-unlocks");
   const spellOutput = byId("my-spells");
+  const spellChoicesOutput = node("div");
+  featureChoices.after(spellChoicesOutput);
   const storageKey = "nimble-offline-characters-v1";
   const accountStore = window.NimbleProfileStore;
   const saveButton = byId("my-save");
@@ -1863,6 +2284,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   let manaStats = {};
   const sheetRules = window.CharacterSheetRules;
   let sheet = {};
+  let portrait = "";
   let sheetTotals;
   let pendingLevel = 0;
   let notePages = [{ title: "General", text: "" }];
@@ -1871,6 +2293,17 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
   let extraAbilities = [];
   let editingExtra = -1;
   let openSections = new Set();
+  let overrideSheet = false;
+  let playMode = "exploration";
+  const playName = byId("my-play-name");
+  const portraitPicker = byId("my-portrait-picker");
+  const portraitFile = byId("my-portrait-file");
+  const portraitCrop = byId("my-portrait-crop");
+  const portraitStatus = byId("my-portrait-status");
+  const portraitPreview = byId("my-portrait-preview");
+  const portraitControls = ["x", "y", "zoom"].map((axis) => byId(`my-portrait-${axis}`));
+  let cropImage;
+  let cropRequest = 0;
   for (const name of Object.keys(rules.classes)) classSelect.add(new Option(name));
   for (let level = 1; level <= 20; level++) levelSelect.add(new Option(String(level)));
 
@@ -1880,6 +2313,92 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     if (text !== undefined) element.textContent = text;
     return element;
   }
+
+  function renderPortrait() {
+    const image = byId("my-portrait-image");
+    image.hidden = !portrait;
+    if (portrait) image.src = portrait;
+    else image.removeAttribute("src");
+    byId("my-portrait-label").textContent = portrait ? "Replace image" : "Upload image";
+    byId("my-portrait-remove").hidden = !portrait;
+  }
+
+  function closePortraitCrop() {
+    cropRequest++;
+    cropImage = undefined;
+    portraitCrop.hidden = true;
+    portraitStatus.textContent = "";
+  }
+
+  function drawPortrait() {
+    const [x, y, zoom] = portraitControls.map((input) => input.valueAsNumber);
+    const { naturalWidth: width, naturalHeight: height } = cropImage;
+    const side = Math.min(width, height) / zoom;
+    const context = portraitPreview.getContext("2d");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, portraitPreview.width, portraitPreview.height);
+    context.drawImage(cropImage, (width - side) * x / 100, (height - side) * y / 100, side, side,
+      0, 0, portraitPreview.width, portraitPreview.height);
+  }
+
+  portraitPicker.addEventListener("click", () => portraitFile.click());
+  portraitFile.addEventListener("change", async () => {
+    const file = portraitFile.files[0];
+    portraitFile.value = "";
+    if (!file) return;
+    closePortraitCrop();
+    const request = cropRequest;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      portraitStatus.textContent = "Choose a PNG, JPEG, or WebP no larger than 10 MB.";
+      return;
+    }
+    try {
+      const source = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = source;
+      await image.decode();
+      if (request !== cropRequest) return;
+      cropImage = image;
+      portraitControls.forEach((input) => { input.value = input.defaultValue; });
+      drawPortrait();
+      portraitCrop.hidden = false;
+      portraitControls[0].focus();
+    } catch {
+      if (request === cropRequest) portraitStatus.textContent = "Could not read that image. Try another PNG, JPEG, or WebP.";
+    }
+  });
+  for (const control of portraitControls) control.addEventListener("input", drawPortrait);
+  byId("my-portrait-cancel").addEventListener("click", () => {
+    closePortraitCrop();
+    portraitPicker.focus();
+  });
+  byId("my-portrait-remove").addEventListener("click", () => {
+    closePortraitCrop();
+    portrait = "";
+    renderPortrait();
+    autosave();
+    portraitPicker.focus();
+  });
+  portraitCrop.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!cropImage) return;
+    for (const quality of [0.85, 0.65, 0.45, 0.25]) {
+      const candidate = portraitPreview.toDataURL("image/jpeg", quality);
+      if (!candidate.startsWith("data:image/jpeg;base64,") || candidate.length > 24 * 1024) continue;
+      portrait = candidate;
+      closePortraitCrop();
+      renderPortrait();
+      autosave();
+      portraitPicker.focus();
+      return;
+    }
+    portraitStatus.textContent = "This crop is too large to save. Try a tighter crop or another image.";
+  });
 
   function refreshProfiles(selected = "") {
     profileSelect.replaceChildren(new Option("New character", ""));
@@ -2056,8 +2575,6 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     byId("my-background-spell-field").hidden = !hasUtility;
     backgroundSpell.disabled = !hasUtility;
     if (!hasUtility) backgroundSpell.value = "";
-    const utility = utilities.get(backgroundSpell.value);
-
     const groups = new Map(Object.keys(abilityGroups).map((kind) => [kind, []]));
     if (ancestry) groups.get("Ancestry").push({ ...ancestry, name: ancestry.trait, source: `${ancestry.name} · ${ancestry.size}` });
     for (const entry of selectedBackgrounds) groups.get("Background").push({ ...entry, page: 15 });
@@ -2073,14 +2590,14 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         item.append(node("span", "keyword-badge arsenal-badge", entry.source || kind));
         if (entry.page) item.append(node("small", "", ` · Core Rules · PDF page ${entry.page}`));
         if (entry.description) item.append(node("p", "feature-description", entry.description));
-        if (entry.utilitySpell && utility) {
-          item.append(optional("background-spell", `Learned: ${utility.name}`, spellList([{ spell: utility, state: "known" }])));
-        }
+        tagPlayAbility(item, abilityModes(entry));
         if (entry.page) addAbilityEdit(item, `ability:origin:${JSON.stringify([kind, entry.name])}`);
         list.append(item);
       }
       output.append(heading(abilityGroups[kind], list));
     }
+    applyPlayFilter();
+    refreshKeyText(output);
   }
 
   function renderExtraChoices() {
@@ -2147,6 +2664,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
         extraName.focus();
       }
       renderOrigins();
+      if (select !== ancestrySelect) render();
       autosave();
     });
   }
@@ -2278,6 +2796,20 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return data ? rules.unlockedFeatures(data.features, { ...current, companionSize }) : [];
   }
 
+  const keyText = new WeakMap();
+  function refreshKeyText(root = editor) {
+    if (!sheetTotals || !character().className) return;
+    for (const description of root.querySelectorAll(".feature-description, .spell-description")) {
+      const walker = document.createTreeWalker(description, NodeFilter.SHOW_TEXT);
+      for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+        const formula = keyText.get(text) ?? text.data;
+        if (!/\bKEY\b/.test(formula)) continue;
+        keyText.set(text, formula);
+        text.data = sheetRules.resolveKey(formula, sheetTotals.key);
+      }
+    }
+  }
+
   function sheetValue(name, { parts, total }, { suffix = "", caption = "", signed = false } = {}) {
     const card = node("div", "sheet-value");
     const breakdown = parts.filter(([, value], index) => value !== 0 || !index)
@@ -2293,49 +2825,216 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return card;
   }
 
-  function renderVitals(metrics, hitDie, refreshOnly) {
-    const groups = [
-      ["my-health-values", [
-        ["currentHP", "Current HP", metrics["Max HP"].total],
-        ["tempHP", "Temp HP", 0],
-        ["Max HP"],
-        ["wounds", "Wounds taken", 0],
-        ["Max Wounds"],
-        ["currentHitDice", "Hit Dice left", metrics["Hit Dice"].total],
-        ["Hit Dice", undefined, undefined, ` × d${hitDie}`, "Max Hit Dice"]
-      ]],
-      ["my-combat-values", [
-        ["currentActions", "Actions left", metrics.Actions.total],
-        ["Actions", undefined, undefined, "", "Max Actions"], ["Defense"], ["Initiative"], ["Speed", undefined, undefined, " spaces"]
-      ]]
-    ];
-    for (const [id, fields] of groups) {
-      const wrapper = byId(id);
-      const cards = fields.map(([key, label, fallback, suffix, heading]) => {
-        if (!label) return sheetValue(heading ?? key, metrics[key], { suffix });
-        const field = sheetInput(label, key, { className: "sheet-tracker" });
-        const input = field.querySelector("input");
-        input.placeholder = String(fallback);
-        input.title = `Defaults to ${fallback} when left blank`;
-        return field;
-      });
-      if (!refreshOnly) {
-        wrapper.replaceChildren(...cards);
-        continue;
-      }
-      cards.forEach((card, index) => {
-        const existing = wrapper.children[index];
-        if (existing.classList.contains("sheet-tracker")) {
-          const input = existing.querySelector("input");
-          const next = card.querySelector("input");
-          input.placeholder = next.placeholder;
-          input.title = next.title;
-        } else {
-          existing.querySelector("output").textContent = card.querySelector("output").textContent;
-          existing.querySelector(".sheet-breakdown").textContent = card.querySelector(".sheet-breakdown").textContent;
-        }
-      });
+  const tracked = (key, max) => Math.max(0, Math.min(max, sheetRules.number(sheet[key], max)));
+  const refreshPlay = () => renderSheet(character(), currentFeatures(), true);
+  const icon = (name) => {
+    const image = node("span", "play-icon");
+    image.style.backgroundImage = `var(--image-${name})`;
+    if (name === "MoveIcon" || name === "InitiativeIcon") image.classList.add("play-white-icon");
+    image.setAttribute("aria-hidden", "true");
+    return image;
+  };
+  function playField(label, key, fallback, { bonus, min = 0, max = 9999 } = {}) {
+    const field = node("label", "play-cell");
+    const input = node("input");
+    input.type = "number";
+    input.min = min;
+    input.max = max;
+    input.value = fallback;
+    input.dataset.playField = key;
+    input.addEventListener("change", () => {
+      if (input.value !== "" && !input.reportValidity()) return;
+      writeSheet(key, input.value === "" ? "" : bonus === undefined ? input.value : String(input.valueAsNumber - fallback + bonus));
+      const focused = document.activeElement === input;
+      refreshPlay();
+      if (focused) [...editor.querySelectorAll("[data-play-field]")].find((item) => item.dataset.playField === key)?.focus({ preventScroll: true });
+    });
+    field.append(input, node("span", "", label));
+    return field;
+  }
+  function playTotal(key, label, value, options = {}) {
+    const bonusKey = `bonus:${key}`;
+    if (overrideSheet) return playField(label, bonusKey, value.total, { bonus: sheetRules.number(sheet[bonusKey]), ...options });
+    const field = sheetValue(label, value, options);
+    field.classList.add("play-cell");
+    return field;
+  }
+  function manaPool(current) {
+    const resource = rules.castingResource(current);
+    if (!resource.stat) return null;
+    const base = Math.max(0, sheetRules.number(manaStats[resource.stat], sheetTotals.stats[resource.stat].total) * resource.multiplier + resource.bonus);
+    const bonus = sheetRules.number(sheet["bonus:Mana"]);
+    return { parts: [[resource.unit, base], ["Manual bonus", bonus]], total: Math.max(0, base + bonus),
+      label: current.className === "Manawright (Artificer)" ? "Mana Dice" : "Mana", encounter: resource.unit === "mana at Initiative" };
+  }
+  function renderPlayDashboard(current, ancestry, saves) {
+    const { metrics, stats, skills, hitDie, key } = sheetTotals;
+    const keyAttributes = sheetRules.keyStats(current.className);
+    if (document.activeElement !== playName) playName.value = nameInput.value;
+    byId("my-sheet-subtitle").textContent = [`Level ${current.level}`, current.className, current.subclass].filter(Boolean).join(" · ");
+    byId("my-play-ancestry").textContent = ancestry?.name ||
+      (ancestrySelect.value === "__custom" ? extraAbilities.find(({ kind }) => kind === "Ancestry")?.name || "Custom" : "Not chosen");
+    const hp = Math.max(0, metrics["Max HP"].total);
+    const dice = Math.max(0, metrics["Hit Dice"].total);
+    const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === saves[0] ? "Advantage" : stat === saves[1] ? "Disadvantage" : "Normal");
+    byId("my-play-hp").replaceChildren(icon("HPIcon"), playField("Current HP", "currentHP", tracked("currentHP", hp), { max: hp }),
+      playTotal("Max HP", "Max HP", metrics["Max HP"]));
+    const tempHP = playField("Temp HP", "tempHP", sheetRules.number(sheet.tempHP));
+    const defense = playTotal("Defense", "Defense", metrics.Defense, { min: -9999 });
+    const diceHint = node("strong", "play-dice-hint");
+    diceHint.append(icon("HitDiceIcon"), `Hit Dice · d${hitDie}`);
+    byId("my-play-defense").replaceChildren(tempHP, defense);
+    byId("my-play-dice").replaceChildren(diceHint,
+      playField("Current Hit Dice", "currentHitDice", tracked("currentHitDice", dice), { max: dice }), playTotal("Hit Dice", "Max Hit Dice", metrics["Hit Dice"]));
+    const speed = playTotal("Speed", "Speed", metrics.Speed);
+    const initiative = playTotal("Initiative", "Initiative", metrics.Initiative, { min: -9999 });
+    initiative.dataset.stat = "DEX";
+    for (const [field, image] of [[tempHP, "TempHPIcon"], [defense, "ShieldIcon"], [speed, "MoveIcon"], [initiative, "InitiativeIcon"]]) {
+      field.classList.add("play-icon-cell");
+      field.append(icon(image));
     }
+    byId("my-play-motion").replaceChildren(speed, initiative);
+    const mainStats = sheetRules.stats.map((stat) => {
+      const card = playTotal(stat, stat, stats[stat], { signed: true, min: -9999 });
+      card.dataset.stat = stat;
+      card.dataset.save = saveMode(stat);
+      card.setAttribute("title", `${stat} save: ${saveMode(stat)}`);
+      if (keyAttributes.includes(stat)) {
+        const isHighest = stats[stat].total === key;
+        const label = card.querySelector(".sheet-label") || card.lastElementChild;
+        const badge = node("b", "play-key-badge", "KEY");
+        badge.title = isHighest ? `Highest KEY stat (${key})` : "Class KEY stat";
+        badge.setAttribute("aria-label", badge.title);
+        label.append(" ", badge);
+        card.title += ` · ${badge.title}`;
+      }
+      return card;
+    });
+    byId("my-sheet-attributes").replaceChildren(...mainStats);
+    byId("my-sheet-skills").replaceChildren(...Object.keys(skills).sort().map((skill) => {
+      const card = overrideSheet
+        ? playField(skill, `skill:${skill}`, skills[skill].total, { bonus: sheetRules.number(sheet[`skill:${skill}`]), min: -9999 })
+        : playTotal(skill, skill, skills[skill], { signed: true });
+      card.dataset.stat = sheetRules.skills[skill];
+      return card;
+    }));
+    const pool = manaPool(current);
+    const secondary = rules.secondaryResource(current);
+    const resources = byId("my-play-resources");
+    const resourceCards = [];
+    if (pool) resourceCards.push(playField(pool.label, "currentMana", tracked("currentMana", pool.total), { max: pool.total }), playTotal("Mana", `Max ${pool.label}`, pool));
+    if (secondary) {
+      const caption = {
+        "Thrill of the Hunt Charges": "Hunt Charges",
+        "Futuresight Dice": "Futuresight",
+        "Judgment Dice": "Judgment"
+      }[secondary.label] || secondary.label;
+      const info = sheetRules.resolveKey(secondary.value, key);
+      const die = info.match(/^\d*d\d+\b/)?.[0];
+      if (secondary.label !== "Mana Die Size") {
+        const starting = secondary.label === "Futuresight Dice" ? Number.parseInt(secondary.value, 10) : 0;
+        const fieldKey = `resource:${secondary.label}`;
+        const field = playField(caption, fieldKey, sheetRules.number(sheet[fieldKey], starting));
+        field.querySelector("input").setAttribute("aria-label", secondary.label);
+        resourceCards.push(resourceHelp(field, secondary.label, info));
+      }
+      if (die) resourceCards.push(playResourceHint(secondary.label === "Mana Die Size" ? "Die size" : "Dice", die, secondary.label, info));
+    }
+    if (!resourceCards.length && current.className === "Shadowmancer" && current.level >= 2) {
+      resourceCards.push(playResourceHint("Resource", "Pilfered Power", "Pilfered Power", rules.castingResource(current).text));
+    }
+    resources.replaceChildren(...resourceCards);
+    byId("my-play-mana").replaceChildren(...(pool?.label === "Mana" ? [
+      playField("Current mana", "currentMana", tracked("currentMana", pool.total), { max: pool.total }),
+      playTotal("Mana", "Maximum mana", pool)
+    ] : []));
+    renderConditions();
+    const maxWounds = Math.max(1, metrics["Max Wounds"].total);
+    const wounds = Math.min(maxWounds, Math.max(0, sheetRules.number(sheet.wounds)));
+    const tracker = byId("my-play-wounds");
+    const dots = node("div", "play-wound-dots");
+    for (let count = 1; count <= maxWounds; count++) {
+      const button = node("button", "play-wound-dot");
+      button.type = "button";
+      button.setAttribute("aria-label", wounds === count ? `Clear ${count} wounds` : `Set ${count} wounds`);
+      button.setAttribute("aria-pressed", String(count <= wounds));
+      if (count === maxWounds) button.append(icon("DeathIcon"));
+      button.addEventListener("click", () => {
+        writeSheet("wounds", String(wounds === count ? 0 : count));
+        refreshPlay();
+        tracker.querySelectorAll("button")[count - 1]?.focus({ preventScroll: true });
+      });
+      dots.append(button);
+    }
+    tracker.replaceChildren(icon("WoundIcon"), dots, overrideSheet
+      ? playTotal("Max Wounds", "Max Wounds", metrics["Max Wounds"], { min: 1 })
+      : node("span", "play-wound-label", `Wounds · ${wounds}/${maxWounds}`));
+    byId("my-field-dice").max = tracked("currentHitDice", dice);
+    byId("my-field-rest").disabled = Number(byId("my-field-dice").max) === 0;
+    renderActionPoints();
+  }
+  function playResourceHint(label, text, name, info) {
+    const field = node("div", "play-cell");
+    field.tabIndex = 0;
+    field.append(node("strong", "", text), node("span", "", label));
+    return resourceHelp(field, name, info);
+  }
+  function resourceHelp(field, name, info) {
+    const target = field.querySelector("input") || field;
+    const hint = node("span", "sheet-breakdown", `${name}: ${info}`);
+    hint.id = `resource-hint-${name.toLowerCase().replace(/[^a-z]+/g, "-")}-${field.tagName.toLowerCase()}`;
+    hint.setAttribute("role", "tooltip");
+    field.classList.add("play-resource");
+    field.append(hint);
+    target.setAttribute("aria-describedby", hint.id);
+    return field;
+  }
+  function renderConditions() {
+    const selected = (sheet.conditions || "").split("|");
+    const options = byId("my-condition-options");
+    const badges = byId("my-condition-badges");
+    if (!options.childElementCount) {
+      for (const [name, effect] of window.NimbleCoreConditions) {
+        const label = node("label", "", name);
+        label.title = effect;
+        const input = node("input");
+        input.type = "checkbox";
+        input.value = name;
+        input.addEventListener("change", () => {
+          writeSheet("conditions", [...options.querySelectorAll("input:checked")].map((item) => item.value).join("|"));
+          renderConditions();
+        });
+        label.prepend(input);
+        options.append(label);
+      }
+    }
+    badges.replaceChildren(...window.NimbleCoreConditions.filter(([name]) => selected.includes(name)).map(([name, effect]) => {
+      const badge = node("span", "", name);
+      badge.title = effect;
+      return badge;
+    }));
+    for (const input of options.querySelectorAll("input")) input.checked = selected.includes(input.value);
+  }
+  function renderActionPoints() {
+    const metric = sheetTotals.metrics.Actions;
+    const max = Math.max(0, metric.total);
+    const current = tracked("currentActions", max);
+    const bar = byId("my-action-points");
+    bar.replaceChildren();
+    for (let index = 0; index < max; index++) {
+      const ready = index < current;
+      const point = node("button", "play-point");
+      point.type = "button";
+      point.setAttribute("aria-pressed", String(ready));
+      point.setAttribute("aria-label", `Action point ${index + 1}: ${ready ? "available; spend one" : "spent; restore one"}`);
+      point.addEventListener("click", () => {
+        writeSheet("currentActions", String(current + (ready ? -1 : 1)));
+        renderActionPoints();
+        bar.querySelectorAll("button")[index]?.focus({ preventScroll: true });
+      });
+      bar.append(point);
+    }
+    if (overrideSheet) bar.append(playTotal("Actions", "Max Actions", metric, { max: 30 }));
   }
 
   function sheetGrid(...content) {
@@ -2356,27 +3055,17 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       sheetTotals = undefined;
       return;
     }
-    const [keyStats, , , saves, starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
+    const [, , , saves] = sheetRules.classes[className];
     const ancestry = ancestries.get(ancestrySelect.value);
-    byId("my-sheet-subtitle").textContent = [nameInput.value.trim(), `${className} · Level ${level}`, subclass,
-      ancestry?.name].filter(Boolean).join(" · ");
     byId("my-level-up").disabled = level >= 20;
     sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
-    const { stats, metrics, skills, hitDie } = sheetTotals;
-    renderVitals(metrics, hitDie, refreshOnly);
+    const { skills } = sheetTotals;
+    renderPlayDashboard(current, ancestry, saves.split(" "));
 
     const statFields = byId("my-sheet-stat-fields");
     const base = sheetRules.baseArray(className, "Standard");
     const [advantage, disadvantage] = saves.split(" ");
     const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal");
-    byId("my-sheet-attributes").replaceChildren(...sheetRules.stats.map((stat) => {
-      const value = stats[stat];
-      const isKey = keyStats.split(" ").includes(stat);
-      const save = saveMode(stat);
-      return sheetValue(stat, value, { signed: true,
-        caption: `${isKey ? "Key stat · " : ""}Base ${value.parts[0][1] >= 0 ? "+" : ""}${value.parts[0][1]}${save !== "Normal" ? ` · ${save} on saves` : ""}` });
-    }));
-    byId("my-sheet-skills").replaceChildren(...Object.entries(skills).map(([skill, value]) => sheetValue(skill, value, { signed: true })));
     const preset = sheetInput("Apply a starting array", "preset", {
       value: "", choices: [["", "Choose a preset"], ...sheetOptions(sheetRules.arrays)],
       onChange: (choice) => {
@@ -2418,7 +3107,197 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       const input = statFields.querySelector(`[data-sheet-field="${key}"]`);
       if (input) for (const option of input.options) option.disabled = Boolean(option.value && option.value === sheet[other]);
     }
+    renderSheetEquipment(current, features, ancestry, refreshOnly);
+    if (refreshOnly) refreshKeyText();
+  }
 
+    const heroic = {
+      exploration: [],
+      actions: [
+        ["Ask a Question", "Assess (DC 10): Ask about a weakness, ability, or immediate plans. The GM answers honestly.", "QuestionIcon"],
+        ["Move", "Travel up to your Speed in spaces.", "MoveIcon"],
+        ["Create an Opening", "Assess (DC 10): Raise the next Primary Die rolled against the target this round by one face.", "BrokenShield"],
+        ["Anticipate Danger", "Assess (DC 10): Lower all Primary Dice rolled against you this round by one face.", "ShieldIcon"],
+        ["Cast a Spell", "You need a free hand or a held focus, and must be able to speak. See each spell for its action and mana cost.", "SpellsIcon"]
+      ],
+      reactions: [
+        ["Defend", "Reduce damage from an incoming attack by your Defense. Critical hits ignore Defense.", "ShieldIcon"],
+        ["Interpose", "When a creature within Reach 2 is hit, enter its space and take the hit instead. It moves to an adjacent space."],
+        ["Opportunity Attack", "Make a melee attack with disadvantage against an adjacent creature that willingly moves away."],
+        ["Help", "Explain how you can help an ally reroll. The GM may require a check. Only one Help per roll."]
+      ]
+    };
+    function abilityModes({ activation = "", description = "", name = "" }) {
+      const modes = new Set();
+      if (/reaction|when(?:ever)? you defend/i.test(activation) ||
+          /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free |[0-9]+ actions?:?\s*)?reaction\b|when(?:ever)? you Defend\b/i.test(description)) modes.add("reactions");
+      if (/^(?:free |heroic )?(?:\d+ )?actions?\b/i.test(activation) ||
+          /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free action|action:|\d+ actions?\b)/i.test(description)) modes.add("actions");
+      if (!modes.size) {
+        const category = featureCategory({ activation, description, name });
+        modes.add(category === "Reactions" ? "reactions" : category === "Attacks & combat actions" ? "actions" : "exploration");
+      }
+      if (sheetRules.isCombatPassive(activation, description, modes)) {
+        modes.add("actions");
+        modes.add("reactions");
+      }
+      return [...modes];
+    }
+    function tagPlayAbility(item, modes) {
+      item.dataset.playMode = [...new Set(modes)].join(" ");
+      item.classList.add("play-ability");
+    }
+    function applyPlayFilter() {
+      const matches = (item) => item.dataset.playMode.split(" ").includes(playMode);
+      for (const card of editor.querySelectorAll("[data-play-mode]")) card.hidden = !matches(card);
+      byId("my-play-spells").hidden = !spellOutput.querySelector("[data-play-mode]:not([hidden])");
+      for (const section of editor.querySelectorAll("#my-unlocks .ability-category, #my-origin-abilities > section, #my-spells .school-section")) {
+        const cards = [...section.querySelectorAll("[data-play-mode]")];
+        section.hidden = cards.length > 0 && !cards.some(matches);
+      }
+      for (const id of ["my-unlocks", "my-origin-abilities"]) {
+        const notes = byId(id).querySelector(":scope > details");
+        if (notes) notes.hidden = playMode !== "exploration";
+      }
+    }
+    function renderPlayMode() {
+      byId("my-turn").hidden = playMode === "exploration";
+      byId("my-free-action-note").hidden = playMode !== "actions";
+      byId("my-play-panel").setAttribute("aria-labelledby", `my-tab-${playMode}`);
+      for (const tab of editor.querySelectorAll(".play-tabs button")) {
+        const selected = tab.dataset.mode === playMode;
+        tab.tabIndex = selected ? 0 : -1;
+        tab.setAttribute("aria-selected", String(selected));
+      }
+      byId("my-heroic-actions").replaceChildren(...heroic[playMode].map(([name, text, image]) => {
+        const card = node("article", "play-action-card");
+        const content = node("div");
+        content.append(node("h4", "", name), node("p", "", text));
+        if (image) card.append(icon(image));
+        card.append(content);
+        return card;
+      }));
+      renderWeaponActions();
+      applyPlayFilter();
+    }
+    function renderWeaponActions() {
+      const cards = byId("my-heroic-actions");
+      for (const card of cards.querySelectorAll(".play-weapon")) card.remove();
+      if (playMode !== "actions") return;
+      for (const weapon of equippedWeapons(true)) {
+        const card = node("article", "play-action-card play-weapon");
+        const attack = weaponAttack(weapon);
+        const header = node("header", "play-weapon-heading");
+        header.append(node("h4", "", weapon), node("span", "play-attack-badge play-attack-cost", attack ? "1 action" : "Custom weapon"));
+        card.append(header);
+        if (attack) {
+          const damage = node("div", "play-attack-row");
+          damage.append(node("span", "play-attack-label", "Damage"));
+          for (const [index, { formula, stat }] of attack.damage.entries()) {
+            if (index) damage.append(node("span", "play-attack-label", "or"));
+            const badge = node("span", "play-attack-badge play-attack-damage");
+            badge.append(node("strong", "", formula), node("span", "", stat));
+            damage.append(badge);
+          }
+          const traits = node("ul", "play-attack-row play-attack-traits");
+          traits.setAttribute("aria-label", "Weapon traits");
+          for (const trait of attack.traits) {
+            const badge = node("li", "play-attack-badge", trait);
+            if (/^(?:Reach|Range|Thrown)\b/.test(trait)) badge.classList.add("play-attack-reach");
+            traits.append(badge);
+          }
+          card.append(damage, traits);
+        } else card.append(node("p", "", "Use this weapon’s recorded attack rules."));
+        cards.append(card);
+      }
+    }
+    for (const tab of editor.querySelectorAll(".play-tabs button")) {
+      tab.addEventListener("click", () => { playMode = tab.dataset.mode; renderPlayMode(); });
+      tab.addEventListener("keydown", (event) => {
+        const modes = Object.keys(heroic);
+        const index = modes.indexOf(playMode);
+        const next = { ArrowRight: (index + 1) % 3, ArrowLeft: (index + 2) % 3, Home: 0, End: 2 }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        byId(`my-tab-${modes[next]}`).click();
+        byId(`my-tab-${modes[next]}`).focus();
+      });
+    }
+    playName.addEventListener("change", () => {
+      nameInput.value = playName.value.trim();
+      playName.value = nameInput.value;
+      if (activeName && nameInput.value !== activeName && !profileBusy) queueSave(nameInput.value);
+    });
+    byId("my-sheet-override").addEventListener("click", (event) => {
+      overrideSheet = !overrideSheet;
+      event.currentTarget.setAttribute("aria-pressed", String(overrideSheet));
+      byId("my-sheet-stats").hidden = !overrideSheet;
+      refreshPlay();
+    });
+    byId("my-end-turn").addEventListener("click", () => {
+      writeSheet("currentActions", "");
+      renderActionPoints();
+      byId("my-sheet-status").textContent = "Actions refreshed.";
+    });
+    const fieldOptions = byId("my-field-options");
+    function setFieldOptions(open) {
+      fieldOptions.hidden = !open;
+      byId("my-field-rest").setAttribute("aria-expanded", String(open));
+    }
+    byId("my-field-rest").addEventListener("click", () => setFieldOptions(fieldOptions.hidden));
+    byId("my-safe-rest").addEventListener("click", () => {
+      delete sheet.currentHP;
+      delete sheet.currentHitDice;
+      if (!manaPool(character())?.encounter) delete sheet.currentMana;
+      for (const key of ["resource:Judgment Dice", "resource:Futuresight Dice"]) delete sheet[key];
+      sheet.wounds = String(Math.max(0, sheetRules.number(sheet.wounds) - 1));
+      autosave();
+      refreshPlay();
+      setFieldOptions(false);
+      byId("my-sheet-status").textContent = "Safe Rest applied: restored HP and Hit Dice, refreshed rest-based resources, and healed up to one Wound.";
+    });
+    fieldOptions.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const { metrics, stats, hitDie } = sheetTotals;
+      const remaining = tracked("currentHitDice", metrics["Hit Dice"].total);
+      const spent = byId("my-field-dice").valueAsNumber;
+      if (!Number.isInteger(spent) || spent < 1 || spent > remaining) {
+        byId("my-sheet-status").textContent = "Choose a number of Hit Dice you have left.";
+        return;
+      }
+      const takeMax = byId("my-field-method").value === "max";
+      const maxHP = metrics["Max HP"].total;
+      const before = tracked("currentHP", maxHP);
+      let restored = 0;
+      for (let die = 0; die < spent; die++) restored += Math.max(0, (takeMax ? hitDie : 1 + Math.floor(Math.random() * hitDie)) + stats.STR.total);
+      sheet.currentHP = String(Math.min(maxHP, before + restored));
+      sheet.currentHitDice = String(remaining - spent);
+      autosave();
+      refreshPlay();
+      setFieldOptions(false);
+      byId("my-sheet-status").textContent = `Field Rest applied: spent ${spent} Hit Dice and healed ${sheet.currentHP - before} HP.`;
+    });
+
+  function equippedWeapons(includeUnarmed = false) {
+    const weapons = (sheet.weapons || "").split(/\r?\n|,\s*(?![^()]*\))/).map((item) => item.trim()).filter(Boolean);
+    if (!weapons.length || (includeUnarmed && !weapons.includes("Unarmed Strike"))) weapons.push("Unarmed Strike");
+    return weapons;
+  }
+
+  function weaponAttack(weapon) {
+    if (!Object.hasOwn(sheetRules.weapons, weapon)) return null;
+    const [dice, statNames, traits] = sheetRules.weapons[weapon];
+    const damage = statNames.split("/").map((stat) => {
+      const total = sheetTotals.stats[stat].total;
+      return { stat, formula: `${dice}${total >= 0 ? "+" : ""}${total}` };
+    });
+    return { damage, traits: traits.split(", ") };
+  }
+
+  function renderSheetEquipment(current, features, ancestry, refreshOnly) {
+    const { className, level } = current;
+    const { stats, metrics } = sheetTotals;
+    const [, , , , starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
     const gear = byId("my-sheet-gear-fields");
     const applyGear = node("button", "school-button", "Use class starting gear");
     applyGear.type = "button";
@@ -2443,20 +3322,19 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     };
     const armorName = sheet.armor || "Unarmored";
     const armorCard = itemCard(armorName, "Armor");
-    const equipped = splitItems(sheet.weapons, /\r?\n|,\s*(?![^()]*\))/);
     equipment.replaceChildren(armorCard);
     if (sheet.shield) equipment.append(itemCard(sheet.shield, "Shield"));
-    for (const weapon of equipped.length ? equipped : ["Unarmed Strike"]) {
-      const entry = Object.hasOwn(sheetRules.weapons, weapon) && sheetRules.weapons[weapon];
-      const card = itemCard(weapon, equipped.length ? "Weapon" : "Unarmed");
+    for (const weapon of equippedWeapons()) {
+      const entry = weaponAttack(weapon);
+      const card = itemCard(weapon, weapon === "Unarmed Strike" ? "Unarmed" : "Weapon");
       equipment.append(card);
       if (!entry) continue;
-      const [dice, statNames, reach] = entry;
-      const modifiers = statNames.split("/").map((stat) => `${dice}${stats[stat].total >= 0 ? "+" : ""}${stats[stat].total} (${stat})`);
+      const damage = entry.damage.map(({ formula, stat }) => `${formula} (${stat})`).join(" or ");
       const attack = node("div", "sheet-item-action");
-      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", modifiers.join(" or ")), node("span", "", reach));
+      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", damage), node("span", "", entry.traits.join(", ")));
       card.append(attack);
     }
+    renderWeaponActions();
     const inventory = splitItems(sheet.inventory, sheet.inventory?.includes("\n") ? /\r?\n/ : /,\s*(?![^()]*\))/);
     byId("my-sheet-inventory").replaceChildren(...(inventory.length ? inventory : ["Nothing carried yet"]).map((item) => node("li", "", item)));
     byId("my-sheet-purse").replaceChildren(
@@ -2599,6 +3477,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     autosave();
     byId("my-sheet-status").textContent = `Level ${level} applied. Review any new picks in Feature Choices.`;
     if (sheetRules.capstone(currentFeatures())) {
+      byId("my-sheet-stats").hidden = false;
       byId("my-sheet-stats").open = true;
       byId("my-sheet-status").textContent = `Level ${level} applied. Choose your two stat increases in Stats, saves & skills.`;
       byId("my-sheet-stats").querySelector('[data-sheet-field="capstoneFirst"]')?.focus();
@@ -2617,11 +3496,39 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return list;
   }
 
+  function decoratePlaySpell(card, spell) {
+    const timing = sheetRules.spellTiming(spell);
+    card.dataset.playMode = timing.modes.join(" ");
+    const button = node("button", "play-cast", `Cast ${spell.name}`);
+    const status = node("p", "character-note play-cast-error");
+    status.setAttribute("role", "status");
+    button.type = "button";
+    button.addEventListener("click", () => {
+      const pool = manaPool(character());
+      const cost = playMode === "reactions" ? timing.reactionCost : spell.tier;
+      status.textContent = "";
+      if (pool?.label !== "Mana" && cost) {
+        status.textContent = `${spell.name} uses class-specific casting rules; no mana was spent.`;
+        return;
+      }
+      if (cost && cost > tracked("currentMana", pool.total)) {
+        status.textContent = `Not enough mana to cast ${spell.name} (${cost} needed).`;
+        return;
+      }
+      if (cost) {
+        writeSheet("currentMana", String(tracked("currentMana", pool.total) - cost));
+        refreshPlay();
+      }
+    });
+    card.append(button, status);
+  }
+
   function render() {
     const current = character();
     const { className, subclass, level } = current;
     output.replaceChildren();
     spellOutput.replaceChildren();
+    spellChoicesOutput.replaceChildren();
     featureChoices.replaceChildren();
     byId("my-casting").hidden = true;
     byId("my-choices-summary").textContent = "Feature Choices";
@@ -2724,12 +3631,15 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
               progression.append(detail);
             }
             addAbilityEdit(item, `ability:class:${JSON.stringify([className, rows[0].subclass, name])}`);
+            tagPlayAbility(item, rows.flatMap(abilityModes));
             list.append(item);
           }
           section.append(node("h3", "", category), list);
           unlocked.append(section);
         }
         unlockedSection.hidden = !unlocked.childElementCount;
+        applyPlayFilter();
+        refreshKeyText();
       }
       function rerenderPick(key) {
         render();
@@ -2857,15 +3767,15 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
                   return;
                 }
                 refreshFeaturePicks();
+                if (/(?:key|secondary) stat/i.test(f.name)) renderSheet(current, features, true);
                 renderAbilities();
-                if (/(?:key|secondary) stat/i.test(f.name)) renderSheet(current, features);
               });
               label.append(select);
               item.append(label, explanation);
             }
             if (hasSpellChoices) {
               const hint = node("p", "character-note", "Choose the spells for this feature in the ");
-              const link = node("a", "", "Selectable spells below");
+              const link = node("a", "", "Manage spell choices");
               link.href = "#my-selectable-spells";
               link.addEventListener("click", (event) => {
                 event.preventDefault();
@@ -2918,10 +3828,11 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
       }
       if (notes.childElementCount) output.append(optional("class-notes", "Class sheet notes & hints", notes));
 
-      if (entries.length || spellChoices.size) {
-        spellOutput.append(node("p", "character-note", rules.explanation(current)));
+      const originSpell = utilities.get(backgroundSpell.value);
+      if (entries.length || spellChoices.size || originSpell) {
         const keyFor = (spell) => JSON.stringify([className, subclass, spell.school, spell.name]);
         const states = new Map(entries.map(({ spell, state }) => [spell, state]));
+        if (originSpell) states.set(originSpell, "known");
         const arcaneSpells = new Map(optionRows().filter(({ spell, source }) => spell && source === "Arcane Command")
           .map(({ spell, level }) => [spell, level]));
         for (const spell of arcaneSpells.keys()) states.set(spell, "known");
@@ -2971,7 +3882,7 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
             }
             render();
             autosave();
-            const replacement = [...spellOutput.querySelectorAll(".character-pick input")].find((input) =>
+            const replacement = [...spellChoicesOutput.querySelectorAll(".character-pick input")].find((input) =>
               input.value === keyFor(spell) && !input.disabled);
             const panel = replacement?.closest("#my-selectable-spells");
             if (learning) {
@@ -2979,29 +3890,26 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
               focusTarget?.focus({ preventScroll: true });
               window.scrollTo({ top: scrollTop, behavior: "instant" });
             } else if (panel && !panel.open) panel.querySelector("summary").focus();
-            else (replacement || byId("my-spells-title"))?.focus();
+            else (replacement || (byId("my-play-spells").hidden ? byId(`my-tab-${playMode}`) : byId("my-spells-title"))).focus();
           });
           label.append(checkbox, document.createTextNode(` Learned: ${spell.name}`));
           card.append(label);
           if (checkbox.disabled) card.append(node("p", "character-note", "All matching feature picks are in use."));
         };
         const describeSpell = (spell) => rules.characterSpellDescription(spell, className, features);
-        const section = heading("Character spells", characterSpells.length
-          ? spellList(characterSpells, decorateCard, describeSpell)
-          : node("p", "character-note", "No spells known yet. Choose from Selectable spells below."));
-        section.firstElementChild.id = "my-spells-title";
-        section.firstElementChild.tabIndex = -1;
-        spellOutput.append(section);
-        if (selectable.length) {
-          const panel = optional("spells", `Selectable spells (${selectable.length})`, spellList(selectable, decorateCard, describeSpell));
+        if (characterSpells.length) spellOutput.append(spellList(characterSpells, decoratePlaySpell, describeSpell));
+        const learnable = cards.filter(({ spell }) => !arcaneSpells.has(spell) &&
+          (states.get(spell) === "option" || spellChoices.has(spell)));
+        if (learnable.length) {
+          const panel = optional("spells", `Manage spell choices (${selectable.length} available)`, spellList(learnable, decorateCard, describeSpell));
           panel.id = "my-selectable-spells";
-          spellOutput.append(panel);
+          spellChoicesOutput.append(panel);
         }
-      } else {
-        spellOutput.append(node("p", "character-note", "No spells are listed for this class, subclass, and level."));
       }
       if (subclass.endsWith(" (story)")) output.append(node("p", "character-note", "Story-based subclasses require GM approval."));
     }
+    renderPlayMode();
+    refreshKeyText();
   }
 
   classSelect.addEventListener("change", () => { closeLevelGuide(); updateSubclass(); render(); autosave(); });
@@ -3044,6 +3952,11 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     resetExtraForm();
     renderExtraChoices();
     sheet = { ...saved?.sheet };
+    closePortraitCrop();
+    portrait = saved?.portrait || "";
+    renderPortrait();
+    setFieldOptions(false);
+    byId("my-condition-picker").open = false;
     renderOrigins();
     picks = { ...saved?.picks };
     featurePicks = { ...saved?.featurePicks };
@@ -3098,7 +4011,8 @@ footer span:nth-child(2) { font: italic 13px Georgia, serif; letter-spacing: 0; 
     return { ...character(), notePages: notePages.map((page) => ({ ...page })),
       ancestry: ancestrySelect.value, background: backgroundSelect.value, secondBackground: secondBackground.value,
       backgroundSpell: backgroundSpell.value, extraAbilities: extraAbilities.map((entry) => ({ ...entry })),
-      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet } };
+      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet },
+      ...(portrait ? { portrait } : {}) };
   }
 
   async function persistProfile(name, profile, previousName = null) {

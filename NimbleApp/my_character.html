@@ -71,8 +71,8 @@
     <p id="my-prompt" class="notice">Choose a class and level to see your automatic unlocks. No profile or optional picks are required.</p>
     <section id="my-sheet" class="hero-sheet" aria-labelledby="my-sheet-title" hidden>
       <header class="sheet-heading">
-        <div><h2 id="my-sheet-title" tabindex="-1">Character sheet</h2><p id="my-sheet-subtitle"></p></div>
-        <button type="button" class="school-button" id="my-level-up">Level up</button>
+        <h2 id="my-sheet-title" tabindex="-1">Character sheet</h2>
+        <button type="button" class="school-button" id="my-sheet-override" aria-pressed="false">Override</button>
       </header>
       <section id="my-level-guide" class="character-options" aria-labelledby="my-level-guide-title" hidden>
         <h3 id="my-level-guide-title" tabindex="-1"></h3>
@@ -95,23 +95,83 @@
         <button type="button" class="school-button" id="my-level-cancel">Cancel</button>
       </section>
       <p class="character-note" id="my-sheet-status" role="status"></p>
-      <div id="my-sheet-vitals" class="sheet-vitals">
-        <section class="sheet-panel sheet-health" aria-labelledby="my-health-title">
-          <h3 id="my-health-title">Health</h3>
-          <div class="sheet-metrics" id="my-health-values"></div>
-        </section>
-        <section class="sheet-panel sheet-combat" aria-labelledby="my-combat-title">
-          <h3 id="my-combat-title">Combat</h3>
-          <div class="sheet-metrics" id="my-combat-values"></div>
+      <div class="play-dashboard">
+        <div class="play-identity">
+          <label class="play-cell"><input id="my-play-name" type="text" maxlength="80"><span>Name</span></label>
+          <div class="play-cell"><strong id="my-sheet-subtitle"></strong><span>Level · Class · Subclass</span></div>
+        </div>
+        <div id="my-sheet-attributes" class="play-attributes"></div>
+        <div class="play-conditions">
+          <details id="my-condition-picker"><summary>Conditions</summary><div id="my-condition-options"></div></details>
+          <div id="my-condition-badges"></div>
+        </div>
+        <div class="play-health">
+          <div class="play-pair play-hp" id="my-play-hp"></div>
+          <div class="play-pair play-defense" id="my-play-defense"></div>
+          <div class="play-resources" id="my-play-resources"></div>
+        </div>
+        <div class="play-ancestry play-cell"><strong id="my-play-ancestry"></strong><span>Ancestry</span></div>
+        <div class="play-dice" id="my-play-dice"></div>
+        <div class="play-motion" id="my-play-motion"></div>
+        <div class="play-portrait">
+          <button type="button" class="play-portrait-picker" id="my-portrait-picker">
+            <img id="my-portrait-image" alt="" hidden>
+            <span class="play-portrait-label" id="my-portrait-label">Upload image</span>
+          </button>
+          <input type="file" id="my-portrait-file" accept="image/png,image/jpeg,image/webp" hidden>
+          <button type="button" class="school-button" id="my-level-up">Level up</button>
+          <button type="button" class="school-button" id="my-portrait-remove" hidden>Remove photo</button>
+        </div>
+        <p class="character-note" id="my-portrait-status" role="status"></p>
+        <form class="play-crop" id="my-portrait-crop" hidden>
+          <canvas id="my-portrait-preview" width="192" height="192" role="img" aria-label="Square portrait crop preview"></canvas>
+          <div>
+            <label>Horizontal position <input id="my-portrait-x" type="range" min="0" max="100" value="50"></label>
+            <label>Vertical position <input id="my-portrait-y" type="range" min="0" max="100" value="50"></label>
+            <label>Zoom <input id="my-portrait-zoom" type="range" min="1" max="5" step=".05" value="1"></label>
+            <button type="submit">Save square crop</button>
+            <button type="button" id="my-portrait-cancel">Cancel</button>
+          </div>
+        </form>
+        <div id="my-sheet-skills" class="play-skills" aria-label="Skills"></div>
+        <div class="play-rest">
+          <div id="my-play-wounds"></div>
+          <div class="play-rest-buttons">
+            <button type="button" id="my-safe-rest">Safe Rest</button>
+            <button type="button" id="my-field-rest" aria-expanded="false" aria-controls="my-field-options">Field Rest</button>
+            <span class="play-info" tabindex="0" aria-describedby="my-rest-hint">ⓘ
+              <span id="my-rest-hint" class="play-tooltip" role="tooltip">Safe Rest: GM-approved safe lodging; restore HP, Hit Dice and mana, and heal 1 Wound. Field Rest: 10 minutes to roll spent Hit Dice + STR, or 8 hours with food and sleep to take maximum rolls instead.</span>
+            </span>
+          </div>
+          <form id="my-field-options" hidden>
+            <label>Rest method <select id="my-field-method"><option value="roll">Catch Breath (10 min)</option><option value="max">Make Camp (8 hours)</option></select></label>
+            <label>Hit Dice to spend <input type="number" id="my-field-dice" min="1" value="1" required></label>
+            <button type="submit">Apply Field Rest</button>
+          </form>
+        </div>
+      </div>
+      <div class="play-body">
+        <div class="play-tabs" role="tablist" aria-label="Play mode">
+          <button type="button" id="my-tab-exploration" role="tab" data-mode="exploration" aria-selected="true" aria-controls="my-play-panel">Exploration</button>
+          <button type="button" id="my-tab-actions" role="tab" data-mode="actions" aria-selected="false" aria-controls="my-play-panel" tabindex="-1">Actions</button>
+          <button type="button" id="my-tab-reactions" role="tab" data-mode="reactions" aria-selected="false" aria-controls="my-play-panel" tabindex="-1">Reactions</button>
+        </div>
+        <section id="my-play-panel" role="tabpanel" aria-labelledby="my-tab-exploration">
+          <div id="my-turn" class="play-turn" hidden>
+            <div id="my-action-points" class="play-points" aria-label="Action points"></div>
+            <button id="my-end-turn" type="button">End turn</button>
+          </div>
+          <div id="my-heroic-actions" class="play-cards"></div>
+          <p id="my-free-action-note" class="play-note" hidden><strong>Free action:</strong> Once on your turn, do one simple task without spending an action, such as opening an unlocked door, dropping an item, or ending Concentration.</p>
+          <div id="my-unlocks"></div>
+          <div id="my-origin-abilities"></div>
+          <section id="my-play-spells" aria-labelledby="my-spells-title" hidden>
+            <div class="play-spell-heading"><h3 id="my-spells-title" tabindex="-1">Spells</h3><div id="my-play-mana"></div></div>
+            <div id="my-spells"></div>
+          </section>
         </section>
       </div>
-      <section class="sheet-panel" aria-labelledby="my-attributes-title">
-        <h3 id="my-attributes-title">Attributes &amp; saves</h3>
-        <div class="sheet-attributes" id="my-sheet-attributes"></div>
-        <h4>Skills</h4>
-        <div class="sheet-skills" id="my-sheet-skills"></div>
-      </section>
-      <details class="character-options" id="my-sheet-stats">
+      <details class="character-options" id="my-sheet-stats" hidden>
         <summary>Edit stats, saves &amp; skills</summary>
         <div id="my-sheet-stat-fields"></div>
       </details>
@@ -137,17 +197,17 @@
         <summary>Edit languages, movement &amp; other adjustments</summary>
         <div id="my-sheet-adjustments"></div>
       </details>
-    </section>
-    <div id="my-unlocks"></div>
-    <div id="my-origin-abilities"></div>
+      <details class="character-options">
+        <summary>Casting rules and limits</summary>
     <div id="my-casting" class="casting-summary" hidden>
       <div id="my-mana-box"><span id="my-resource-label" class="eyebrow">MANA</span><output id="my-mana"></output>
         <label id="my-mana-stat-field" hidden><span id="my-mana-stat-label"></span><input id="my-mana-stat" type="number" step="1" placeholder="Optional"></label>
       </div>
+        </details>
+      </section>
       <div id="my-tier-box"><span class="eyebrow">MAXIMUM SPELL TIER</span><output id="my-max-tier"></output></div>
       <div id="my-dice-box" hidden><span id="my-dice-label" class="eyebrow"></span><output id="my-dice"></output></div>
     </div>
-    <div id="my-spells"></div>
     <dialog id="my-create-dialog" aria-labelledby="my-create-title">
       <form id="my-create-form">
         <header><p class="eyebrow" id="my-create-progress"></p><h2 id="my-create-title" tabindex="-1"></h2></header>

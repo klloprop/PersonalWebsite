@@ -19,7 +19,7 @@ import { SITE_TITLE } from '../../consts';
 const user = Astro.locals.user!;
 const libraryPath = '/tavern/library';
 const nimblePath = `${libraryPath}?view=nimble`;
-const showNimble = Astro.url.searchParams.get('view') === 'nimble';
+const showNimble = Astro.url.searchParams.get('view') !== 'files';
 const referenceSrc = `${libraryPath}/reference.html?embed=1#spells`;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 
@@ -799,7 +799,7 @@ function fileIcon(ext: string): string {
 	<body>
 		<Header />
 		<nav class="library-nav" id="library-nav" aria-label="Library views">
-			<a href={libraryPath} aria-current={showNimble ? undefined : 'page'}>Files</a>
+			<a href={`${libraryPath}?view=files`} aria-current={showNimble ? undefined : 'page'}>Files</a>
 			<a href={nimblePath} aria-current={showNimble ? 'page' : undefined}>Nimble</a>
 		</nav>
 		<main id="library-nimble" hidden={!showNimble}>
@@ -997,7 +997,7 @@ function fileIcon(ext: string): string {
 
 			function showLibraryView() {
 				if (!filesPanel || !nimblePanel || !nimbleFrame) return;
-				const showNimble = new URLSearchParams(location.search).get('view') === 'nimble';
+				const showNimble = new URLSearchParams(location.search).get('view') !== 'files';
 				if (!showNimble && !nimblePanel.hidden) {
 					const focused = nimbleFrame.contentDocument?.activeElement;
 					if (focused && 'blur' in focused && typeof focused.blur === 'function') focused.blur();

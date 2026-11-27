@@ -3,6 +3,7 @@
 import json
 import re
 import sqlite3
+from base64 import b64encode
 from contextlib import closing
 from html import escape
 from pathlib import Path
@@ -56,6 +57,12 @@ def build() -> str:
     origins = json.dumps(json.loads((ROOT / "character_origins.json").read_text(encoding="utf-8")),
                          ensure_ascii=False).replace("<", "\\u003c")
     css = (ROOT / "styles.css").read_text(encoding="utf-8")
+    image_dir = ROOT.parent / "adorable-accretion" / "public" / "images" / "NimbleSheet"
+    images = sorted(path for path in image_dir.glob("*.png") if path.stem not in {"TotalLayout", "DuckPortrait"})
+    css += "\n:root {" + "".join(
+        f"--image-{path.stem}:url(data:image/png;base64,{b64encode(path.read_bytes()).decode('ascii')});"
+        for path in images
+    ) + "}"
     scripts = "\n".join(
         f"<script>\n{(ROOT / filename).read_text(encoding='utf-8')}\n</script>"
         for filename in ("character.js", "sheet.js", "app.js", "conditions.js", "my_character.js")
@@ -68,7 +75,7 @@ def build() -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
   <title>Nimble Spellbook | Offline</title>
   <style>{css}</style>
 </head>

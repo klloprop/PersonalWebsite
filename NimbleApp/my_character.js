@@ -28,6 +28,8 @@
   const status = byId("my-status");
   const output = byId("my-unlocks");
   const spellOutput = byId("my-spells");
+  const spellChoicesOutput = node("div");
+  featureChoices.after(spellChoicesOutput);
   const storageKey = "nimble-offline-characters-v1";
   const accountStore = window.NimbleProfileStore;
   const saveButton = byId("my-save");
@@ -43,6 +45,7 @@
   let manaStats = {};
   const sheetRules = window.CharacterSheetRules;
   let sheet = {};
+  let portrait = "";
   let sheetTotals;
   let pendingLevel = 0;
   let notePages = [{ title: "General", text: "" }];
@@ -51,6 +54,17 @@
   let extraAbilities = [];
   let editingExtra = -1;
   let openSections = new Set();
+  let overrideSheet = false;
+  let playMode = "exploration";
+  const playName = byId("my-play-name");
+  const portraitPicker = byId("my-portrait-picker");
+  const portraitFile = byId("my-portrait-file");
+  const portraitCrop = byId("my-portrait-crop");
+  const portraitStatus = byId("my-portrait-status");
+  const portraitPreview = byId("my-portrait-preview");
+  const portraitControls = ["x", "y", "zoom"].map((axis) => byId(`my-portrait-${axis}`));
+  let cropImage;
+  let cropRequest = 0;
   for (const name of Object.keys(rules.classes)) classSelect.add(new Option(name));
   for (let level = 1; level <= 20; level++) levelSelect.add(new Option(String(level)));
 
@@ -60,6 +74,92 @@
     if (text !== undefined) element.textContent = text;
     return element;
   }
+
+  function renderPortrait() {
+    const image = byId("my-portrait-image");
+    image.hidden = !portrait;
+    if (portrait) image.src = portrait;
+    else image.removeAttribute("src");
+    byId("my-portrait-label").textContent = portrait ? "Replace image" : "Upload image";
+    byId("my-portrait-remove").hidden = !portrait;
+  }
+
+  function closePortraitCrop() {
+    cropRequest++;
+    cropImage = undefined;
+    portraitCrop.hidden = true;
+    portraitStatus.textContent = "";
+  }
+
+  function drawPortrait() {
+    const [x, y, zoom] = portraitControls.map((input) => input.valueAsNumber);
+    const { naturalWidth: width, naturalHeight: height } = cropImage;
+    const side = Math.min(width, height) / zoom;
+    const context = portraitPreview.getContext("2d");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, portraitPreview.width, portraitPreview.height);
+    context.drawImage(cropImage, (width - side) * x / 100, (height - side) * y / 100, side, side,
+      0, 0, portraitPreview.width, portraitPreview.height);
+  }
+
+  portraitPicker.addEventListener("click", () => portraitFile.click());
+  portraitFile.addEventListener("change", async () => {
+    const file = portraitFile.files[0];
+    portraitFile.value = "";
+    if (!file) return;
+    closePortraitCrop();
+    const request = cropRequest;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      portraitStatus.textContent = "Choose a PNG, JPEG, or WebP no larger than 10 MB.";
+      return;
+    }
+    try {
+      const source = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = source;
+      await image.decode();
+      if (request !== cropRequest) return;
+      cropImage = image;
+      portraitControls.forEach((input) => { input.value = input.defaultValue; });
+      drawPortrait();
+      portraitCrop.hidden = false;
+      portraitControls[0].focus();
+    } catch {
+      if (request === cropRequest) portraitStatus.textContent = "Could not read that image. Try another PNG, JPEG, or WebP.";
+    }
+  });
+  for (const control of portraitControls) control.addEventListener("input", drawPortrait);
+  byId("my-portrait-cancel").addEventListener("click", () => {
+    closePortraitCrop();
+    portraitPicker.focus();
+  });
+  byId("my-portrait-remove").addEventListener("click", () => {
+    closePortraitCrop();
+    portrait = "";
+    renderPortrait();
+    autosave();
+    portraitPicker.focus();
+  });
+  portraitCrop.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!cropImage) return;
+    for (const quality of [0.85, 0.65, 0.45, 0.25]) {
+      const candidate = portraitPreview.toDataURL("image/jpeg", quality);
+      if (!candidate.startsWith("data:image/jpeg;base64,") || candidate.length > 24 * 1024) continue;
+      portrait = candidate;
+      closePortraitCrop();
+      renderPortrait();
+      autosave();
+      portraitPicker.focus();
+      return;
+    }
+    portraitStatus.textContent = "This crop is too large to save. Try a tighter crop or another image.";
+  });
 
   function refreshProfiles(selected = "") {
     profileSelect.replaceChildren(new Option("New character", ""));
@@ -236,8 +336,6 @@
     byId("my-background-spell-field").hidden = !hasUtility;
     backgroundSpell.disabled = !hasUtility;
     if (!hasUtility) backgroundSpell.value = "";
-    const utility = utilities.get(backgroundSpell.value);
-
     const groups = new Map(Object.keys(abilityGroups).map((kind) => [kind, []]));
     if (ancestry) groups.get("Ancestry").push({ ...ancestry, name: ancestry.trait, source: `${ancestry.name} · ${ancestry.size}` });
     for (const entry of selectedBackgrounds) groups.get("Background").push({ ...entry, page: 15 });
@@ -253,14 +351,14 @@
         item.append(node("span", "keyword-badge arsenal-badge", entry.source || kind));
         if (entry.page) item.append(node("small", "", ` · Core Rules · PDF page ${entry.page}`));
         if (entry.description) item.append(node("p", "feature-description", entry.description));
-        if (entry.utilitySpell && utility) {
-          item.append(optional("background-spell", `Learned: ${utility.name}`, spellList([{ spell: utility, state: "known" }])));
-        }
+        tagPlayAbility(item, abilityModes(entry));
         if (entry.page) addAbilityEdit(item, `ability:origin:${JSON.stringify([kind, entry.name])}`);
         list.append(item);
       }
       output.append(heading(abilityGroups[kind], list));
     }
+    applyPlayFilter();
+    refreshKeyText(output);
   }
 
   function renderExtraChoices() {
@@ -327,6 +425,7 @@
         extraName.focus();
       }
       renderOrigins();
+      if (select !== ancestrySelect) render();
       autosave();
     });
   }
@@ -458,6 +557,20 @@
     return data ? rules.unlockedFeatures(data.features, { ...current, companionSize }) : [];
   }
 
+  const keyText = new WeakMap();
+  function refreshKeyText(root = editor) {
+    if (!sheetTotals || !character().className) return;
+    for (const description of root.querySelectorAll(".feature-description, .spell-description")) {
+      const walker = document.createTreeWalker(description, NodeFilter.SHOW_TEXT);
+      for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+        const formula = keyText.get(text) ?? text.data;
+        if (!/\bKEY\b/.test(formula)) continue;
+        keyText.set(text, formula);
+        text.data = sheetRules.resolveKey(formula, sheetTotals.key);
+      }
+    }
+  }
+
   function sheetValue(name, { parts, total }, { suffix = "", caption = "", signed = false } = {}) {
     const card = node("div", "sheet-value");
     const breakdown = parts.filter(([, value], index) => value !== 0 || !index)
@@ -473,49 +586,216 @@
     return card;
   }
 
-  function renderVitals(metrics, hitDie, refreshOnly) {
-    const groups = [
-      ["my-health-values", [
-        ["currentHP", "Current HP", metrics["Max HP"].total],
-        ["tempHP", "Temp HP", 0],
-        ["Max HP"],
-        ["wounds", "Wounds taken", 0],
-        ["Max Wounds"],
-        ["currentHitDice", "Hit Dice left", metrics["Hit Dice"].total],
-        ["Hit Dice", undefined, undefined, ` × d${hitDie}`, "Max Hit Dice"]
-      ]],
-      ["my-combat-values", [
-        ["currentActions", "Actions left", metrics.Actions.total],
-        ["Actions", undefined, undefined, "", "Max Actions"], ["Defense"], ["Initiative"], ["Speed", undefined, undefined, " spaces"]
-      ]]
-    ];
-    for (const [id, fields] of groups) {
-      const wrapper = byId(id);
-      const cards = fields.map(([key, label, fallback, suffix, heading]) => {
-        if (!label) return sheetValue(heading ?? key, metrics[key], { suffix });
-        const field = sheetInput(label, key, { className: "sheet-tracker" });
-        const input = field.querySelector("input");
-        input.placeholder = String(fallback);
-        input.title = `Defaults to ${fallback} when left blank`;
-        return field;
-      });
-      if (!refreshOnly) {
-        wrapper.replaceChildren(...cards);
-        continue;
-      }
-      cards.forEach((card, index) => {
-        const existing = wrapper.children[index];
-        if (existing.classList.contains("sheet-tracker")) {
-          const input = existing.querySelector("input");
-          const next = card.querySelector("input");
-          input.placeholder = next.placeholder;
-          input.title = next.title;
-        } else {
-          existing.querySelector("output").textContent = card.querySelector("output").textContent;
-          existing.querySelector(".sheet-breakdown").textContent = card.querySelector(".sheet-breakdown").textContent;
-        }
-      });
+  const tracked = (key, max) => Math.max(0, Math.min(max, sheetRules.number(sheet[key], max)));
+  const refreshPlay = () => renderSheet(character(), currentFeatures(), true);
+  const icon = (name) => {
+    const image = node("span", "play-icon");
+    image.style.backgroundImage = `var(--image-${name})`;
+    if (name === "MoveIcon" || name === "InitiativeIcon") image.classList.add("play-white-icon");
+    image.setAttribute("aria-hidden", "true");
+    return image;
+  };
+  function playField(label, key, fallback, { bonus, min = 0, max = 9999 } = {}) {
+    const field = node("label", "play-cell");
+    const input = node("input");
+    input.type = "number";
+    input.min = min;
+    input.max = max;
+    input.value = fallback;
+    input.dataset.playField = key;
+    input.addEventListener("change", () => {
+      if (input.value !== "" && !input.reportValidity()) return;
+      writeSheet(key, input.value === "" ? "" : bonus === undefined ? input.value : String(input.valueAsNumber - fallback + bonus));
+      const focused = document.activeElement === input;
+      refreshPlay();
+      if (focused) [...editor.querySelectorAll("[data-play-field]")].find((item) => item.dataset.playField === key)?.focus({ preventScroll: true });
+    });
+    field.append(input, node("span", "", label));
+    return field;
+  }
+  function playTotal(key, label, value, options = {}) {
+    const bonusKey = `bonus:${key}`;
+    if (overrideSheet) return playField(label, bonusKey, value.total, { bonus: sheetRules.number(sheet[bonusKey]), ...options });
+    const field = sheetValue(label, value, options);
+    field.classList.add("play-cell");
+    return field;
+  }
+  function manaPool(current) {
+    const resource = rules.castingResource(current);
+    if (!resource.stat) return null;
+    const base = Math.max(0, sheetRules.number(manaStats[resource.stat], sheetTotals.stats[resource.stat].total) * resource.multiplier + resource.bonus);
+    const bonus = sheetRules.number(sheet["bonus:Mana"]);
+    return { parts: [[resource.unit, base], ["Manual bonus", bonus]], total: Math.max(0, base + bonus),
+      label: current.className === "Manawright (Artificer)" ? "Mana Dice" : "Mana", encounter: resource.unit === "mana at Initiative" };
+  }
+  function renderPlayDashboard(current, ancestry, saves) {
+    const { metrics, stats, skills, hitDie, key } = sheetTotals;
+    const keyAttributes = sheetRules.keyStats(current.className);
+    if (document.activeElement !== playName) playName.value = nameInput.value;
+    byId("my-sheet-subtitle").textContent = [`Level ${current.level}`, current.className, current.subclass].filter(Boolean).join(" · ");
+    byId("my-play-ancestry").textContent = ancestry?.name ||
+      (ancestrySelect.value === "__custom" ? extraAbilities.find(({ kind }) => kind === "Ancestry")?.name || "Custom" : "Not chosen");
+    const hp = Math.max(0, metrics["Max HP"].total);
+    const dice = Math.max(0, metrics["Hit Dice"].total);
+    const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === saves[0] ? "Advantage" : stat === saves[1] ? "Disadvantage" : "Normal");
+    byId("my-play-hp").replaceChildren(icon("HPIcon"), playField("Current HP", "currentHP", tracked("currentHP", hp), { max: hp }),
+      playTotal("Max HP", "Max HP", metrics["Max HP"]));
+    const tempHP = playField("Temp HP", "tempHP", sheetRules.number(sheet.tempHP));
+    const defense = playTotal("Defense", "Defense", metrics.Defense, { min: -9999 });
+    const diceHint = node("strong", "play-dice-hint");
+    diceHint.append(icon("HitDiceIcon"), `Hit Dice · d${hitDie}`);
+    byId("my-play-defense").replaceChildren(tempHP, defense);
+    byId("my-play-dice").replaceChildren(diceHint,
+      playField("Current Hit Dice", "currentHitDice", tracked("currentHitDice", dice), { max: dice }), playTotal("Hit Dice", "Max Hit Dice", metrics["Hit Dice"]));
+    const speed = playTotal("Speed", "Speed", metrics.Speed);
+    const initiative = playTotal("Initiative", "Initiative", metrics.Initiative, { min: -9999 });
+    initiative.dataset.stat = "DEX";
+    for (const [field, image] of [[tempHP, "TempHPIcon"], [defense, "ShieldIcon"], [speed, "MoveIcon"], [initiative, "InitiativeIcon"]]) {
+      field.classList.add("play-icon-cell");
+      field.append(icon(image));
     }
+    byId("my-play-motion").replaceChildren(speed, initiative);
+    const mainStats = sheetRules.stats.map((stat) => {
+      const card = playTotal(stat, stat, stats[stat], { signed: true, min: -9999 });
+      card.dataset.stat = stat;
+      card.dataset.save = saveMode(stat);
+      card.setAttribute("title", `${stat} save: ${saveMode(stat)}`);
+      if (keyAttributes.includes(stat)) {
+        const isHighest = stats[stat].total === key;
+        const label = card.querySelector(".sheet-label") || card.lastElementChild;
+        const badge = node("b", "play-key-badge", "KEY");
+        badge.title = isHighest ? `Highest KEY stat (${key})` : "Class KEY stat";
+        badge.setAttribute("aria-label", badge.title);
+        label.append(" ", badge);
+        card.title += ` · ${badge.title}`;
+      }
+      return card;
+    });
+    byId("my-sheet-attributes").replaceChildren(...mainStats);
+    byId("my-sheet-skills").replaceChildren(...Object.keys(skills).sort().map((skill) => {
+      const card = overrideSheet
+        ? playField(skill, `skill:${skill}`, skills[skill].total, { bonus: sheetRules.number(sheet[`skill:${skill}`]), min: -9999 })
+        : playTotal(skill, skill, skills[skill], { signed: true });
+      card.dataset.stat = sheetRules.skills[skill];
+      return card;
+    }));
+    const pool = manaPool(current);
+    const secondary = rules.secondaryResource(current);
+    const resources = byId("my-play-resources");
+    const resourceCards = [];
+    if (pool) resourceCards.push(playField(pool.label, "currentMana", tracked("currentMana", pool.total), { max: pool.total }), playTotal("Mana", `Max ${pool.label}`, pool));
+    if (secondary) {
+      const caption = {
+        "Thrill of the Hunt Charges": "Hunt Charges",
+        "Futuresight Dice": "Futuresight",
+        "Judgment Dice": "Judgment"
+      }[secondary.label] || secondary.label;
+      const info = sheetRules.resolveKey(secondary.value, key);
+      const die = info.match(/^\d*d\d+\b/)?.[0];
+      if (secondary.label !== "Mana Die Size") {
+        const starting = secondary.label === "Futuresight Dice" ? Number.parseInt(secondary.value, 10) : 0;
+        const fieldKey = `resource:${secondary.label}`;
+        const field = playField(caption, fieldKey, sheetRules.number(sheet[fieldKey], starting));
+        field.querySelector("input").setAttribute("aria-label", secondary.label);
+        resourceCards.push(resourceHelp(field, secondary.label, info));
+      }
+      if (die) resourceCards.push(playResourceHint(secondary.label === "Mana Die Size" ? "Die size" : "Dice", die, secondary.label, info));
+    }
+    if (!resourceCards.length && current.className === "Shadowmancer" && current.level >= 2) {
+      resourceCards.push(playResourceHint("Resource", "Pilfered Power", "Pilfered Power", rules.castingResource(current).text));
+    }
+    resources.replaceChildren(...resourceCards);
+    byId("my-play-mana").replaceChildren(...(pool?.label === "Mana" ? [
+      playField("Current mana", "currentMana", tracked("currentMana", pool.total), { max: pool.total }),
+      playTotal("Mana", "Maximum mana", pool)
+    ] : []));
+    renderConditions();
+    const maxWounds = Math.max(1, metrics["Max Wounds"].total);
+    const wounds = Math.min(maxWounds, Math.max(0, sheetRules.number(sheet.wounds)));
+    const tracker = byId("my-play-wounds");
+    const dots = node("div", "play-wound-dots");
+    for (let count = 1; count <= maxWounds; count++) {
+      const button = node("button", "play-wound-dot");
+      button.type = "button";
+      button.setAttribute("aria-label", wounds === count ? `Clear ${count} wounds` : `Set ${count} wounds`);
+      button.setAttribute("aria-pressed", String(count <= wounds));
+      if (count === maxWounds) button.append(icon("DeathIcon"));
+      button.addEventListener("click", () => {
+        writeSheet("wounds", String(wounds === count ? 0 : count));
+        refreshPlay();
+        tracker.querySelectorAll("button")[count - 1]?.focus({ preventScroll: true });
+      });
+      dots.append(button);
+    }
+    tracker.replaceChildren(icon("WoundIcon"), dots, overrideSheet
+      ? playTotal("Max Wounds", "Max Wounds", metrics["Max Wounds"], { min: 1 })
+      : node("span", "play-wound-label", `Wounds · ${wounds}/${maxWounds}`));
+    byId("my-field-dice").max = tracked("currentHitDice", dice);
+    byId("my-field-rest").disabled = Number(byId("my-field-dice").max) === 0;
+    renderActionPoints();
+  }
+  function playResourceHint(label, text, name, info) {
+    const field = node("div", "play-cell");
+    field.tabIndex = 0;
+    field.append(node("strong", "", text), node("span", "", label));
+    return resourceHelp(field, name, info);
+  }
+  function resourceHelp(field, name, info) {
+    const target = field.querySelector("input") || field;
+    const hint = node("span", "sheet-breakdown", `${name}: ${info}`);
+    hint.id = `resource-hint-${name.toLowerCase().replace(/[^a-z]+/g, "-")}-${field.tagName.toLowerCase()}`;
+    hint.setAttribute("role", "tooltip");
+    field.classList.add("play-resource");
+    field.append(hint);
+    target.setAttribute("aria-describedby", hint.id);
+    return field;
+  }
+  function renderConditions() {
+    const selected = (sheet.conditions || "").split("|");
+    const options = byId("my-condition-options");
+    const badges = byId("my-condition-badges");
+    if (!options.childElementCount) {
+      for (const [name, effect] of window.NimbleCoreConditions) {
+        const label = node("label", "", name);
+        label.title = effect;
+        const input = node("input");
+        input.type = "checkbox";
+        input.value = name;
+        input.addEventListener("change", () => {
+          writeSheet("conditions", [...options.querySelectorAll("input:checked")].map((item) => item.value).join("|"));
+          renderConditions();
+        });
+        label.prepend(input);
+        options.append(label);
+      }
+    }
+    badges.replaceChildren(...window.NimbleCoreConditions.filter(([name]) => selected.includes(name)).map(([name, effect]) => {
+      const badge = node("span", "", name);
+      badge.title = effect;
+      return badge;
+    }));
+    for (const input of options.querySelectorAll("input")) input.checked = selected.includes(input.value);
+  }
+  function renderActionPoints() {
+    const metric = sheetTotals.metrics.Actions;
+    const max = Math.max(0, metric.total);
+    const current = tracked("currentActions", max);
+    const bar = byId("my-action-points");
+    bar.replaceChildren();
+    for (let index = 0; index < max; index++) {
+      const ready = index < current;
+      const point = node("button", "play-point");
+      point.type = "button";
+      point.setAttribute("aria-pressed", String(ready));
+      point.setAttribute("aria-label", `Action point ${index + 1}: ${ready ? "available; spend one" : "spent; restore one"}`);
+      point.addEventListener("click", () => {
+        writeSheet("currentActions", String(current + (ready ? -1 : 1)));
+        renderActionPoints();
+        bar.querySelectorAll("button")[index]?.focus({ preventScroll: true });
+      });
+      bar.append(point);
+    }
+    if (overrideSheet) bar.append(playTotal("Actions", "Max Actions", metric, { max: 30 }));
   }
 
   function sheetGrid(...content) {
@@ -536,27 +816,17 @@
       sheetTotals = undefined;
       return;
     }
-    const [keyStats, , , saves, starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
+    const [, , , saves] = sheetRules.classes[className];
     const ancestry = ancestries.get(ancestrySelect.value);
-    byId("my-sheet-subtitle").textContent = [nameInput.value.trim(), `${className} · Level ${level}`, subclass,
-      ancestry?.name].filter(Boolean).join(" · ");
     byId("my-level-up").disabled = level >= 20;
     sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
-    const { stats, metrics, skills, hitDie } = sheetTotals;
-    renderVitals(metrics, hitDie, refreshOnly);
+    const { skills } = sheetTotals;
+    renderPlayDashboard(current, ancestry, saves.split(" "));
 
     const statFields = byId("my-sheet-stat-fields");
     const base = sheetRules.baseArray(className, "Standard");
     const [advantage, disadvantage] = saves.split(" ");
     const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal");
-    byId("my-sheet-attributes").replaceChildren(...sheetRules.stats.map((stat) => {
-      const value = stats[stat];
-      const isKey = keyStats.split(" ").includes(stat);
-      const save = saveMode(stat);
-      return sheetValue(stat, value, { signed: true,
-        caption: `${isKey ? "Key stat · " : ""}Base ${value.parts[0][1] >= 0 ? "+" : ""}${value.parts[0][1]}${save !== "Normal" ? ` · ${save} on saves` : ""}` });
-    }));
-    byId("my-sheet-skills").replaceChildren(...Object.entries(skills).map(([skill, value]) => sheetValue(skill, value, { signed: true })));
     const preset = sheetInput("Apply a starting array", "preset", {
       value: "", choices: [["", "Choose a preset"], ...sheetOptions(sheetRules.arrays)],
       onChange: (choice) => {
@@ -598,7 +868,197 @@
       const input = statFields.querySelector(`[data-sheet-field="${key}"]`);
       if (input) for (const option of input.options) option.disabled = Boolean(option.value && option.value === sheet[other]);
     }
+    renderSheetEquipment(current, features, ancestry, refreshOnly);
+    if (refreshOnly) refreshKeyText();
+  }
 
+    const heroic = {
+      exploration: [],
+      actions: [
+        ["Ask a Question", "Assess (DC 10): Ask about a weakness, ability, or immediate plans. The GM answers honestly.", "QuestionIcon"],
+        ["Move", "Travel up to your Speed in spaces.", "MoveIcon"],
+        ["Create an Opening", "Assess (DC 10): Raise the next Primary Die rolled against the target this round by one face.", "BrokenShield"],
+        ["Anticipate Danger", "Assess (DC 10): Lower all Primary Dice rolled against you this round by one face.", "ShieldIcon"],
+        ["Cast a Spell", "You need a free hand or a held focus, and must be able to speak. See each spell for its action and mana cost.", "SpellsIcon"]
+      ],
+      reactions: [
+        ["Defend", "Reduce damage from an incoming attack by your Defense. Critical hits ignore Defense.", "ShieldIcon"],
+        ["Interpose", "When a creature within Reach 2 is hit, enter its space and take the hit instead. It moves to an adjacent space."],
+        ["Opportunity Attack", "Make a melee attack with disadvantage against an adjacent creature that willingly moves away."],
+        ["Help", "Explain how you can help an ally reroll. The GM may require a check. Only one Help per roll."]
+      ]
+    };
+    function abilityModes({ activation = "", description = "", name = "" }) {
+      const modes = new Set();
+      if (/reaction|when(?:ever)? you defend/i.test(activation) ||
+          /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free |[0-9]+ actions?:?\s*)?reaction\b|when(?:ever)? you Defend\b/i.test(description)) modes.add("reactions");
+      if (/^(?:free |heroic )?(?:\d+ )?actions?\b/i.test(activation) ||
+          /(?:^|[.!?]\s+)(?:\([^)]*\)\s*)?(?:free action|action:|\d+ actions?\b)/i.test(description)) modes.add("actions");
+      if (!modes.size) {
+        const category = featureCategory({ activation, description, name });
+        modes.add(category === "Reactions" ? "reactions" : category === "Attacks & combat actions" ? "actions" : "exploration");
+      }
+      if (sheetRules.isCombatPassive(activation, description, modes)) {
+        modes.add("actions");
+        modes.add("reactions");
+      }
+      return [...modes];
+    }
+    function tagPlayAbility(item, modes) {
+      item.dataset.playMode = [...new Set(modes)].join(" ");
+      item.classList.add("play-ability");
+    }
+    function applyPlayFilter() {
+      const matches = (item) => item.dataset.playMode.split(" ").includes(playMode);
+      for (const card of editor.querySelectorAll("[data-play-mode]")) card.hidden = !matches(card);
+      byId("my-play-spells").hidden = !spellOutput.querySelector("[data-play-mode]:not([hidden])");
+      for (const section of editor.querySelectorAll("#my-unlocks .ability-category, #my-origin-abilities > section, #my-spells .school-section")) {
+        const cards = [...section.querySelectorAll("[data-play-mode]")];
+        section.hidden = cards.length > 0 && !cards.some(matches);
+      }
+      for (const id of ["my-unlocks", "my-origin-abilities"]) {
+        const notes = byId(id).querySelector(":scope > details");
+        if (notes) notes.hidden = playMode !== "exploration";
+      }
+    }
+    function renderPlayMode() {
+      byId("my-turn").hidden = playMode === "exploration";
+      byId("my-free-action-note").hidden = playMode !== "actions";
+      byId("my-play-panel").setAttribute("aria-labelledby", `my-tab-${playMode}`);
+      for (const tab of editor.querySelectorAll(".play-tabs button")) {
+        const selected = tab.dataset.mode === playMode;
+        tab.tabIndex = selected ? 0 : -1;
+        tab.setAttribute("aria-selected", String(selected));
+      }
+      byId("my-heroic-actions").replaceChildren(...heroic[playMode].map(([name, text, image]) => {
+        const card = node("article", "play-action-card");
+        const content = node("div");
+        content.append(node("h4", "", name), node("p", "", text));
+        if (image) card.append(icon(image));
+        card.append(content);
+        return card;
+      }));
+      renderWeaponActions();
+      applyPlayFilter();
+    }
+    function renderWeaponActions() {
+      const cards = byId("my-heroic-actions");
+      for (const card of cards.querySelectorAll(".play-weapon")) card.remove();
+      if (playMode !== "actions") return;
+      for (const weapon of equippedWeapons(true)) {
+        const card = node("article", "play-action-card play-weapon");
+        const attack = weaponAttack(weapon);
+        const header = node("header", "play-weapon-heading");
+        header.append(node("h4", "", weapon), node("span", "play-attack-badge play-attack-cost", attack ? "1 action" : "Custom weapon"));
+        card.append(header);
+        if (attack) {
+          const damage = node("div", "play-attack-row");
+          damage.append(node("span", "play-attack-label", "Damage"));
+          for (const [index, { formula, stat }] of attack.damage.entries()) {
+            if (index) damage.append(node("span", "play-attack-label", "or"));
+            const badge = node("span", "play-attack-badge play-attack-damage");
+            badge.append(node("strong", "", formula), node("span", "", stat));
+            damage.append(badge);
+          }
+          const traits = node("ul", "play-attack-row play-attack-traits");
+          traits.setAttribute("aria-label", "Weapon traits");
+          for (const trait of attack.traits) {
+            const badge = node("li", "play-attack-badge", trait);
+            if (/^(?:Reach|Range|Thrown)\b/.test(trait)) badge.classList.add("play-attack-reach");
+            traits.append(badge);
+          }
+          card.append(damage, traits);
+        } else card.append(node("p", "", "Use this weapon’s recorded attack rules."));
+        cards.append(card);
+      }
+    }
+    for (const tab of editor.querySelectorAll(".play-tabs button")) {
+      tab.addEventListener("click", () => { playMode = tab.dataset.mode; renderPlayMode(); });
+      tab.addEventListener("keydown", (event) => {
+        const modes = Object.keys(heroic);
+        const index = modes.indexOf(playMode);
+        const next = { ArrowRight: (index + 1) % 3, ArrowLeft: (index + 2) % 3, Home: 0, End: 2 }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        byId(`my-tab-${modes[next]}`).click();
+        byId(`my-tab-${modes[next]}`).focus();
+      });
+    }
+    playName.addEventListener("change", () => {
+      nameInput.value = playName.value.trim();
+      playName.value = nameInput.value;
+      if (activeName && nameInput.value !== activeName && !profileBusy) queueSave(nameInput.value);
+    });
+    byId("my-sheet-override").addEventListener("click", (event) => {
+      overrideSheet = !overrideSheet;
+      event.currentTarget.setAttribute("aria-pressed", String(overrideSheet));
+      byId("my-sheet-stats").hidden = !overrideSheet;
+      refreshPlay();
+    });
+    byId("my-end-turn").addEventListener("click", () => {
+      writeSheet("currentActions", "");
+      renderActionPoints();
+      byId("my-sheet-status").textContent = "Actions refreshed.";
+    });
+    const fieldOptions = byId("my-field-options");
+    function setFieldOptions(open) {
+      fieldOptions.hidden = !open;
+      byId("my-field-rest").setAttribute("aria-expanded", String(open));
+    }
+    byId("my-field-rest").addEventListener("click", () => setFieldOptions(fieldOptions.hidden));
+    byId("my-safe-rest").addEventListener("click", () => {
+      delete sheet.currentHP;
+      delete sheet.currentHitDice;
+      if (!manaPool(character())?.encounter) delete sheet.currentMana;
+      for (const key of ["resource:Judgment Dice", "resource:Futuresight Dice"]) delete sheet[key];
+      sheet.wounds = String(Math.max(0, sheetRules.number(sheet.wounds) - 1));
+      autosave();
+      refreshPlay();
+      setFieldOptions(false);
+      byId("my-sheet-status").textContent = "Safe Rest applied: restored HP and Hit Dice, refreshed rest-based resources, and healed up to one Wound.";
+    });
+    fieldOptions.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const { metrics, stats, hitDie } = sheetTotals;
+      const remaining = tracked("currentHitDice", metrics["Hit Dice"].total);
+      const spent = byId("my-field-dice").valueAsNumber;
+      if (!Number.isInteger(spent) || spent < 1 || spent > remaining) {
+        byId("my-sheet-status").textContent = "Choose a number of Hit Dice you have left.";
+        return;
+      }
+      const takeMax = byId("my-field-method").value === "max";
+      const maxHP = metrics["Max HP"].total;
+      const before = tracked("currentHP", maxHP);
+      let restored = 0;
+      for (let die = 0; die < spent; die++) restored += Math.max(0, (takeMax ? hitDie : 1 + Math.floor(Math.random() * hitDie)) + stats.STR.total);
+      sheet.currentHP = String(Math.min(maxHP, before + restored));
+      sheet.currentHitDice = String(remaining - spent);
+      autosave();
+      refreshPlay();
+      setFieldOptions(false);
+      byId("my-sheet-status").textContent = `Field Rest applied: spent ${spent} Hit Dice and healed ${sheet.currentHP - before} HP.`;
+    });
+
+  function equippedWeapons(includeUnarmed = false) {
+    const weapons = (sheet.weapons || "").split(/\r?\n|,\s*(?![^()]*\))/).map((item) => item.trim()).filter(Boolean);
+    if (!weapons.length || (includeUnarmed && !weapons.includes("Unarmed Strike"))) weapons.push("Unarmed Strike");
+    return weapons;
+  }
+
+  function weaponAttack(weapon) {
+    if (!Object.hasOwn(sheetRules.weapons, weapon)) return null;
+    const [dice, statNames, traits] = sheetRules.weapons[weapon];
+    const damage = statNames.split("/").map((stat) => {
+      const total = sheetTotals.stats[stat].total;
+      return { stat, formula: `${dice}${total >= 0 ? "+" : ""}${total}` };
+    });
+    return { damage, traits: traits.split(", ") };
+  }
+
+  function renderSheetEquipment(current, features, ancestry, refreshOnly) {
+    const { className, level } = current;
+    const { stats, metrics } = sheetTotals;
+    const [, , , , starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
     const gear = byId("my-sheet-gear-fields");
     const applyGear = node("button", "school-button", "Use class starting gear");
     applyGear.type = "button";
@@ -623,20 +1083,19 @@
     };
     const armorName = sheet.armor || "Unarmored";
     const armorCard = itemCard(armorName, "Armor");
-    const equipped = splitItems(sheet.weapons, /\r?\n|,\s*(?![^()]*\))/);
     equipment.replaceChildren(armorCard);
     if (sheet.shield) equipment.append(itemCard(sheet.shield, "Shield"));
-    for (const weapon of equipped.length ? equipped : ["Unarmed Strike"]) {
-      const entry = Object.hasOwn(sheetRules.weapons, weapon) && sheetRules.weapons[weapon];
-      const card = itemCard(weapon, equipped.length ? "Weapon" : "Unarmed");
+    for (const weapon of equippedWeapons()) {
+      const entry = weaponAttack(weapon);
+      const card = itemCard(weapon, weapon === "Unarmed Strike" ? "Unarmed" : "Weapon");
       equipment.append(card);
       if (!entry) continue;
-      const [dice, statNames, reach] = entry;
-      const modifiers = statNames.split("/").map((stat) => `${dice}${stats[stat].total >= 0 ? "+" : ""}${stats[stat].total} (${stat})`);
+      const damage = entry.damage.map(({ formula, stat }) => `${formula} (${stat})`).join(" or ");
       const attack = node("div", "sheet-item-action");
-      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", modifiers.join(" or ")), node("span", "", reach));
+      attack.append(node("span", "sheet-label", "Attack · 1 action"), node("strong", "", damage), node("span", "", entry.traits.join(", ")));
       card.append(attack);
     }
+    renderWeaponActions();
     const inventory = splitItems(sheet.inventory, sheet.inventory?.includes("\n") ? /\r?\n/ : /,\s*(?![^()]*\))/);
     byId("my-sheet-inventory").replaceChildren(...(inventory.length ? inventory : ["Nothing carried yet"]).map((item) => node("li", "", item)));
     byId("my-sheet-purse").replaceChildren(
@@ -779,6 +1238,7 @@
     autosave();
     byId("my-sheet-status").textContent = `Level ${level} applied. Review any new picks in Feature Choices.`;
     if (sheetRules.capstone(currentFeatures())) {
+      byId("my-sheet-stats").hidden = false;
       byId("my-sheet-stats").open = true;
       byId("my-sheet-status").textContent = `Level ${level} applied. Choose your two stat increases in Stats, saves & skills.`;
       byId("my-sheet-stats").querySelector('[data-sheet-field="capstoneFirst"]')?.focus();
@@ -797,11 +1257,39 @@
     return list;
   }
 
+  function decoratePlaySpell(card, spell) {
+    const timing = sheetRules.spellTiming(spell);
+    card.dataset.playMode = timing.modes.join(" ");
+    const button = node("button", "play-cast", `Cast ${spell.name}`);
+    const status = node("p", "character-note play-cast-error");
+    status.setAttribute("role", "status");
+    button.type = "button";
+    button.addEventListener("click", () => {
+      const pool = manaPool(character());
+      const cost = playMode === "reactions" ? timing.reactionCost : spell.tier;
+      status.textContent = "";
+      if (pool?.label !== "Mana" && cost) {
+        status.textContent = `${spell.name} uses class-specific casting rules; no mana was spent.`;
+        return;
+      }
+      if (cost && cost > tracked("currentMana", pool.total)) {
+        status.textContent = `Not enough mana to cast ${spell.name} (${cost} needed).`;
+        return;
+      }
+      if (cost) {
+        writeSheet("currentMana", String(tracked("currentMana", pool.total) - cost));
+        refreshPlay();
+      }
+    });
+    card.append(button, status);
+  }
+
   function render() {
     const current = character();
     const { className, subclass, level } = current;
     output.replaceChildren();
     spellOutput.replaceChildren();
+    spellChoicesOutput.replaceChildren();
     featureChoices.replaceChildren();
     byId("my-casting").hidden = true;
     byId("my-choices-summary").textContent = "Feature Choices";
@@ -904,12 +1392,15 @@
               progression.append(detail);
             }
             addAbilityEdit(item, `ability:class:${JSON.stringify([className, rows[0].subclass, name])}`);
+            tagPlayAbility(item, rows.flatMap(abilityModes));
             list.append(item);
           }
           section.append(node("h3", "", category), list);
           unlocked.append(section);
         }
         unlockedSection.hidden = !unlocked.childElementCount;
+        applyPlayFilter();
+        refreshKeyText();
       }
       function rerenderPick(key) {
         render();
@@ -1037,15 +1528,15 @@
                   return;
                 }
                 refreshFeaturePicks();
+                if (/(?:key|secondary) stat/i.test(f.name)) renderSheet(current, features, true);
                 renderAbilities();
-                if (/(?:key|secondary) stat/i.test(f.name)) renderSheet(current, features);
               });
               label.append(select);
               item.append(label, explanation);
             }
             if (hasSpellChoices) {
               const hint = node("p", "character-note", "Choose the spells for this feature in the ");
-              const link = node("a", "", "Selectable spells below");
+              const link = node("a", "", "Manage spell choices");
               link.href = "#my-selectable-spells";
               link.addEventListener("click", (event) => {
                 event.preventDefault();
@@ -1098,10 +1589,11 @@
       }
       if (notes.childElementCount) output.append(optional("class-notes", "Class sheet notes & hints", notes));
 
-      if (entries.length || spellChoices.size) {
-        spellOutput.append(node("p", "character-note", rules.explanation(current)));
+      const originSpell = utilities.get(backgroundSpell.value);
+      if (entries.length || spellChoices.size || originSpell) {
         const keyFor = (spell) => JSON.stringify([className, subclass, spell.school, spell.name]);
         const states = new Map(entries.map(({ spell, state }) => [spell, state]));
+        if (originSpell) states.set(originSpell, "known");
         const arcaneSpells = new Map(optionRows().filter(({ spell, source }) => spell && source === "Arcane Command")
           .map(({ spell, level }) => [spell, level]));
         for (const spell of arcaneSpells.keys()) states.set(spell, "known");
@@ -1151,7 +1643,7 @@
             }
             render();
             autosave();
-            const replacement = [...spellOutput.querySelectorAll(".character-pick input")].find((input) =>
+            const replacement = [...spellChoicesOutput.querySelectorAll(".character-pick input")].find((input) =>
               input.value === keyFor(spell) && !input.disabled);
             const panel = replacement?.closest("#my-selectable-spells");
             if (learning) {
@@ -1159,29 +1651,26 @@
               focusTarget?.focus({ preventScroll: true });
               window.scrollTo({ top: scrollTop, behavior: "instant" });
             } else if (panel && !panel.open) panel.querySelector("summary").focus();
-            else (replacement || byId("my-spells-title"))?.focus();
+            else (replacement || (byId("my-play-spells").hidden ? byId(`my-tab-${playMode}`) : byId("my-spells-title"))).focus();
           });
           label.append(checkbox, document.createTextNode(` Learned: ${spell.name}`));
           card.append(label);
           if (checkbox.disabled) card.append(node("p", "character-note", "All matching feature picks are in use."));
         };
         const describeSpell = (spell) => rules.characterSpellDescription(spell, className, features);
-        const section = heading("Character spells", characterSpells.length
-          ? spellList(characterSpells, decorateCard, describeSpell)
-          : node("p", "character-note", "No spells known yet. Choose from Selectable spells below."));
-        section.firstElementChild.id = "my-spells-title";
-        section.firstElementChild.tabIndex = -1;
-        spellOutput.append(section);
-        if (selectable.length) {
-          const panel = optional("spells", `Selectable spells (${selectable.length})`, spellList(selectable, decorateCard, describeSpell));
+        if (characterSpells.length) spellOutput.append(spellList(characterSpells, decoratePlaySpell, describeSpell));
+        const learnable = cards.filter(({ spell }) => !arcaneSpells.has(spell) &&
+          (states.get(spell) === "option" || spellChoices.has(spell)));
+        if (learnable.length) {
+          const panel = optional("spells", `Manage spell choices (${selectable.length} available)`, spellList(learnable, decorateCard, describeSpell));
           panel.id = "my-selectable-spells";
-          spellOutput.append(panel);
+          spellChoicesOutput.append(panel);
         }
-      } else {
-        spellOutput.append(node("p", "character-note", "No spells are listed for this class, subclass, and level."));
       }
       if (subclass.endsWith(" (story)")) output.append(node("p", "character-note", "Story-based subclasses require GM approval."));
     }
+    renderPlayMode();
+    refreshKeyText();
   }
 
   classSelect.addEventListener("change", () => { closeLevelGuide(); updateSubclass(); render(); autosave(); });
@@ -1224,6 +1713,11 @@
     resetExtraForm();
     renderExtraChoices();
     sheet = { ...saved?.sheet };
+    closePortraitCrop();
+    portrait = saved?.portrait || "";
+    renderPortrait();
+    setFieldOptions(false);
+    byId("my-condition-picker").open = false;
     renderOrigins();
     picks = { ...saved?.picks };
     featurePicks = { ...saved?.featurePicks };
@@ -1278,7 +1772,8 @@
     return { ...character(), notePages: notePages.map((page) => ({ ...page })),
       ancestry: ancestrySelect.value, background: backgroundSelect.value, secondBackground: secondBackground.value,
       backgroundSpell: backgroundSpell.value, extraAbilities: extraAbilities.map((entry) => ({ ...entry })),
-      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet } };
+      picks: { ...picks }, featurePicks: { ...featurePicks }, manaStats: { ...manaStats }, sheet: { ...sheet },
+      ...(portrait ? { portrait } : {}) };
   }
 
   async function persistProfile(name, profile, previousName = null) {

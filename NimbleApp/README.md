@@ -46,12 +46,10 @@ and Greater catalogs. Psionic ability choices are limited to the ranks unlocked
 when the choice is granted.
 Selected catalog abilities are highlighted, while sidebars such as Rigorous
 Training appear separately under **Class sheet notes & hints**.
-Unlocked **Progression** features are visible alongside other abilities. The casting summary
-sits just above **Character spells**. Pick eligible spells in the expandable
-**Selectable spells** section. Once learned, a spell moves to its school group
-in **Character spells** without scrolling the page. Unchecking it
-returns it to **Selectable spells**. Feature-granted spell cards name the
-granting feature, and **Feature Choices** links to the picker.
+Unlocked **Progression** features are visible alongside other abilities.
+Pick eligible spells under **Feature Choices → Manage spell choices**.
+Learned spells appear in their school group under **Spells**. Unchecking one
+in the picker removes it from the play tabs.
 In **Origin & Other Ability Choices**, pick an ancestry and background from the
 Core Rules. Their ability summaries appear in separate groups with PDF citations.
 Academy Dropout also lets you choose a Utility Spell. Use **Add ability** for
@@ -70,12 +68,25 @@ it and open its level 1 sheet. Back preserves your choices; Cancel leaves the
 current sheet unchanged. For imported or higher-level characters, use the
 manual sheet controls and **Save manual sheet** instead.
 
-Track HP, Wounds, Hit Dice, and actions directly in the Health and Combat
-panels. Hover over or keyboard-focus a total to see its contributing rules and
-manual bonuses. Base stats, skills, gold, equipment, carried items, and known
-languages stay visible when their editors are closed. Weapon attacks appear on
-their equipment cards. Ability cards let you apply a personal rules override
-without losing the original text.
+Use the sheet dashboard to track health, wounds, Hit Dice, conditions, and
+class resources. Ability scores stay aligned with or without a KEY badge.
+On phones, health and Hit Dice each get their own row, and
+skills are listed in two columns. **Override** unlocks calculated totals without
+altering the underlying class rules. Use **Safe Rest** in GM-approved lodging, or spend
+Hit Dice in **Field Rest** after catching your breath or making camp.
+**Exploration**, **Actions**, and **Reactions** filter the character's abilities
+and known spells. The **Spells** section appears only when the current tab has
+spells to show. Click a diamond to spend or restore an action; **End turn**
+refills the bar. **Cast** spends the spell's base mana cost when the character
+uses mana. Learn or unlearn optional spells under **Feature Choices → Manage
+spell choices**. Select **Upload image** in the portrait square to upload a PNG, JPEG, or WebP, then
+choose a square crop. Only that crop saves with the character. Equipment, gold,
+inventory, and languages remain visible farther down the sheet.
+Weapon cards under **Actions** group damage, action cost, reach, and other
+traits so they can be scanned in either Tavern theme.
+The **KEY** badges mark class key stats. Abilities and spells use the highest
+current total among those stats. Hover over or focus a class resource for
+its full rules.
 
 Use **Level up** to preview new class features, take the flat HP increase or
 enter a roll, and allocate the new skill point. Subclass choices are offered

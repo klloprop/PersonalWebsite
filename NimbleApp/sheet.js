@@ -52,9 +52,21 @@
   }
 
   function baseArray(className, array) {
-    const key = classes[className][0].split(" ");
+    const key = keyStats(className);
     const order = [...key, ...stats.filter((stat) => !key.includes(stat))];
     return Object.fromEntries(order.map((stat, index) => [stat, arrays[array][index]]));
+  }
+
+  function keyStats(className) {
+    return classes[className][0].split(" ");
+  }
+
+  function resolveKey(text, key) {
+    return text.replace(/(?:\b(\d+)\s*([+×])\s*)?(\+\s*)?\bKEY\b(?![-\s]+(?:[Ss]tats?|STATS?)\b)/g,
+      (_match, operand, operator, plus) => {
+        if (operator) return String(operator === "×" ? Number(operand) * key : Number(operand) + key);
+        return plus && key >= 0 ? `+${key}` : String(key);
+      });
   }
 
   function startingGear(className) {
@@ -103,6 +115,7 @@
     const [, hitDie, startingHP] = classes[className];
     const totals = statTotals(character, sheet, features, picks);
     const value = (stat) => totals[stat].total;
+    const key = Math.max(...keyStats(className).map(value));
     const has = (name) => features.some((feature) => feature.name === name);
     const gear = Object.hasOwn(armor, sheet.armor) ? sheet.armor : "";
     const [armorValue, armorStat, cap, secondStat] = armor[gear];
@@ -125,10 +138,10 @@
       [`Level ${index + 2} HP`, number(sheet[`hp:${index + 2}`], hitDie / 2)]);
     const grants = skillGrants(level, sheet);
     return {
-      stats: totals, hitDie,
+      stats: totals, hitDie, key,
       metrics: {
         "Max HP": measure("Max HP", [["Starting HP", startingHP], ...hpSteps]),
-        "Hit Dice": measure("Hit Dice", [["Level", level]]),
+        "Hit Dice": measure("Hit Dice", [["Level", level], ...(has("Potent Bloom") ? [["Potent Bloom (KEY)", key]] : [])]),
         "Max Wounds": measure("Max Wounds", [["Base", 6]]),
         Defense: measure("Defense", defense),
         Initiative: measure("Initiative", [["DEX", value("DEX")], ...(swift ? [["Swift Feet", swift]] : [])]),
@@ -144,7 +157,23 @@
     };
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, capstone, skillGrants };
+  function spellTiming(spell) {
+    const text = spell.description || "";
+    const reactionOnly = /\bReaction:|^Castable only while Defending\b/i.test(text);
+    const reactionAlso = /\bcast (?:as a Reaction|while Defending)\b/i.test(text);
+    const modes = ["exploration"];
+    if (!reactionOnly && /\bactions?\b/i.test(spell.casting_time || "")) modes.push("actions");
+    if (reactionOnly || reactionAlso) modes.push("reactions");
+    const reactionCost = text.match(/cast as a Reaction for (\d+) mana/i)?.[1];
+    return { modes, reactionCost: reactionCost === undefined ? spell.tier : Number(reactionCost) };
+  }
+
+  function isCombatPassive(activation, description, modes) {
+    if (!modes.has("exploration") || /\b(?:action|reaction)\b/i.test(activation)) return false;
+    return /\b(?:combat|attacks?|damage|crits?|critical hits?|defense|initiative|temporar(?:y|ily) HP|temp HP|resistan(?:t|ce)|vulnerab(?:le|ility)|saving throws?)\b/i.test(description);
+  }
+
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, capstone, skillGrants, spellTiming, isCombatPassive };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

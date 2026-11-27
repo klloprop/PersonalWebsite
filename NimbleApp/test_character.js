@@ -11,6 +11,40 @@ const { availability, castingResource, featureCategory, maxTier, featureSummary,
 const offlineHtml = readFileSync(join(__dirname, "Nimble-Spellbook-Offline.html"), "utf8");
 const classSheets = JSON.parse(offlineHtml.match(/<script id="offline-features" type="application\/json">(.*?)<\/script>/s)[1]);
 
+test("play spell timing separates defense reactions, dual-mode casting and rituals", () => {
+  const timing = (description, casting_time, tier) => sheetRules.spellTiming({ description, casting_time, tier });
+  assert.deepEqual(timing("Castable only while Defending.", "0 Actions", 3),
+    { modes: ["exploration", "reactions"], reactionCost: 3 });
+  assert.deepEqual(timing("Cast as a Reaction for 1 mana.", "1 Action", 0),
+    { modes: ["exploration", "actions", "reactions"], reactionCost: 1 });
+  assert.deepEqual(timing("Spend one hour preparing.", "1 hour", 2).modes, ["exploration"]);
+});
+
+test("combat passives can appear in both combat tabs without promoting exploration or active abilities", () => {
+  const exploration = new Set(["exploration"]);
+  assert.equal(sheetRules.isCombatPassive("", "Gain advantage on ranged attacks.", exploration), true);
+  assert.equal(sheetRules.isCombatPassive("", "Advantage on checks to find food and water.", exploration), false);
+  assert.equal(sheetRules.isCombatPassive("", "Discern the events of a past encounter by studying tracks.", exploration), false);
+  assert.equal(sheetRules.isCombatPassive("Reaction", "Reduce damage from an attack.", new Set(["reactions"])), false);
+});
+
+test("KEY uses the highest current class KEY stat and ignores higher secondary stats", () => {
+  const character = { className: "Hexbinder", subclass: "", level: 7 };
+  const features = unlockedFeatures(classSheets.Hexbinder.features, character);
+  const extras = [{ name: "Potent Bloom" }];
+  const sheet = { "base:INT": "2", "base:WIL": "3", "base:DEX": "8", "bonus:INT": "2" };
+  const totals = sheetRules.derived(character, sheet, [...features.filter((f) => f.name !== "Potent Bloom"), ...extras], {});
+  assert.equal(totals.key, 4);
+  assert.equal(totals.metrics["Hit Dice"].total, 11);
+  assert.equal(sheetRules.derived(character, { ...sheet, "bonus:WIL": "2" }, [], {}).key, 5);
+});
+
+test("KEY resolves fixed arithmetic but preserves dice and key stat choice wording", () => {
+  assert.equal(sheetRules.resolveKey("10+KEY damage; 2×KEY temp HP; 1d8+KEY HP; choose a KEY stat.", 3),
+    "13 damage; 6 temp HP; 1d8+3 HP; choose a KEY stat.");
+  assert.equal(sheetRules.resolveKey("1d8 + KEY HP; gain +KEY damage.", -1), "1d8 -1 HP; gain -1 damage.");
+});
+
 test("sheet totals separate starting stats, feature picks, and manual bonuses", () => {
   const character = { className: "Commander", subclass: "", level: 4 };
   const features = unlockedFeatures(classSheets.Commander.features, character);

@@ -17,6 +17,7 @@
     ["Taunted", "Attack with disadvantage unless targeting whoever Taunted you most recently."],
     ["Weakened X", "Subtract X from attack damage."]
   ];
+  window.NimbleCoreConditions = core;
   const special = [
     ["Bloodied", "At half your maximum HP or less."],
     ["Charged", "Taking lightning damage makes you Charged for one minute or until combat ends. Some spells interact with this status, including Overload and Electrickery."],

@@ -183,6 +183,334 @@ h1, h2, h3, p { margin-top: 0; }
   .sheet-health .sheet-metrics > :nth-child(-n+3) { grid-column: span 4; }
 }
 .sheet-ability-edit { font-size: .9em; margin-top: 4px; }
+.hero-sheet {
+  --play-fill: #fff7e9;
+  --play-line: #88612c;
+  --play-text: #352305;
+  --play-caption: #68491f;
+  --play-ready: #efb369;
+  --play-spent: #fffaf1;
+  --play-spent-line: #897667;
+  --play-icon-filter: brightness(.22);
+  --attack-cost: #edd9ac;
+  --attack-damage: #f8ded7;
+  --attack-reach: #dfe9db;
+  --attack-trait: #eee6d9;
+}
+.tavern-reference.dark .hero-sheet {
+  --play-fill: #3a2818;
+  --play-line: #f6c07a;
+  --play-text: #fff;
+  --play-caption: rgb(255 255 255 / 80%);
+  --play-ready: #f6c07a;
+  --play-spent: #fff;
+  --play-spent-line: #fff;
+  --play-icon-filter: none;
+  --attack-cost: #624520;
+  --attack-damage: #663535;
+  --attack-reach: #354c3c;
+  --attack-trait: #524032;
+}
+.hero-sheet [hidden] { display: none !important; }
+.play-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas: "identity health ancestry portrait" "attributes health dice portrait"
+    "conditions health motion portrait" "skills skills skills rest";
+  align-items: start; gap: 12px 24px; padding: 8px 0 0;
+  font-family: Arial, sans-serif; color: var(--play-text);
+}
+.play-identity { grid-area: identity; }
+.play-health { grid-area: health; padding-top: 33px; }
+.play-ancestry { grid-area: ancestry; }
+.play-attributes { grid-area: attributes; }
+.play-conditions { grid-area: conditions; }
+.play-dice { grid-area: dice; }
+.play-motion { grid-area: motion; }
+.play-skills { grid-area: skills; }
+.play-rest { grid-area: rest; }
+.play-portrait {
+  grid-area: portrait; position: relative; aspect-ratio: 1;
+}
+.hero-sheet .play-portrait .play-portrait-picker {
+  position: relative; display: grid; place-items: center; width: 100%; height: 100%; padding: 0; overflow: hidden;
+}
+.play-portrait-picker img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.play-portrait-label {
+  position: relative; margin-inline: 4px; padding: 4px 7px; border: 1px solid var(--play-line); border-radius: 5px;
+  background: var(--play-fill); color: var(--play-text); font-size: .75rem; line-height: 1.2;
+}
+.play-portrait-picker:hover .play-portrait-label, .play-portrait-picker:focus-visible .play-portrait-label {
+  outline: 1px solid var(--play-line);
+}
+.play-portrait .school-button {
+  position: absolute; right: 6px; bottom: 6px; background: var(--play-fill); color: var(--play-text);
+}
+.play-portrait #my-portrait-remove { inset: 6px 6px auto auto; }
+#my-portrait-status:empty, .play-cast-error:empty { display: none; }
+.play-crop {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 10px;
+  padding: 12px; border: 2px solid var(--play-line); border-radius: 6px;
+  background: var(--play-fill); color: var(--play-text);
+}
+.play-crop canvas { width: min(192px, 100%); height: auto; }
+.play-crop label { display: grid; margin-block: 6px; }
+.play-cell, .play-action-card, .hero-sheet button:not(.play-point, .play-wound-dot, .school-button),
+#my-condition-picker > summary, #my-play-wounds, .hero-sheet .sheet-panel,
+.hero-sheet .sheet-item, .hero-sheet .sheet-panel .sheet-value {
+  background: var(--play-fill); color: var(--play-text); border: 2px solid var(--stat-color, var(--play-line)); border-radius: 6px;
+}
+.hero-sheet :is(.sheet-panel .sheet-label, .sheet-panel .sheet-caption) { color: var(--play-caption); }
+.hero-sheet .sheet-panel .sheet-value output { color: inherit; }
+.hero-sheet .sheet-item-action { background: var(--paper); color: var(--ink); }
+.hero-sheet .sheet-item-action .sheet-label { color: var(--muted); }
+.hero-sheet .sheet-gold { border-width: 2px; color: var(--play-text); }
+.hero-sheet > .character-options { border-width: 2px; border-color: var(--play-line); }
+.play-cell {
+  position: relative; display: flex; flex-direction: column-reverse; justify-content: flex-start;
+  align-items: center; gap: 3px; text-align: center; min-width: 0; min-height: 54px; padding: 5px;
+  overflow-wrap: anywhere;
+}
+label.play-cell, .play-cell:has(> strong) { flex-direction: column; justify-content: flex-end; }
+.play-cell > :is(span:not(.play-icon), .sheet-label) { color: var(--play-caption); font: 700 .71rem/1.2 Arial, sans-serif; }
+.play-cell > :is(output, input, strong) { font: 700 clamp(.85rem, 1.65vw, 1.25rem)/1.15 Arial, sans-serif; color: inherit; }
+.play-cell input {
+  width: 100%; min-width: 0; text-align: center; color: inherit; background: transparent;
+  border: 1px solid transparent; border-radius: 3px; padding: 3px 0;
+}
+.play-cell input:hover, .play-cell input:focus { border-color: var(--play-line); }
+.play-cell input[type="number"] { appearance: textfield; }
+.play-cell input::-webkit-inner-spin-button { appearance: none; }
+.play-dashboard .play-cell:where(:has(> :is(input[type="number"], output))),
+.play-dashboard .play-resources .play-cell {
+  display: grid; align-content: start; grid-template: auto auto / minmax(0, 1fr);
+}
+.play-dashboard .play-cell > :is(input[type="number"], output) {
+  grid-row: 1; font-variant-numeric: tabular-nums;
+}
+.play-dashboard .play-cell > output {
+  border: 1px solid transparent; padding-block: 3px;
+}
+.play-dashboard .play-cell > :is(.sheet-label, span:not([class])) { grid-row: 2; }
+.play-cell > .sheet-breakdown, .play-tooltip {
+  position: absolute; inset: auto auto calc(100% + 6px) 50%; transform: translateX(-50%);
+  width: max-content; max-width: min(230px, 85vw); z-index: 4; visibility: hidden; pointer-events: none;
+  border-radius: 5px; background: #21160e; color: #fff; padding: 8px; border: 1px solid #f6c07a;
+  font: .78rem/1.35 Arial, sans-serif;
+}
+.play-info:hover .play-tooltip, .play-info:focus .play-tooltip { visibility: visible; }
+.play-tooltip { inset-inline: auto 0; transform: none; }
+.play-identity, .play-motion, .play-pair, .play-resources, .play-dice, #my-play-mana {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px;
+}
+.play-pair, .play-dice { position: relative; gap: 0; }
+.play-pair .play-cell, .play-dice .play-cell { border-radius: 0; }
+.play-pair .play-cell + .play-cell, .play-dice .play-cell + .play-cell { border-inline-start: 0; }
+.play-hp { margin-inline: 8%; }
+.play-hp .play-cell { padding-top: 35px; border-radius: 5px 5px 0 0; }
+.play-defense { margin: -2px 6% 0; }
+.play-defense > .play-cell:first-child { border-radius: 5px 0 0 5px; }
+.play-defense > .play-cell:last-child { border-radius: 0 5px 5px 0; }
+.play-resources { margin: 0 7%; gap: 0; }
+.play-resources:empty { display: none; }
+.play-dashboard .play-resources .play-cell {
+  min-height: 42px; border-radius: 0 0 5px 5px; align-content: center;
+}
+.play-resources .play-cell > strong { grid-row: 1; }
+.play-resources .play-cell:only-child { grid-column: 1 / -1; width: min(100%, 8rem); justify-self: center; }
+.play-resource:hover > .sheet-breakdown, .play-resource:focus-within > .sheet-breakdown { visibility: visible; }
+.play-dice { border-top: 2px solid var(--play-line); }
+.play-dice-hint {
+  grid-column: 1/-1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 36px; text-align: center; background: var(--play-fill); border-inline: 2px solid var(--play-line);
+  font-size: .8rem; padding: 5px 4px 5px 38px;
+}
+.play-icon { display: inline-block; flex: none; width: 40px; height: 40px; background: center / contain no-repeat; }
+.play-white-icon { filter: var(--play-icon-filter); }
+:is(.play-hp, .play-icon-cell, .play-dice-hint, #my-play-wounds) > .play-icon {
+  position: absolute; z-index: 1; pointer-events: none;
+}
+.play-hp > .play-icon { width: 66px; height: 66px; top: -33px; left: 50%; transform: translateX(-50%); }
+.play-icon-cell { padding-inline-start: 33px; }
+.play-icon-cell > .play-icon {
+  width: 26px; height: 30px; top: 50%; inset-inline-start: 3px; transform: translateY(-50%);
+}
+.play-defense .play-icon-cell { padding-inline: 22px 4px; }
+.play-defense .play-icon-cell > .play-icon { width: 40px; height: 40px; inset-inline-start: -22px; }
+.play-defense .play-icon-cell:last-child { padding-inline: 4px 22px; }
+.play-defense .play-icon-cell:last-child > .play-icon { inset-inline: auto -22px; }
+.play-dice-hint > .play-icon { width: 40px; height: 40px; inset-inline-start: -10px; top: -6px; }
+[data-stat="STR"] { --stat-color: #872e31; }
+[data-stat="DEX"] { --stat-color: #425842; }
+[data-stat="INT"] { --stat-color: #474f5c; }
+[data-stat="WIL"] { --stat-color: #98661c; }
+.play-attributes, .play-skills { display: grid; gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.play-skills { position: relative; grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.play-dashboard .play-attributes .play-cell {
+  min-height: 67px; padding: 0; border-width: 3px; grid-template-rows: 1fr auto;
+}
+.play-attributes .play-cell > :is(.sheet-label, span:not([class])) {
+  grid-column: 1; align-self: stretch; padding: 3px; background: var(--stat-color); color: #fff; font-size: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 2.65rem;
+}
+.play-attributes .play-cell > :is(input, output) { grid-column: 1; }
+.play-key-badge {
+  display: inline-block; padding: 1px 3px; border: 1px solid currentColor; border-radius: 3px;
+  font: 700 .58rem/1.1 Arial, sans-serif; vertical-align: middle;
+}
+.play-attributes [data-save="Advantage"]::before, .play-attributes [data-save="Disadvantage"]::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+  border-inline: 7px solid transparent;
+}
+.play-attributes [data-save="Advantage"]::before { bottom: 100%; border-bottom: 10px solid #69db6b; }
+.play-attributes [data-save="Disadvantage"]::after { top: 100%; border-top: 10px solid #ff6565; }
+.play-skills .play-cell { min-height: 64px; border-width: 2px; padding-inline: 2px; }
+.play-skills .play-cell { position: static; }
+.play-skills .play-cell > .sheet-breakdown { max-width: min(230px, 100%); }
+.play-conditions, #my-condition-badges, .play-rest-buttons, .play-turn, .play-tabs, .play-spell-heading {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+#my-condition-picker, #my-play-wounds, .play-info { position: relative; }
+#my-condition-picker > summary, .hero-sheet button:not(.play-point, .play-wound-dot, .school-button) {
+  cursor: pointer; padding: 6px 10px; font: 700 .9rem Arial, sans-serif;
+}
+#my-condition-options {
+  position: absolute; z-index: 3; min-width: 155px; padding: 8px;
+  background: var(--play-fill); border: 1px solid var(--play-line); border-radius: 5px;
+}
+#my-condition-options label { display: flex; gap: 5px; align-items: center; font-size: .85rem; padding-block: 2px; }
+#my-condition-badges span { background: #eee3d7; color: #3e2703; border-radius: 999px; padding: 2px 6px; font-size: .72rem; }
+#my-play-wounds { padding: 6px 6px 4px 43px; text-align: center; }
+#my-play-wounds > .play-icon { width: 42px; height: 42px; inset-inline-start: -6px; top: 5px; }
+.play-wound-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; }
+.play-wound-dot {
+  position: relative; padding: 0; width: 17px; height: 17px; border: 2px solid var(--play-line);
+  border-radius: 50%; background: transparent;
+}
+.play-wound-dot + .play-wound-dot::before {
+  content: ""; position: absolute; width: 5px; height: 2px; top: 50%; right: calc(100% + 3px);
+  transform: translateY(-50%); background: var(--play-line);
+}
+.play-wound-dot[aria-pressed="true"] + .play-wound-dot[aria-pressed="true"]::before { background: #bd4d4d; }
+.play-wound-dot[aria-pressed="true"] { background: #bd4d4d; }
+.play-wound-dot:has(.play-icon) { width: 26px; height: 26px; }
+.play-wound-dot > .play-icon { width: 100%; height: 100%; }
+.play-wound-label { font-size: .75rem; color: var(--play-caption); }
+.play-rest-buttons { margin-top: 6px; justify-content: center; }
+#my-field-options { margin-top: 7px; display: grid; gap: 6px; }
+#my-field-options input { width: 100%; }
+.play-body { max-width: 850px; margin: 24px auto; font-family: Arial, sans-serif; }
+.play-tabs { justify-content: center; margin-bottom: 14px; }
+.hero-sheet .play-tabs [role="tab"] { font-size: clamp(1.05rem, 3vw, 1.65rem); padding: 8px 12px; }
+.play-note { margin: 12px 0; padding: 6px 10px; border-inline-start: 3px solid var(--play-line); }
+.play-tabs [aria-selected="true"], #my-sheet-override[aria-pressed="true"] { outline: 2px solid var(--play-line); outline-offset: 2px; }
+.play-turn { justify-content: space-between; margin-block: 20px 24px; }
+.play-points { flex: 1; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 38px; padding: 12px; }
+.play-point {
+  position: relative; width: 45px; height: 45px; padding: 0; border: 0; background: transparent;
+}
+.play-point::after {
+  content: ""; position: absolute; inset: 7px; background: var(--play-spent);
+  border: 1px solid var(--play-spent-line); transform: rotate(45deg);
+}
+.play-point[aria-pressed="true"]::after { background: var(--play-ready); border-color: var(--play-line); }
+.play-point + .play-point::before {
+  content: ""; position: absolute; width: 21px; height: 2px; background: var(--play-spent-line);
+  right: calc(100% + 8px); top: 50%;
+}
+.play-point[aria-pressed="true"] + .play-point[aria-pressed="true"]::before { background: var(--play-line); }
+.play-cards, .play-body .character-feature-list { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.play-action-card { display: flex; gap: 8px; align-items: center; padding: 10px; }
+.play-action-card :is(h4, p) { margin: 0; }
+.play-action-card p { margin-top: 2px; font-size: .9rem; }
+.play-weapon { display: grid; align-content: start; gap: 8px; overflow-wrap: anywhere; }
+.play-weapon-heading, .play-attack-row { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; }
+.play-weapon-heading { justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--play-line); }
+.play-attack-traits { margin: 0; padding: 0; list-style: none; }
+.play-attack-badge {
+  display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 7px; border-radius: 6px;
+  background: var(--attack-trait); color: var(--play-text); font-size: .8rem; font-weight: 700;
+}
+.play-attack-label { color: var(--play-caption); font-size: .8rem; }
+.play-attack-cost { background: var(--attack-cost); }
+.play-attack-damage { background: var(--attack-damage); }
+.play-attack-damage strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.play-attack-reach { background: var(--attack-reach); }
+.play-body .ability-category { border: 0; background: transparent; margin-block: 10px; }
+.play-body .ability-category h3 { background: transparent; color: var(--ink); padding-inline: 0; }
+.hero-sheet .play-ability {
+  position: relative; border: 2px solid var(--play-line); border-radius: 6px; background: var(--play-fill);
+  color: var(--play-text); padding: 9px 10px;
+}
+.play-spell-heading { margin-top: 28px; border-top: 2px solid var(--play-line); padding-top: 10px; }
+.play-spell-heading h3 { margin: 0; display: flex; align-items: center; gap: 6px; }
+.play-spell-heading h3::before { content: ""; width: 34px; height: 39px; background: var(--image-SpellsIcon) center / contain no-repeat; }
+.play-ability small { color: var(--play-caption); }
+.hero-sheet .spell-card { border-width: 2px; }
+.play-cast { margin-top: 8px; }
+@media (max-width: 960px) {
+  .play-skills { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .play-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "identity portrait" "ancestry portrait" "attributes attributes"
+      "health health" "dice motion" "conditions conditions" "rest rest" "skills skills";
+    gap: 12px 14px;
+  }
+  .play-portrait { width: min(100%, 10rem); justify-self: center; align-self: center; }
+  .play-attributes { margin-block: 10px 4px; }
+  .play-dashboard .play-attributes .play-cell {
+    min-height: 7rem; grid-template-rows: minmax(0, 2fr) minmax(0, 1fr); gap: 0;
+  }
+  .play-attributes .play-cell > :is(.sheet-label, span:not([class])) {
+    min-height: 0; padding-block: 1px; gap: 1px; justify-content: center; font-size: .875rem;
+  }
+  .play-dashboard .play-cell > :is(output, input, strong) { font-size: 1rem; }
+  .play-dashboard .play-cell > .sheet-breakdown { max-width: 11rem; }
+  :is(.play-pair, .play-motion) > .play-cell:first-child > .sheet-breakdown,
+  .play-dice > .play-cell:nth-child(2) > .sheet-breakdown,
+  .play-attributes > .play-cell:nth-child(-n+2) > .sheet-breakdown {
+    inset-inline: 0 auto; transform: none;
+  }
+  :is(.play-pair, .play-motion, .play-dice) > .play-cell:last-child > .sheet-breakdown,
+  .play-attributes > .play-cell:nth-child(n+3) > .sheet-breakdown {
+    inset-inline: auto 0; transform: none;
+  }
+  .play-health { width: min(100%, 23rem); justify-self: center; }
+  .play-defense { margin-inline: 13%; }
+  .play-dice-hint { border-radius: 6px 6px 0 0; }
+  .play-dice { border-radius: 6px; }
+  .play-dice > .play-cell:nth-child(2) { border-end-start-radius: 6px; }
+  .play-dice > .play-cell:last-child { border-end-end-radius: 6px; }
+  .play-dice-hint > .play-icon { inset-inline-start: 0; width: 36px; }
+  .play-motion { align-self: stretch; }
+  .play-motion > .play-cell { align-content: center; }
+  .play-rest { width: min(100%, 23rem); justify-self: center; }
+  #my-play-wounds { min-height: 46px; }
+  #my-play-wounds > .play-icon { inset-inline-start: 2px; width: 36px; top: 50%; transform: translateY(-50%); }
+  #my-portrait-status, .play-crop { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .play-dashboard {
+    grid-template-areas: "identity portrait" "ancestry portrait" "attributes attributes"
+      "health health" "dice dice" "motion motion" "conditions conditions" "rest rest" "skills skills";
+  }
+  .play-identity { grid-template-columns: minmax(0, 1fr); }
+  .play-identity > .play-cell, .play-ancestry { min-height: 44px; }
+  .play-skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .play-dashboard .play-skills > .play-cell:has(> :is(input[type="number"], output)) {
+    min-height: 44px; padding-inline: 8px; grid-template: auto / minmax(0, 1fr) minmax(2.5rem, auto);
+    align-content: center; align-items: center;
+  }
+  .play-dashboard .play-skills .play-cell > .sheet-label { grid-area: 1 / 1; text-align: start; }
+  .play-dashboard .play-skills .play-cell > :is(input, output) { grid-area: 1 / 2; }
+  .play-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .hero-sheet .play-tabs [role="tab"] { min-height: 44px; padding-inline: 2px; font-size: .9rem; }
+  .play-points { gap: 0 14px; padding: 4px 6px; }
+  .play-point + .play-point::before { width: 9px; right: calc(100% + 2.5px); }
+  .play-cards, .play-body .character-feature-list { grid-template-columns: 1fr; }
+}
 .sheet-ability-edit summary { cursor: pointer; }
 .sheet-ability-edit textarea { width: 100%; color: var(--ink); background: transparent; border: 1px solid var(--rule); font: inherit; }
 #my-level-guide { margin-bottom: 12px; }
