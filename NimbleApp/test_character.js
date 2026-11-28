@@ -75,6 +75,69 @@ test("KEY resolves fixed arithmetic but preserves dice and key stat choice wordi
   assert.equal(sheetRules.resolveKey("10+KEY damage; 2×KEY temp HP; 1d8+KEY HP; choose a KEY stat.", 3),
     "13 damage; 6 temp HP; 1d8+3 HP; choose a KEY stat.");
   assert.equal(sheetRules.resolveKey("1d8 + KEY HP; gain +KEY damage.", -1), "1d8 -1 HP; gain -1 damage.");
+  assert.equal(sheetRules.resolveKey("LVL + KEY damage or KEY + LVL healing.", 3, 5), "8 damage or 8 healing.");
+});
+
+test("Construct increases the Hit Die without replacing recorded HP gains", () => {
+  const mage = { className: "Mage", level: 2 };
+  const normal = sheetRules.derived(mage, {}, [], {});
+  const construct = { ...mage, ancestry: "Oozeling/Construct" };
+  const updated = sheetRules.derived(construct, {}, [], {});
+  assert.equal(updated.hitDie, 8);
+  assert.equal(updated.metrics["Max HP"].total, normal.metrics["Max HP"].total + 1);
+  assert.equal(sheetRules.derived(construct, { "hp:2": "2" }, [], {}).metrics["Max HP"].total,
+    sheetRules.derived(mage, { "hp:2": "2" }, [], {}).metrics["Max HP"].total);
+});
+
+test("Celestial neutralizes the default disadvantaged save without changing other saves or overrides", () => {
+  const celestial = { className: "Hunter", ancestry: "Celestial" };
+  assert.equal(sheetRules.saveMode({ className: "Hunter" }, {}, "INT"), "Disadvantage");
+  assert.equal(sheetRules.saveMode(celestial, {}, "INT"), "Normal");
+  assert.equal(sheetRules.saveMode(celestial, {}, "DEX"), "Advantage");
+  assert.equal(sheetRules.saveMode(celestial, { "save:INT": "Advantage" }, "INT"), "Advantage");
+});
+
+test("Dwarf applies Stout to Hit Dice, wounds, and Speed alongside manual bonuses", () => {
+  const character = { className: "Hunter", level: 2 };
+  const sheet = { "bonus:Hit Dice": "1" };
+  const normal = sheetRules.derived(character, sheet, [], {});
+  const dwarf = sheetRules.derived({ ...character, ancestry: "Dwarf" }, sheet, [], {});
+  for (const [name, bonus] of [["Hit Dice", 2], ["Max Wounds", 1], ["Speed", -1]]) {
+    assert.equal(dwarf.metrics[name].total, normal.metrics[name].total + bonus, name);
+    assert.deepEqual(dwarf.metrics[name].parts.find(([source]) => source === "Stout"), ["Stout", bonus]);
+  }
+});
+
+test("other fixed ancestry modifiers update the relevant sheet totals", () => {
+  const character = { className: "Hunter", level: 1 };
+  const totals = (ancestry) => sheetRules.derived({ ...character, ancestry }, {}, [], {});
+  const base = totals("");
+  const elf = totals("Elf");
+  assert.equal(elf.initiativeAdvantage, true);
+  assert.equal(elf.metrics.Initiative.total, base.metrics.Initiative.total);
+  for (const [ancestry, name, delta] of [["Elf", "Speed", 1], ["Gnome", "Speed", -1],
+    ["Dragonborn", "Defense", 1], ["Planarbeing", "Max Wounds", -2], ["Ratfolk", "Speed", 1],
+    ["Turtle/Stonefolk", "Defense", 4], ["Turtle/Stonefolk", "Speed", -2]]) {
+    assert.equal(totals(ancestry).metrics[name].total, base.metrics[name].total + delta, `${ancestry}: ${name}`);
+  }
+  assert.equal(totals("Ratfolk").metrics.Defense.total, base.metrics.Defense.total);
+  for (const [ancestry, skill, delta] of [["Halfling", "Stealth", 1], ["Orc", "Might", 1], ["Half-Giant", "Might", 2],
+    ...Object.keys(base.skills).map((skill) => ["Human", skill, 1])]) {
+    assert.equal(totals(ancestry).skills[skill].total, base.skills[skill].total + delta, `${ancestry}: ${skill}`);
+  }
+});
+
+test("ancestry languages are derived at INT zero or higher without duplicating manual languages", () => {
+  assert.equal(sheetRules.knownLanguages("Elvish", "Celestial", 0), "Common, Elvish, Celestial");
+  assert.equal(sheetRules.knownLanguages("Elvish", "Celestial", -1), "Common, Elvish");
+  assert.equal(sheetRules.knownLanguages("common, Dwarvish", "Gnome", 2), "Common, Dwarvish");
+});
+
+test("equipped armor contribution excludes shield and manual Defense bonuses", () => {
+  const result = sheetRules.derived({ className: "Hunter", level: 1 },
+    { armor: "Custom", customArmor: "5", shield: "Wooden Buckler", "bonus:Defense": "2" }, [], {});
+  assert.equal(result.armorDefense.total, 5);
+  assert.equal(result.metrics.Defense.total, 7 + sheetRules.shields["Wooden Buckler"]);
 });
 
 test("sheet totals separate starting stats, feature picks, and manual bonuses", () => {

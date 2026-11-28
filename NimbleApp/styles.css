@@ -260,15 +260,17 @@ h1, h2, h3, p { margin-top: 0; }
 .play-portrait-picker:hover .play-portrait-label, .play-portrait-picker:focus-visible .play-portrait-label {
   outline: 1px solid var(--play-line);
 }
-.play-portrait .school-button {
+.play-portrait #my-level-up {
   position: absolute; right: 6px; bottom: 6px; background: var(--play-fill); color: var(--play-text);
 }
-.play-portrait #my-portrait-remove { inset: 6px 6px auto auto; }
+.play-portrait-actions {
+  position: absolute; inset: 6px 6px auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px;
+  pointer-events: none; visibility: hidden;
+}
+.play-portrait-actions .school-button { background: var(--play-fill); color: var(--play-text); pointer-events: auto; }
+.play-portrait-picker[aria-expanded="true"] ~ .play-portrait-actions { visibility: visible; }
 @media (hover: hover) {
-  .play-portrait.has-portrait:not(:hover, :has(:focus-visible)) :is(.play-portrait-label, #my-portrait-remove) {
-    opacity: 0;
-    pointer-events: none;
-  }
+  .play-portrait:hover .play-portrait-actions { visibility: visible; }
 }
 #my-portrait-status:empty { display: none; }
 .play-crop {

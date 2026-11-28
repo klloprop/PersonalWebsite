@@ -59,6 +59,7 @@
   let playMode = "exploration";
   const playName = byId("my-play-name");
   const portraitPicker = byId("my-portrait-picker");
+  const portraitActions = byId("my-portrait-actions");
   const portraitFile = byId("my-portrait-file");
   const portraitCrop = byId("my-portrait-crop");
   const portraitStatus = byId("my-portrait-status");
@@ -81,9 +82,17 @@
     image.hidden = !portrait;
     if (portrait) image.src = portrait;
     else image.removeAttribute("src");
-    image.closest(".play-portrait").classList.toggle("has-portrait", Boolean(portrait));
-    byId("my-portrait-label").textContent = portrait ? "Replace image" : "Upload image";
-    byId("my-portrait-remove").hidden = !portrait;
+    byId("my-portrait-label").hidden = Boolean(portrait);
+    portraitActions.hidden = !portrait;
+    portraitPicker.removeAttribute("aria-expanded");
+    if (portrait) {
+      portraitPicker.setAttribute("aria-label", "Manage portrait");
+      portraitPicker.setAttribute("aria-controls", portraitActions.id);
+      portraitPicker.setAttribute("aria-expanded", "false");
+    } else {
+      portraitPicker.removeAttribute("aria-label");
+      portraitPicker.removeAttribute("aria-controls");
+    }
   }
 
   function closePortraitCrop() {
@@ -104,7 +113,11 @@
       0, 0, portraitPreview.width, portraitPreview.height);
   }
 
-  portraitPicker.addEventListener("click", () => portraitFile.click());
+  portraitPicker.addEventListener("click", () => {
+    if (!portrait) portraitFile.click();
+    else portraitPicker.setAttribute("aria-expanded", String(portraitPicker.getAttribute("aria-expanded") !== "true"));
+  });
+  byId("my-portrait-replace").addEventListener("click", () => portraitFile.click());
   portraitFile.addEventListener("change", async () => {
     const file = portraitFile.files[0];
     portraitFile.value = "";
@@ -222,7 +235,7 @@
 
   function character() {
     const level = Number(levelSelect.value);
-    return { className: classSelect.value, subclass: level >= 3 ? subclassSelect.value : "", level };
+    return { className: classSelect.value, subclass: level >= 3 ? subclassSelect.value : "", level, ancestry: ancestrySelect.value };
   }
 
   function updateSubclass(selected = "") {
@@ -568,7 +581,7 @@
         const formula = keyText.get(text) ?? text.data;
         if (!/\bKEY\b/.test(formula)) continue;
         keyText.set(text, formula);
-        text.data = sheetRules.resolveKey(formula, sheetTotals.key);
+        text.data = sheetRules.resolveKey(formula, sheetTotals.key, Number(levelSelect.value));
       }
     }
   }
@@ -636,8 +649,8 @@
     return { parts: [[resource.unit, base], ["Manual bonus", bonus]], total: Math.max(0, base + bonus),
       label: current.className === "Manawright (Artificer)" ? "Mana Dice" : "Mana", encounter: resource.unit === "mana at Initiative" };
   }
-  function renderPlayDashboard(current, ancestry, saves, features) {
-    const { metrics, stats, skills, hitDie, key } = sheetTotals;
+  function renderPlayDashboard(current, ancestry, features) {
+    const { metrics, stats, skills, hitDie, key, initiativeAdvantage } = sheetTotals;
     const keyAttributes = sheetRules.keyStats(current.className);
     if (document.activeElement !== playName) playName.value = nameInput.value;
     byId("my-sheet-subtitle").textContent = [`Level ${current.level}`, current.className, current.subclass].filter(Boolean).join(" · ");
@@ -657,7 +670,8 @@
       playField("Current Hit Dice", "currentHitDice", tracked("currentHitDice", dice), { max: dice }), playTotal("Hit Dice", "Max Hit Dice", metrics["Hit Dice"]));
     const extraMovement = [sheet.movement, features.some(({ name }) => name === "Explorer of the Wilds") && "Climbing Speed"].filter(Boolean);
     const speed = playTotal("Speed", "Speed", metrics.Speed, {}, extraMovement.join(" · "));
-    const initiative = playTotal("Initiative", "Initiative", metrics.Initiative, { min: -9999 });
+    const initiative = playTotal("Initiative", initiativeAdvantage ? "Initiative (Adv.)" : "Initiative",
+      metrics.Initiative, { min: -9999 }, initiativeAdvantage ? "Lithe: Roll Initiative with advantage." : "");
     initiative.dataset.stat = "DEX";
     for (const [field, image] of [[tempHP, "TempHPIcon"], [defense, "ShieldIcon"], [speed, "MoveIcon"], [initiative, "InitiativeIcon"]]) {
       field.classList.add("play-icon-cell");
@@ -667,8 +681,8 @@
     const mainStats = sheetRules.stats.map((stat) => {
       const card = playTotal(stat, stat, stats[stat], { signed: true, min: -9999 });
       card.dataset.stat = stat;
-      card.dataset.save = saveMode(stat);
-      card.setAttribute("title", `${stat} save: ${saveMode(stat)}`);
+      card.dataset.save = sheetRules.saveMode(current, sheet, stat);
+      card.setAttribute("title", `${stat} save: ${card.dataset.save}`);
       if (keyAttributes.includes(stat)) {
         const isHighest = stats[stat].total === key;
         const label = card.querySelector(".sheet-label") || card.lastElementChild;
@@ -827,17 +841,14 @@
       sheetTotals = undefined;
       return;
     }
-    const [, , , saves] = sheetRules.classes[className];
     const ancestry = ancestries.get(ancestrySelect.value);
     byId("my-level-up").disabled = level >= 20;
     sheetTotals = sheetRules.derived(current, sheet, features, featurePicks);
     const { skills } = sheetTotals;
-    renderPlayDashboard(current, ancestry, saves.split(" "), features);
+    renderPlayDashboard(current, ancestry, features);
 
     const statFields = byId("my-sheet-stat-fields");
     const base = sheetRules.baseArray(className, "Standard");
-    const [advantage, disadvantage] = saves.split(" ");
-    const saveMode = (stat) => sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage" : stat === disadvantage ? "Disadvantage" : "Normal");
     const preset = sheetInput("Apply a starting array", "preset", {
       value: "", choices: [["", "Choose a preset"], ...sheetOptions(sheetRules.arrays)],
       onChange: (choice) => {
@@ -851,7 +862,7 @@
       card.append(
         sheetInput(`${stat} base`, `base:${stat}`, { value: sheet[`base:${stat}`] ?? base[stat] }),
         sheetInput(`${stat} manual bonus`, `bonus:${stat}`),
-        sheetInput(`${stat} save`, `save:${stat}`, { value: saveMode(stat),
+        sheetInput(`${stat} save`, `save:${stat}`, { value: sheetRules.saveMode(current, sheet, stat),
           choices: ["Normal", "Advantage", "Disadvantage"].map((value) => [value, value]) }));
       return card;
     });
@@ -1035,6 +1046,13 @@
     function setFieldOptions(open) {
       fieldOptions.hidden = !open;
       byId("my-field-rest").setAttribute("aria-expanded", String(open));
+      if (open) {
+        const method = byId("my-field-method");
+        const takesMax = character().ancestry === "Oozeling/Construct";
+        if (takesMax) method.value = "max";
+        else if (method.disabled) method.selectedIndex = 0;
+        method.disabled = takesMax;
+      }
     }
     byId("my-field-rest").addEventListener("click", () => setFieldOptions(fieldOptions.hidden));
     byId("my-safe-rest").addEventListener("click", () => {
@@ -1057,7 +1075,7 @@
         byId("my-sheet-status").textContent = "Choose a number of Hit Dice you have left.";
         return;
       }
-      const takeMax = byId("my-field-method").value === "max";
+      const takeMax = character().ancestry === "Oozeling/Construct" || byId("my-field-method").value === "max";
       const maxHP = metrics["Max HP"].total;
       const before = tracked("currentHP", maxHP);
       let restored = 0;
@@ -1088,7 +1106,7 @@
 
   function renderSheetEquipment(current, features, ancestry, refreshOnly) {
     const { className, level } = current;
-    const { stats, metrics } = sheetTotals;
+    const { stats, metrics, armorDefense } = sheetTotals;
     const [, , , , starterArmor, starterShield, starterWeapons, starterGear] = sheetRules.classes[className];
     const gear = byId("my-sheet-gear-fields");
     const applyGear = node("button", "school-button", "Use class starting gear");
@@ -1114,6 +1132,9 @@
     };
     const armorName = sheet.armor || "Unarmored";
     const armorCard = itemCard(armorName, "Armor");
+    armorCard.classList.add("sheet-hint-anchor");
+    const armorParts = armorDefense.parts.map(([label, amount]) => `${label}: ${amount}`);
+    attachSheetHint(armorCard, "equipped-armor-hint", `Defense: ${armorDefense.total} · ${armorParts.join(" · ")}`);
     equipment.replaceChildren(armorCard);
     if (sheet.shield) equipment.append(itemCard(sheet.shield, "Shield"));
     for (const [index, weapon] of equippedWeapons().entries()) {
@@ -1168,18 +1189,18 @@
     const adjustments = byId("my-sheet-adjustments");
     const climbs = features.some(({ name }) => name === "Explorer of the Wilds") ? " Class movement: climbing Speed (Explorer of the Wilds)." : "";
     byId("my-sheet-traits-summary").replaceChildren(...[
-      ["Known languages", sheet.languages?.trim() || "Common"], ["Size", sheet.size || ancestry?.size || "Medium"]
+      ["Known languages", sheetRules.knownLanguages(sheet.languages, ancestry?.name, stats.INT.total)], ["Size", sheet.size || ancestry?.size || "Medium"]
     ].map(([label, text]) => {
       const pair = node("div", "");
       pair.append(node("dt", "sheet-label", label), node("dd", "", text));
       return pair;
     }));
-    const languageHint = `Common plus ${Math.max(0, stats.INT.total)} additional language(s) from INT.${climbs} Add ancestry or custom movement and bonuses here.`;
+    const languageHint = `Common and eligible ancestry languages are added automatically. Add your ${Math.max(0, stats.INT.total)} INT language choice(s) and any other languages here.${climbs}`;
     if (refreshOnly) adjustments.querySelector(".character-note").textContent = languageHint;
     else adjustments.replaceChildren(
       sheetGrid(sheetInput("Size", "size", { type: "text", value: sheet.size ?? ancestry?.size ?? "Medium" }),
         sheetInput("Other movement (climb, swim, fly)", "movement", { type: "text" }),
-        sheetInput("Languages", "languages", { type: "text", value: sheet.languages ?? "Common" })),
+        sheetInput("Additional languages", "languages", { type: "text", value: sheet.languages ?? "" })),
       node("p", "character-note", languageHint),
       node("h3", "", "Manual adjustments"),
       sheetGrid(...Object.keys(metrics).map((name) => sheetInput(`${name} bonus`, `bonus:${name}`))));
@@ -1245,7 +1266,7 @@
     if (!className || level >= 20) return;
     pendingLevel = level + 1;
     byId("my-level-guide-title").textContent = `Level up to ${pendingLevel}`;
-    byId("my-level-hp").value = sheet[`hp:${pendingLevel}`] ?? sheetRules.classes[className][1] / 2;
+    byId("my-level-hp").value = sheet[`hp:${pendingLevel}`] ?? sheetTotals.hitDie / 2;
     byId("my-level-roll-result").textContent = "The default is the flat HP increase. Roll or enter your own result.";
     byId("my-level-skill").replaceChildren(new Option("Allocate later", ""));
     for (const skill of Object.keys(sheetRules.skills)) byId("my-level-skill").add(new Option(skill));
@@ -1260,7 +1281,7 @@
   });
   byId("my-level-subclass").addEventListener("change", previewLevel);
   byId("my-level-roll").addEventListener("click", () => {
-    const size = sheetRules.classes[character().className][1];
+    const size = sheetTotals.hitDie;
     const roll = () => Math.floor(Math.random() * size) + 1;
     const first = roll(), second = roll();
     byId("my-level-hp").value = Math.max(first, second);
@@ -1275,7 +1296,7 @@
     if (pendingLevel !== current.level + 1 || pendingLevel > 20 || !byId("my-level-hp").reportValidity()) return;
     const level = pendingLevel;
     const skill = byId("my-level-skill").value;
-    sheet[`hp:${level}`] = String(sheetRules.number(byId("my-level-hp").value, sheetRules.classes[current.className][1] / 2));
+    sheet[`hp:${level}`] = String(sheetRules.number(byId("my-level-hp").value, sheetTotals.hitDie / 2));
     if (skill) sheet[`levelSkill:${level}`] = skill;
     else delete sheet[`levelSkill:${level}`];
     const subclass = level === 3 ? byId("my-level-subclass").value : current.subclass;

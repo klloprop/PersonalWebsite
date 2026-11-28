@@ -5,6 +5,19 @@
   const arrays = { Standard: [2, 2, 0, -1], Balanced: [2, 1, 1, 0], "Min-Max": [3, 1, -1, -1] };
   const skills = { Might: "STR", Finesse: "DEX", Stealth: "DEX", Arcana: "INT", Examination: "INT", Lore: "INT",
     Influence: "WIL", Insight: "WIL", Naturecraft: "WIL", Perception: "WIL" };
+  const ancestryBonuses = {
+    Human: { trait: "Tenacious", allSkills: 1 },
+    Dwarf: { trait: "Stout", "Hit Dice": 2, "Max Wounds": 1, Speed: -1 },
+    Elf: { trait: "Lithe", Speed: 1, initiativeAdvantage: true },
+    Halfling: { trait: "Elusive", Stealth: 1 },
+    Gnome: { trait: "Optimistic", Speed: -1 },
+    Dragonborn: { trait: "Draconic Heritage", Defense: 1 },
+    Orc: { trait: "Relentless", Might: 1 },
+    "Half-Giant": { trait: "Strength of Stone", Might: 2 },
+    Planarbeing: { trait: "Planeshift", "Max Wounds": -2 },
+    Ratfolk: { trait: "Scurry", Speed: 1 },
+    "Turtle/Stonefolk": { trait: "Slow & Steady", Defense: 4, Speed: -2 },
+  };
   // Class-sheet starting values, independent of the character's later progression.
   const classes = {
     "Manawright (Artificer)": ["INT STR", 8, 13, "INT WIL", "Armor Prototype", "", "", "Weapon Prototype, Wrench, Notebook"],
@@ -61,12 +74,36 @@
     return classes[className][0].split(" ");
   }
 
-  function resolveKey(text, key) {
-    return text.replace(/(?:\b(\d+)\s*([+×])\s*)?(\+\s*)?\bKEY\b(?![-\s]+(?:[Ss]tats?|STATS?)\b)/g,
+  function resolveKey(text, key, level) {
+    const formula = level === undefined ? text : text
+      .replace(/\bLVL(?=\s*[+×]\s*KEY\b)/g, String(level))
+      .replace(/\bKEY(\s*[+×]\s*)LVL\b/g, (_, operator) => `${level}${operator}KEY`);
+    return formula.replace(/(?:\b(\d+)\s*([+×])\s*)?(\+\s*)?\bKEY\b(?![-\s]+(?:[Ss]tats?|STATS?)\b)/g,
       (_match, operand, operator, plus) => {
         if (operator) return String(operator === "×" ? Number(operand) * key : Number(operand) + key);
         return plus && key >= 0 ? `+${key}` : String(key);
       });
+  }
+
+  function saveMode(character, sheet, stat) {
+    const [advantage, disadvantage] = classes[character.className][3].split(" ");
+    return sheet[`save:${stat}`] ?? (stat === advantage ? "Advantage"
+      : stat === disadvantage && character.ancestry !== "Celestial" ? "Disadvantage" : "Normal");
+  }
+
+  function knownLanguages(manual, ancestry, intelligence) {
+    const ancestryLanguages = {
+      Dwarf: "Dwarvish", Elf: "Elvish", Gnome: "Dwarvish", Dragonborn: "Draconic", Goblin: "Goblin",
+      Orc: "Goblin", Kobold: "Draconic", Fiendkin: "Infernal", Celestial: "Celestial",
+      "Dryad/Shroomling": "Elvish", "Half-Giant": "Dwarvish",
+    };
+    const languages = new Map([["common", "Common"]]);
+    const granted = intelligence >= 0 && Object.hasOwn(ancestryLanguages, ancestry) ? ancestryLanguages[ancestry] : "";
+    for (const language of [...(manual || "").split(/[,;\n]/), granted]) {
+      const name = language?.trim();
+      if (name && !languages.has(name.toLowerCase())) languages.set(name.toLowerCase(), name);
+    }
+    return [...languages.values()].join(", ");
   }
 
   function startingGear(className) {
@@ -111,21 +148,25 @@
   }
 
   function derived(character, sheet, features, picks) {
-    const { className, level } = character;
-    const [, hitDie, startingHP] = classes[className];
+    const { className, level, ancestry } = character;
+    const origin = Object.hasOwn(ancestryBonuses, ancestry) ? ancestryBonuses[ancestry] : {};
+    const ancestryPart = (bonus) => bonus ? [[origin.trait, bonus]] : [];
+    const [, classDie, startingHP] = classes[className];
+    const hitDie = ancestry === "Oozeling/Construct" ? ({ 4: 6, 6: 8, 8: 10, 10: 12, 12: 20 })[classDie] ?? classDie : classDie;
     const totals = statTotals(character, sheet, features, picks);
     const value = (stat) => totals[stat].total;
     const key = Math.max(...keyStats(className).map(value));
     const has = (name) => features.some((feature) => feature.name === name);
     const gear = Object.hasOwn(armor, sheet.armor) ? sheet.armor : "";
     const [armorValue, armorStat, cap, secondStat] = armor[gear];
-    const defense = gear ? [[gear, gear === "Custom" ? number(sheet.customArmor) : armorValue],
+    const armorDefense = breakdown(gear ? [[gear, gear === "Custom" ? number(sheet.customArmor) : armorValue],
       ...(armorStat ? [[cap ? `${armorStat} (max ${cap})` : armorStat, Math.min(value(armorStat), cap ?? Infinity)]] : []),
       ...(secondStat ? [[secondStat, value(secondStat)]] : [])]
-      : [["DEX (unarmored)", value("DEX")], ...(className === "Zephyr" ? [["Iron Defense", value("STR") * (level >= 5 ? 3 : 1)]] : [])];
+      : [["DEX (unarmored)", value("DEX")], ...(className === "Zephyr" ? [["Iron Defense", value("STR") * (level >= 5 ? 3 : 1)]] : [])]);
+    const defense = [...armorDefense.parts];
     if (sheet.shield && Object.hasOwn(shields, sheet.shield)) defense.push([sheet.shield, shields[sheet.shield]]);
     const swift = !gear && has("Swift Feet") ? (has("Swift Feet (2)") ? 4 : 2) : 0;
-    const measure = (key, parts) => breakdown([...parts, ["Manual bonus", number(sheet[`bonus:${key}`])]]);
+    const measure = (key, parts) => breakdown([...parts, ...ancestryPart(origin[key]), ["Manual bonus", number(sheet[`bonus:${key}`])]]);
     const skilled = {};
     for (const feature of features.filter(({ name }) => name === "Skilled Hero")) {
       for (const match of feature.description.matchAll(/([+–-]\d+)\s+(?:to\s+)?([^+–-]+)/g)) {
@@ -138,7 +179,7 @@
       [`Level ${index + 2} HP`, number(sheet[`hp:${index + 2}`], hitDie / 2)]);
     const grants = skillGrants(level, sheet);
     return {
-      stats: totals, hitDie, key,
+      stats: totals, hitDie, key, armorDefense, initiativeAdvantage: Boolean(origin.initiativeAdvantage),
       metrics: {
         "Max HP": measure("Max HP", [["Starting HP", startingHP], ...hpSteps]),
         "Hit Dice": measure("Hit Dice", [["Level", level], ...(has("Potent Bloom") ? [["Potent Bloom (KEY)", key]] : [])]),
@@ -152,6 +193,7 @@
       },
       skills: Object.fromEntries(Object.entries(skills).map(([skill, stat]) => [skill, breakdown([
         [stat, value(stat)], ["Skilled Hero", skilled[skill] || 0], ["Level-up points", grants[skill]],
+        ...ancestryPart(origin.allSkills ?? origin[skill]),
         ["Manual points / override", number(sheet[`skill:${skill}`])]
       ])]))
     };
@@ -196,7 +238,7 @@
     return /\b(?:combat|attacks?|damage|crits?|critical hits?|defense|initiative|temporar(?:y|ily) HP|temp HP|resistan(?:t|ce)|vulnerab(?:le|ility)|saving throws?)\b/i.test(description);
   }
 
-  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, capstone, skillGrants, spellTiming, abilityCost, actionCostLabel, isCombatPassive };
+  const api = { stats, arrays, skills, classes, armor, shields, weapons, number, baseArray, startingGear, derived, keyStats, resolveKey, saveMode, knownLanguages, capstone, skillGrants, spellTiming, abilityCost, actionCostLabel, isCombatPassive };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.CharacterSheetRules = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

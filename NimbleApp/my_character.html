@@ -120,7 +120,10 @@
           </button>
           <input type="file" id="my-portrait-file" accept="image/png,image/jpeg,image/webp" hidden>
           <button type="button" class="school-button" id="my-level-up">Level up</button>
-          <button type="button" class="school-button" id="my-portrait-remove" hidden>Remove photo</button>
+          <div class="play-portrait-actions" id="my-portrait-actions" hidden>
+            <button type="button" class="school-button" id="my-portrait-replace">Replace image</button>
+            <button type="button" class="school-button" id="my-portrait-remove">Remove photo</button>
+          </div>
         </div>
         <p class="character-note" id="my-portrait-status" role="status"></p>
         <form class="play-crop" id="my-portrait-crop" hidden>
